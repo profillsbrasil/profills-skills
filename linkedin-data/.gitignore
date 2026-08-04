@@ -1,0 +1,10 @@
+# Dados brutos pesados da coleta — não versionar
+catalog/raw/**/screenshots/
+catalog/raw/**/*.png
+catalog/raw/**/*.jpg
+
+# Seleção ativa é efêmera por sessão
+selection.md
+
+# Versionar: refs/ (dossiês + índice), catalog/*.md (relatórios sintetizados),
+# catalog/raw/**/*.json (dado estruturado leve), drafts/ (rascunhos aprovados)

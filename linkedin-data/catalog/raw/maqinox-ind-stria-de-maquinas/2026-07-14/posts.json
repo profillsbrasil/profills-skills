@@ -1,0 +1,43 @@
+[
+  {
+    "post_id": "urn:li:activity:7482524254924754945",
+    "url": "https://www.linkedin.com/feed/update/urn:li:activity:7482524254924754945/",
+    "data": "2026-07-13",
+    "idioma": "PT",
+    "texto": "Alguns detalhes deixam de ser diferenciais e passam a ser expectativa do consumidor. O Zip Lock é um exemplo disso. Além da praticidade, ele agrega valor à embalagem e melhora a experiência de uso do produto. Não por acaso, cada vez mais categorias têm adotado esse formato como parte da estratégia de posicionamento e conveniência.",
+    "formato": "imagem",
+    "descricao_visual": "Imagem de produto/design com o tema Zip Lock — embalagem com fecho, destacando conveniência.",
+    "hook": "Alguns detalhes deixam de ser diferenciais e passam a ser expectativa do consumidor.",
+    "hook_categoria": "bold-claim",
+    "hook_cabe_no_corte": true,
+    "cta": null,
+    "angulo": "trend",
+    "gatilho_psicologico": "contrast",
+    "tom": "institucional, reflexivo, sem emoji, educativo — voz de autoridade de mercado",
+    "hashtags": [],
+    "link_externo": null,
+    "engajamento": { "likes": 0, "comentarios": 0, "reposts": 0 },
+    "screenshot": "descrito (save_to_disk indisponível via claude-in-chrome)"
+  },
+  {
+    "post_id": "urn:li:activity:7481354090615336960",
+    "url": "https://www.linkedin.com/feed/update/urn:li:activity:7481354090615336960/",
+    "data": "2026-07-10",
+    "idioma": "PT",
+    "texto": "Horas de desenvolvimento, testes, ajustes, validações e experiência acumulada ao longo de anos fazem parte de cada projeto. Por trás de cada equipamento, uma equipe comprometida em encontrar soluções, antecipar desafios e entregar uma operação preparada para performar. É esse padrão de excelência que sustenta a confiança construída pela Maqinox há três décadas!",
+    "formato": "imagem",
+    "descricao_visual": "Foto industrial (fresadora/CNC em close, faísca) com overlay de texto em destaque: 'O que sustenta uma boa máquina não aparece na foto' + subtítulo 'Experiência, conhecimento de decisões estratégicas tomadas antes dela chegar à sua fábrica.' Logo Maqinox no topo, acento vermelho. Design institucional forte.",
+    "hook": "Horas de desenvolvimento, testes, ajustes, validações e experiência acumulada ao longo de anos fazem parte de cada projeto.",
+    "hook_categoria": "proof-first",
+    "hook_cabe_no_corte": true,
+    "cta": null,
+    "angulo": "founder-pov",
+    "gatilho_psicologico": "pratfall",
+    "tom": "institucional, orgulhoso, sem emoji — 'costly signal' (30 anos de experiência)",
+    "hashtags": [],
+    "link_externo": null,
+    "engajamento": { "likes": 2, "comentarios": 0, "reposts": 0 },
+    "screenshot": "descrito: 'O que sustenta uma boa máquina não aparece na foto'",
+    "destaque_semana": true
+  }
+]

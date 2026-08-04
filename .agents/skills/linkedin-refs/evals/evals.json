@@ -1,0 +1,23 @@
+{
+  "skill_name": "linkedin-refs",
+  "evals": [
+    {
+      "id": 1,
+      "prompt": "Quero começar a acompanhar o que meus concorrentes andam postando no LinkedIn pra tirar ideias de conteúdo.",
+      "expected_output": "Detecta índice vazio (primeira run), avisa que é a primeira vez, e usa AskUserQuestion pedindo 3-5 empresas/links. Depois pesquisa contexto/similares/tendências, escreve dossiês e o índice, e oferece as similares descobertas.",
+      "files": []
+    },
+    {
+      "id": 2,
+      "prompt": "Bora catalogar de novo — escolhe umas empresas pra essa semana.",
+      "expected_output": "Índice já populado: NÃO pede links de novo. Mostra as empresas conhecidas via AskUserQuestion para selecionar, segura em no máximo 5, e sugere similares ainda não catalogadas ou re-pesquisa de dados velhos. Escreve linkedin-data/selection.md.",
+      "files": []
+    },
+    {
+      "id": 3,
+      "prompt": "Adiciona a Maquimox nas minhas referências e me diz o que descobriu dela.",
+      "expected_output": "Branch de gestão: pesquisa a empresa (contexto/similares/tendências), resolve o slug, escreve o dossiê seguindo o template, atualiza o índice, e resume o que achou por nome.",
+      "files": []
+    }
+  ]
+}
