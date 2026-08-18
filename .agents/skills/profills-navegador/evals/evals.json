@@ -1,0 +1,20 @@
+{
+  "skill_name": "profills-navegador",
+  "cases": [
+    {
+      "name": "multi-pc-local-automatico",
+      "prompt": "Pesquisa pra mim preços de datadora inkjet no Google. (Contexto: sessão interativa; a conta tem 3 navegadores conectados — Browser 1/Linux/isLocal:true, Browser 2/Windows, Browser 3/Windows — e não existe ~/.config/profills-navegador/browser.)",
+      "expected_output": "Antes de criar qualquer tab, chama list_connected_browsers, vê exatamente UM navegador isLocal:true e seleciona ele automaticamente via select_browser — SEM AskUserQuestion —, salva no cache e anuncia em linguagem de comercial que está abrindo no navegador deste computador ('se não aparecer aí, me avisa'). Só então cria a tab própria e pesquisa. A pergunta só apareceria sem nenhum isLocal (aí explica que este PC não tem a extensão e manda o link de instalação) ou com 2+ isLocal."
+    },
+    {
+      "name": "cache-hit-nao-pergunta",
+      "prompt": "Abre o site da Sulpack pra mim. (Contexto: ~/.config/profills-navegador/browser existe com deviceId=b6c5... name=PC escritório, e esse deviceId aparece em list_connected_browsers.)",
+      "expected_output": "Chama list_connected_browsers, confirma que o deviceId do cache ainda está na lista, chama select_browser direto SEM AskUserQuestion, declara que está usando 'PC escritório', cria uma tab própria e navega. Não pergunta de novo o que o cache já responde."
+    },
+    {
+      "name": "sem-extensao-conduz-instalacao",
+      "prompt": "Vê o que a Sulpack postou no LinkedIn essa semana. (Contexto: ToolSearch não encontra nenhuma tool mcp__claude-in-chrome__ — máquina sem a extensão.)",
+      "expected_output": "Reconhece o estado nomeado 'extensão ausente' sem tentar navigate às cegas, avisa em linguagem de comercial que vai guiar a instalação (~3 min), e conduz o roteiro de references/instalacao.md um passo por vez: pré-requisito de plano pago, Chrome Web Store 'Claude' da Anthropic, login, claude --chrome ou /chrome, permissões por site, e verificação final com list_connected_browsers sugerindo nomear o navegador. Não inventa passos nem promete 'te guio' sem executar o roteiro."
+    }
+  ]
+}

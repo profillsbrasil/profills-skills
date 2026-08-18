@@ -1,6 +1,6 @@
 # profills-skills — pipeline de conteúdo LinkedIn
 
-Quatro skills project-level: o pipeline `profills-radar` → `profills-garimpo` → `profills-post` (catalogar o que empresas de referência postam e transformar em rascunhos pt-BR) + `profills-voz` (cria e mantém o arquivo de voz do usuário que a profills-post consome). O usuário final é o **comercial, não dev** — "conduza pela mão" é princípio de produto de todas elas, não floreio.
+Cinco skills project-level: o pipeline `profills-radar` → `profills-garimpo` → `profills-post` (catalogar o que empresas de referência postam e transformar em rascunhos pt-BR) + `profills-voz` (cria e mantém o arquivo de voz do usuário que a profills-post consome) + `profills-navegador` (transversal: garante o navegador certo e pronto via claude-in-chrome — o usuário tem a extensão em várias máquinas — e conduz a instalação onde falta; a garimpo a invoca antes de navegar, e o cache dela vive fora do repo, em `~/.config/profills-navegador/browser`). O usuário final é o **comercial, não dev** — "conduza pela mão" é princípio de produto de todas elas, não floreio.
 
 Os princípios operacionais de cada skill (medido vs inferido, inspirar-não-copiar, pastas por data, compliance) vivem nos próprios `SKILL.md` e references — este arquivo não os repete; ele guarda o que atravessa arquivos e o que nenhum arquivo isolado conta.
 

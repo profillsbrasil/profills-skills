@@ -42,7 +42,7 @@ Se uma empresa não postou nada na semana, registre isso (silêncio também é s
 
 Processe **uma empresa de cada vez** e salve o bruto em disco antes de passar à próxima. Screenshots enchem o contexto rápido; terminar uma empresa e liberar o material antes da próxima mantém a sessão viável numa lista grande.
 
-Para cada empresa, siga `references/navegacao.md` (como dirigir o `claude-in-chrome`, rolar o feed, e lidar com authwall/erros). Por post, extraia os campos de `references/schema-post.md`, classificando com as taxonomias fechadas de `references/taxonomias.md`. Salve:
+Antes da primeira empresa, **invoque a skill `profills-navegador`**: é ela quem garante o navegador certo (o usuário tem a extensão em várias máquinas) e trata máquina sem extensão — a coleta só começa com o handoff dela (navegador selecionado + tab pronta). Daí em diante, para cada empresa, siga `references/navegacao.md` (como dirigir o `claude-in-chrome`, rolar o feed, e lidar com authwall/erros). Por post, extraia os campos de `references/schema-post.md`, classificando com as taxonomias fechadas de `references/taxonomias.md`. Salve:
 
 ```
 linkedin-data/catalog/raw/<slug>/<AAAA-MM-DD>/

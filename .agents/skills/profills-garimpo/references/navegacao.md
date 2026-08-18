@@ -8,10 +8,9 @@ A aba `/company/<slug>/posts/` só existe logado — deslogado ela cai em authwa
 
 ## Passos por empresa
 
-1. **Carregue as tools** numa chamada de `ToolSearch`:
-   `select:mcp__claude-in-chrome__tabs_context_mcp,mcp__claude-in-chrome__navigate,mcp__claude-in-chrome__read_page,mcp__claude-in-chrome__get_page_text,mcp__claude-in-chrome__computer,mcp__claude-in-chrome__tabs_create_mcp`
+1. **Navegador pronto primeiro**: a skill `profills-navegador` já deve ter rodado (o SKILL.md invoca ela antes da primeira empresa) — é ela que seleciona o navegador certo entre as máquinas conectadas, carrega as tools e entrega uma tab própria. Não chame `tabs_create_mcp`/`navigate` sem esse handoff: com a conta conectada em mais de um PC, a tab abre no computador errado.
 
-2. **Abra o contexto de abas** (`tabs_context_mcp`) e navegue (`navigate`) para `https://www.linkedin.com/company/<slug>/posts/`.
+2. **Navegue na tab do handoff** (`navigate`) para `https://www.linkedin.com/company/<slug>/posts/`. Se precisar de tools além das que a profills-navegador carregou, complete numa chamada de `ToolSearch`: `select:mcp__claude-in-chrome__read_page,mcp__claude-in-chrome__get_page_text,mcp__claude-in-chrome__computer,mcp__claude-in-chrome__javascript_tool`.
 
 3. **Confirme que carregou logado.** Se a página mostrar authwall/login em vez do feed, a sessão do usuário caiu — pare e peça para ele logar no LinkedIn no Brave antes de continuar. Não tente burlar. Logado, **anote os seguidores** do topo da página ("N seguidores") — é o denominador da taxa de engajamento e vai no `meta.json` da coleta (`schema-post.md`).
 
@@ -57,6 +56,8 @@ Testado ao vivo (jul/2026). O feed **intercala anúncios** entre os posts orgân
 
 | Sintoma | Ação |
 |---|---|
+| Tools `mcp__claude-in-chrome__*` ausentes ou nenhum navegador conectado | não é erro de página — invoque a `profills-navegador` (instalação/conexão guiada) |
+| Usuário diz que a aba abriu em outro computador | navegador errado selecionado — refaça a seleção pela `profills-navegador` (ela atualiza o cache) |
 | Página pede login/authwall | sessão caiu — pare e peça ao usuário para logar no Brave |
 | Feed não carrega mais posts ao rolar | chegou ao fim disponível — pare e catalogue o que tem |
 | Empresa com pouquíssimos posts (<5 na janela) | reduza a exigência; sinalize "amostra insuficiente" no perfil |
