@@ -5,8 +5,9 @@ description: >-
   web, abrir um site, coletar posts — e antes da primeira tab de cada sessão.
   Use também quando a tab abrir no computador errado ("abriu no outro PC"),
   quando as tools mcp__claude-in-chrome__ não existirem ou não responderem,
-  ou numa máquina nova sem a extensão instalada. As skills profills-radar,
-  profills-garimpo e profills-post invocam esta antes de navegar.
+  ou numa máquina nova sem a extensão instalada. A profills-garimpo invoca
+  esta antes de navegar — e qualquer skill que for usar o navegador deve
+  fazer o mesmo.
 metadata:
   version: 0.1.0
   author: othavio
