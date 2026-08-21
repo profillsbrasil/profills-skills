@@ -1,0 +1,20 @@
+{
+  "skill_name": "profills-setup",
+  "cases": [
+    {
+      "name": "maquina-nova-instala-tudo",
+      "prompt": "Quero começar a usar as skills da Profills nesse notebook novo. (Contexto: `claude plugin list` não mostra profills-skills; nem ~/.claude/skills nem ~/.agents/skills têm humanize-pt-br; `command -v npx` responde um caminho válido; o diretório atual não está em nenhum repo git; ~/Profills LinkedIn não existe.)",
+      "expected_output": "Diagnostica as 6 peças em silêncio (sem perguntar nada ainda), mostra UMA tabela com as 6 skills do plugin + humanize-pt-br + unslop (marcada opcional), todas ❌ exceto unslop que fica neutra. Explica em uma frase e roda `claude plugin marketplace add https://github.com/profillsbrasil/profills-skills` seguido de `claude plugin install profills-skills@profills-skills`, avisando depois que pode ser preciso reabrir o Claude Code para as skills aparecerem. Explica e roda `npx skills add othavi0/skills --skill humanize-pt-br -g -y -a claude-code`. Cria `~/Profills LinkedIn/` com `refs/`, `catalog/raw/` e `drafts/` (não `linkedin-data/`, pois não há repo com skills/profills-setup/SKILL.md no toplevel). Não instala unslop sem pedido explícito. Termina com uma sugestão só: `/profills-voz` (porque voz.md não existe) — não sugere `/profills-radar` junto."
+    },
+    {
+      "name": "invocada-por-outra-skill-sem-dados-dentro-do-repo",
+      "prompt": "(A profills-radar invocou profills-setup porque não achou a pasta de dados. Contexto: o diretório atual é um clone do repo profills-skills, `git rev-parse --show-toplevel` aponta pra ele, `skills/profills-setup/SKILL.md` existe nesse toplevel, mas `linkedin-data/` ainda não existe na raiz; o resto — plugin via .claude/skills, humanize-pt-br, npx — já está tudo presente; DADOS/voz.md não existe.)",
+      "expected_output": "Reconhece o sinal 'repo-fonte' (skills/profills-setup/SKILL.md no toplevel) e trata o plugin como ✅ 'via repo' sem tentar rodar `claude plugin marketplace add`. Mostra a tabela com as outras peças ✅ e só DADOS ❌. Cria `linkedin-data/` (não `~/Profills LinkedIn/`) na raiz do repo, com `refs/`, `catalog/raw/` e `drafts/` dentro. Termina sugerindo `/profills-voz`, já que voz.md não existe — e devolve o controle para a profills-radar continuar, sem inventar que ela mesma vai catalogar empresas."
+    },
+    {
+      "name": "atualizar-tudo-ja-instalado",
+      "prompt": "Atualiza minhas skills da Profills. (Contexto: plugin instalado, humanize-pt-br instalado, DADOS existe com refs/, catalog/ e drafts/, DADOS/voz.md existe.)",
+      "expected_output": "Reconhece que é pedido de atualização, não de instalação do zero — não recria DADOS nem reinstala do zero. Explica e roda `claude plugin marketplace update profills-skills` seguido de `claude plugin update profills-skills@profills-skills`; menciona que rodar de novo o comando `npx skills add` também atualizaria a humanize-pt-br. Depois mostra a tabela (passo 2) de novo com o status resultante. Termina sugerindo `/profills-radar` (voz.md já existe), uma sugestão só."
+    }
+  ]
+}

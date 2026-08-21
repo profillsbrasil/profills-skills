@@ -26,11 +26,13 @@ O princípio que rege todo o catálogo: **separe o que foi medido do que foi inf
 
 ### 1. Resolva a seleção
 
-Leia `linkedin-data/selection.md` (na raiz do repo; se não achar, `git rev-parse --show-toplevel`). Se não existir ou estiver vazio, **invoque a `profills-radar` primeiro** — ela decide quais empresas catalogar. Não peça a lista direto ao usuário; esse é o trabalho da `profills-radar`.
+**Pasta de dados (`DADOS`)**: se o diretório atual está num repo git com `linkedin-data/` na raiz (`git rev-parse --show-toplevel`), `DADOS` é essa pasta; senão é `~/Profills LinkedIn/`. Se nenhuma das duas existe, invoque a skill `profills-setup` — ela cria a pasta e confere o resto da instalação.
+
+Leia `DADOS/selection.md`. Se não existir ou estiver vazio, **invoque a `profills-radar` primeiro** — ela decide quais empresas catalogar. Não peça a lista direto ao usuário; esse é o trabalho da `profills-radar`.
 
 ### 2. Carregue o contexto do usuário
 
-Se existir `.agents/voz.md` (ou `.claude/voz.md`), leia antes — o produto e o público dele definem o que é relevante nos posts das empresas. Sem esse arquivo, siga assim mesmo, catalogando de forma neutra.
+Se existir `DADOS/voz.md`, leia antes — o produto e o público dele definem o que é relevante nos posts das empresas. Sem esse arquivo, siga assim mesmo, catalogando de forma neutra.
 
 ### 3. Alvo da coleta — recente e enxuto
 
@@ -45,7 +47,7 @@ Processe **uma empresa de cada vez** e salve o bruto em disco antes de passar à
 Antes da primeira empresa, **invoque a skill `profills-navegador`**: é ela quem garante o navegador certo (o usuário tem a extensão em várias máquinas) e trata máquina sem extensão — a coleta só começa com o handoff dela (navegador selecionado + tab pronta). Daí em diante, para cada empresa, siga `references/navegacao.md` (como dirigir o `claude-in-chrome`, rolar o feed, e lidar com authwall/erros). Por post, extraia os campos de `references/schema-post.md`, classificando com as taxonomias fechadas de `references/taxonomias.md`. Salve:
 
 ```
-linkedin-data/catalog/raw/<slug>/<AAAA-MM-DD>/
+DADOS/catalog/raw/<slug>/<AAAA-MM-DD>/
 ├── posts.json        # array de posts (dado estruturado — o artefato primário)
 ├── meta.json         # contexto da página: seguidores, janela, nº de posts
 └── screenshots/      # um PNG por post com mídia
@@ -55,7 +57,7 @@ linkedin-data/catalog/raw/<slug>/<AAAA-MM-DD>/
 
 ### 5. Sintetize o perfil
 
-De `posts.json`, gere `linkedin-data/catalog/<slug>.md` seguindo `assets/perfil-template.md`. O relatório em prosa nasce **do JSON**, não o contrário — assim a `profills-post` lê o dado estruturado direto, sem interpretar prosa.
+De `posts.json`, gere `DADOS/catalog/<slug>.md` seguindo `assets/perfil-template.md`. O relatório em prosa nasce **do JSON**, não o contrário — assim a `profills-post` lê o dado estruturado direto, sem interpretar prosa.
 
 Com a amostra da semana (≤5 posts), o foco é **o que está fresco**, não estatística: capture por post o tema, o hook, o formato e o engajamento, e aponte qual post **puxou mais engajamento na semana** (o maior, simples — não outlier estatístico) e sobre o quê. Não force cadência (posts/semana vira o próprio número coletado) nem desvio-padrão numa amostra tão pequena.
 
@@ -63,7 +65,7 @@ Todo tema ou padrão citado carrega seu recibo: qual post, qual data. Afirmaçã
 
 ### 6. Compare e feche
 
-Depois de todas as empresas, gere `linkedin-data/catalog/_summary.md`: tabela comparativa (cadência, formato dominante, **taxa de engajamento** por empresa) + o eixo de mercado de `references/benchmark-mercado.md` — "esta empresa posta 1×/semana vs. o padrão B2B de 3-5×". Entre empresas, compare pela taxa normalizada (engajamento ÷ seguidores, do `meta.json`), nunca por likes brutos — audiências diferentes não se comparam em bruto. Dois eixos: contra ela mesma (destaque/outliers) e contra o mercado.
+Depois de todas as empresas, gere `DADOS/catalog/_summary.md`: tabela comparativa (cadência, formato dominante, **taxa de engajamento** por empresa) + o eixo de mercado de `references/benchmark-mercado.md` — "esta empresa posta 1×/semana vs. o padrão B2B de 3-5×". Entre empresas, compare pela taxa normalizada (engajamento ÷ seguidores, do `meta.json`), nunca por likes brutos — audiências diferentes não se comparam em bruto. Dois eixos: contra ela mesma (destaque/outliers) e contra o mercado.
 
 Se estiver re-catalogando uma empresa já vista, não recomece: compare com o relatório anterior e anexe um `## Change Log` (cadência subiu/caiu, novo formato dominante, engajamento médio mudou).
 

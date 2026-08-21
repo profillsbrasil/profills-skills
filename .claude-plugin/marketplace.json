@@ -1,0 +1,15 @@
+{
+  "name": "profills-skills",
+  "description": "Skills de conteúdo LinkedIn da Profills para o time comercial",
+  "owner": {
+    "name": "Profills",
+    "email": "dev@profills.com"
+  },
+  "plugins": [
+    {
+      "name": "profills-skills",
+      "source": "./",
+      "description": "Pipeline de conteúdo LinkedIn da Profills: radar → garimpo → post, mais voz, navegador e setup"
+    }
+  ]
+}

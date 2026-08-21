@@ -21,9 +21,11 @@ Você transforma o **catálogo** em **rascunhos** de post na **voz** do usuário
 
 ## Três insumos antes de escrever
 
-1. **O catálogo** — leia `linkedin-data/catalog/<slug>.md` (e o `posts.json` bruto) da empresa que inspira o post. É de onde vêm os hooks, formatos e ângulos que engajaram. Sem catálogo, sugira rodar a `profills-garimpo` primeiro, ou trabalhe só com o tema que o usuário deu.
-2. **A voz do usuário** — leia `.agents/voz.md` (ou `.claude/voz.md`): identidade, voz, provas, palavras banidas. É o que faz o rascunho soar como ele, não como a empresa de referência. Sem esse arquivo, **invoque a skill `profills-voz`** — ela monta o arquivo com o usuário em ~10 minutos a partir de material real dele. Se ele não puder agora, pergunte o essencial com `AskUserQuestion` (tom, público, o que ele vende) e ofereça a skill para depois.
-3. **O que não copiar** — leia a seção "Do Not Copy" do dossiê da empresa em `linkedin-data/refs/<slug>.md`. Tom ou tema que o usuário rejeitou não entra no rascunho.
+**Pasta de dados (`DADOS`)**: se o diretório atual está num repo git com `linkedin-data/` na raiz (`git rev-parse --show-toplevel`), `DADOS` é essa pasta; senão é `~/Profills LinkedIn/`. Se nenhuma das duas existe, invoque a skill `profills-setup` — ela cria a pasta e confere o resto da instalação.
+
+1. **O catálogo** — leia `DADOS/catalog/<slug>.md` (e o `posts.json` bruto) da empresa que inspira o post. É de onde vêm os hooks, formatos e ângulos que engajaram. Sem catálogo, sugira rodar a `profills-garimpo` primeiro, ou trabalhe só com o tema que o usuário deu.
+2. **A voz do usuário** — leia `DADOS/voz.md`: identidade, voz, provas, palavras banidas. É o que faz o rascunho soar como ele, não como a empresa de referência. Sem esse arquivo, **invoque a skill `profills-voz`** — ela monta o arquivo com o usuário em ~10 minutos a partir de material real dele. Se ele não puder agora, pergunte o essencial com `AskUserQuestion` (tom, público, o que ele vende) e ofereça a skill para depois.
+3. **O que não copiar** — leia a seção "Do Not Copy" do dossiê da empresa em `DADOS/refs/<slug>.md`. Tom ou tema que o usuário rejeitou não entra no rascunho.
 
 ## Conduza pela mão
 
@@ -75,7 +77,7 @@ Renderize as variações como **previews realistas de feed** seguindo `reference
 
 ### 7. Persista o escolhido
 
-Depois da escolha e dos `[campos]` preenchidos, salve o texto final em `linkedin-data/drafts/<AAAA-MM-DD>-<tema-slug>.md` — o texto exato do preview, pronto para colar, com uma linha de contexto no topo (tema, ângulo, empresa que inspirou). O preview morre com a sessão; o arquivo é o que ele encontra amanhã.
+Depois da escolha e dos `[campos]` preenchidos, salve o texto final em `DADOS/drafts/<AAAA-MM-DD>-<tema-slug>.md` — o texto exato do preview, pronto para colar, com uma linha de contexto no topo (tema, ângulo, empresa que inspirou). O preview morre com a sessão; o arquivo é o que ele encontra amanhã.
 
 ## Restrições de formato (LinkedIn)
 

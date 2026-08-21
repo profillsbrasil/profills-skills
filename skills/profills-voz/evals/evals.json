@@ -4,7 +4,7 @@
     {
       "id": 1,
       "prompt": "Quero criar meu arquivo de voz pros posts saírem com a minha cara.",
-      "expected_output": "Branch Criar: explica em uma frase o que é o arquivo, pede material bruto pela ordem de força do sinal (sugere áudio de 1min como caminho fácil), extrai marcadores com trecho-recibo, completa com entrevista curta (identidade, provas com número, 4 eixos fugindo do meio), escreve .agents/voz.md pelo template com traços 'X, mas nunca Y', e valida com frases de teste e perguntas específicas — nunca 'ficou bom?'.",
+      "expected_output": "Branch Criar: explica em uma frase o que é o arquivo, pede material bruto pela ordem de força do sinal (sugere áudio de 1min como caminho fácil), extrai marcadores com trecho-recibo, completa com entrevista curta (identidade, provas com número, 4 eixos fugindo do meio), escreve DADOS/voz.md pelo template com traços 'X, mas nunca Y', e valida com frases de teste e perguntas específicas — nunca 'ficou bom?'.",
       "files": []
     },
     {

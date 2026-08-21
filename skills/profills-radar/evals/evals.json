@@ -10,7 +10,7 @@
     {
       "id": 2,
       "prompt": "Bora catalogar de novo — escolhe umas empresas pra essa semana.",
-      "expected_output": "Índice já populado: NÃO pede links de novo. Mostra as empresas conhecidas via AskUserQuestion para selecionar, segura em no máximo 5, e sugere similares ainda não catalogadas ou re-pesquisa de dados velhos. Escreve linkedin-data/selection.md.",
+      "expected_output": "Índice já populado: NÃO pede links de novo. Mostra as empresas conhecidas via AskUserQuestion para selecionar, segura em no máximo 5, e sugere similares ainda não catalogadas ou re-pesquisa de dados velhos. Escreve DADOS/selection.md.",
       "files": []
     },
     {

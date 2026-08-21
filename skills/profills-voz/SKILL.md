@@ -1,7 +1,7 @@
 ---
 name: profills-voz
 description: >-
-  Cria e mantém o arquivo de voz do usuário (.agents/voz.md) — o
+  Cria e mantém o arquivo de voz do usuário (DADOS/voz.md) — o
   que ele vende, para quem, e como ele fala de verdade. Use quando o usuário
   pedir para "criar/atualizar meu arquivo de voz" ou "product marketing", quando
   a profills-post ou a profills-garimpo não encontrarem o arquivo, ou quando o
@@ -14,7 +14,9 @@ metadata:
 
 # profills-voz
 
-Você monta o **arquivo de voz**: `.agents/voz.md`, o retrato de quem o usuário é por escrito — o que vende, para quem, e como fala. É o insumo que faz a `profills-post` soar como ele, e não como a empresa de referência. O princípio que rege tudo aqui: **voz se mostra, não se descreve**. Ninguém sabe descrever a própria voz ("sou informal mas profissional" não diz nada); mas qualquer mensagem de WhatsApp que a pessoa mandou para um cliente mostra a voz inteira.
+Você monta o **arquivo de voz**: `DADOS/voz.md`, o retrato de quem o usuário é por escrito — o que vende, para quem, e como fala. É o insumo que faz a `profills-post` soar como ele, e não como a empresa de referência. O princípio que rege tudo aqui: **voz se mostra, não se descreve**. Ninguém sabe descrever a própria voz ("sou informal mas profissional" não diz nada); mas qualquer mensagem de WhatsApp que a pessoa mandou para um cliente mostra a voz inteira.
+
+**Pasta de dados (`DADOS`)**: se o diretório atual está num repo git com `linkedin-data/` na raiz (`git rev-parse --show-toplevel`), `DADOS` é essa pasta; senão é `~/Profills LinkedIn/`. Se nenhuma das duas existe, invoque a skill `profills-setup` — ela cria a pasta e confere o resto da instalação.
 
 ## Escolha a branch
 
@@ -30,7 +32,7 @@ Você monta o **arquivo de voz**: `.agents/voz.md`, o retrato de quem o usuário
 
 3. **Complete com a entrevista curta** — só o que o material não mostrou. Identidade (o que vende, para quem, a dor que resolve), provas reais (números, casos, prazos — pergunte "quantos?" e "desde quando?" até virar número), e o posicionamento nos 4 eixos de tom (sério↔leve, formal↔casual, reverente↔irreverente, entusiasmado↔direto). Respostas todas no meio dos eixos produzem voz sem graça — se ele hesitar, provoque com exemplos concretos dos dois extremos.
 
-4. **Escreva o arquivo** em `.agents/voz.md` seguindo `assets/voz-template.md`. Cada traço de voz no formato falseável **"X, mas nunca Y"** ("direto, mas nunca seco") — adjetivo solto ("amigável") não sobrevive ao uso. O arquivo está escrito quando: todo traço tem o "mas nunca", a lista de banidas tem ≥5 entradas vindas do material real, e toda prova tem número. Escrito ainda não é pronto — falta a validação.
+4. **Escreva o arquivo** em `DADOS/voz.md` seguindo `assets/voz-template.md`. Cada traço de voz no formato falseável **"X, mas nunca Y"** ("direto, mas nunca seco") — adjetivo solto ("amigável") não sobrevive ao uso. O arquivo está escrito quando: todo traço tem o "mas nunca", a lista de banidas tem ≥5 entradas vindas do material real, e toda prova tem número. Escrito ainda não é pronto — falta a validação.
 
 5. **Valide mostrando, não perguntando.** Escreva 2-3 frases de teste na voz montada e pergunte sobre cada uma, específico: "você usaria a palavra X?", "essa frase parece sua?". "Ficou bom?" só gera resposta vaga. O que ele rejeitar vira entrada da seção **Isso não sou eu**.
 

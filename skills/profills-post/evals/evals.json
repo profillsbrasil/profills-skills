@@ -4,7 +4,7 @@
     {
       "id": 1,
       "prompt": "Gera uns posts sobre embalagens sustentáveis no estilo que a Cetro Máquinas usa.",
-      "expected_output": "Lê o catálogo da Cetro (hooks/formato/ângulos que engajaram) + voz.md (voz). Coleta a matéria-prima antes de gerar: 1 número real, 1 insight contra-intuitivo, 1 mecanismo, a dor do ICP — perguntando o que faltar, sem inventar. Gera 3-5 variações, uma por ângulo distinto E com hooks de mecanismos diferentes (≥1 intelectual, 1 de cena, 1 direto ao leitor), na voz do usuário — não cópia. Passa pelo quality gate (So what? + analgésico/vitamina + palavras banidas + Expert Panel ≥8), encadeia humanize-pt-br, mostra o comparador visual e salva o escolhido em linkedin-data/drafts/.",
+      "expected_output": "Lê o catálogo da Cetro (hooks/formato/ângulos que engajaram) + voz.md (voz). Coleta a matéria-prima antes de gerar: 1 número real, 1 insight contra-intuitivo, 1 mecanismo, a dor do ICP — perguntando o que faltar, sem inventar. Gera 3-5 variações, uma por ângulo distinto E com hooks de mecanismos diferentes (≥1 intelectual, 1 de cena, 1 direto ao leitor), na voz do usuário — não cópia. Passa pelo quality gate (So what? + analgésico/vitamina + palavras banidas + Expert Panel ≥8), encadeia humanize-pt-br, mostra o comparador visual e salva o escolhido em DADOS/drafts/.",
       "files": []
     },
     {

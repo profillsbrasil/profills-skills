@@ -20,7 +20,9 @@ Você mantém a **memória de referências**: a lista de empresas que o usuário
 
 ## O índice é um mapa, não um armazém
 
-A memória vive em `linkedin-data/refs/` na raiz deste repositório de skills (se não achar, rode `git rev-parse --show-toplevel`):
+**Pasta de dados (`DADOS`)**: se o diretório atual está num repo git com `linkedin-data/` na raiz (`git rev-parse --show-toplevel`), `DADOS` é essa pasta; senão é `~/Profills LinkedIn/`. Se nenhuma das duas existe, invoque a skill `profills-setup` — ela cria a pasta e confere o resto da instalação.
+
+A memória vive em `DADOS/refs/`:
 
 - `INDEX.md` — uma linha por empresa: nome, slug, setor, país, datas. O índice **resume e aponta**; nunca repete o conteúdo do dossiê.
 - `<slug>.md` — o dossiê da empresa: tudo que a pesquisa levantou. Cada fato vive num lugar só, aqui.
@@ -29,7 +31,7 @@ Refira-se a cada empresa **pelo nome**, nunca pelo slug cru, no que o usuário l
 
 ## Escolha a branch
 
-Leia `linkedin-data/refs/INDEX.md` e decida:
+Leia `DADOS/refs/INDEX.md` e decida:
 
 - **Índice sem empresas** (primeira execução) → siga [Primeira run](#primeira-run-onboarding).
 - **Índice com empresas** e o usuário quer catalogar → siga [Seleção](#seleção-runs-seguintes).
@@ -48,7 +50,7 @@ A memória está vazia, então esta é a primeira vez. Diga isso ao usuário com
 
 3. **Resolva o slug** de cada empresa (`linkedin.com/company/<slug>`) e guarde também o ID numérico se conseguir — o slug muda em rebranding, o ID não.
 
-4. **Escreva um dossiê** por empresa em `linkedin-data/refs/<slug>.md` seguindo `assets/dossie-template.md`, e adicione a linha correspondente no `INDEX.md`.
+4. **Escreva um dossiê** por empresa em `DADOS/refs/<slug>.md` seguindo `assets/dossie-template.md`, e adicione a linha correspondente no `INDEX.md`.
 
 5. **Ofereça as similares** que a pesquisa descobriu com `AskUserQuestion` (multiSelect): "achei estas empresas parecidas — quer adicionar alguma?". As aprovadas viram dossiês também.
 
@@ -68,7 +70,7 @@ A memória já tem empresas. Não peça links de novo — mostre o que você já
 
 ## A seleção
 
-O handoff para a `profills-garimpo` é o arquivo `linkedin-data/selection.md`. Sobrescreva-o a cada run com as empresas escolhidas:
+O handoff para a `profills-garimpo` é o arquivo `DADOS/selection.md`. Sobrescreva-o a cada run com as empresas escolhidas:
 
 ```markdown
 # Seleção ativa — <data>
