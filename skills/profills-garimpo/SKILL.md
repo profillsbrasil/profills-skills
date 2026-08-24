@@ -81,6 +81,8 @@ DADOS/catalog/raw/<slug>/<AAAA-MM-DD>/
 
 Cada execução cria a pasta do dia; pasta de data anterior fica intacta — é isso que permite comparar cadência semana a semana. Segunda rodada no mesmo dia sobrescreve só a pasta de hoje.
 
+**Screenshot só existe quando a captura aconteceu.** Se a tool não devolveu o PNG (save indisponível, falha, post que não abriu), grave `screenshot: null` e descreva a imagem em `descricao_visual` — a descrição é o fallback documentado. **Arquivo placeholder é proibido**: PNG de 1×1, arquivo vazio ou imagem que você gerou não é captura, é dado falso. O `metricas.js` do passo 6 acusa (aviso de screenshot inexistente ou com menos de 1 KB).
+
 **5a. Extraia o medido.** Rode o JS de `references/navegacao.md` e preencha, a partir do retorno dele e do texto literal do post, os campos da tabela **Medido** de `references/schema-post.md`. Para `formato`, quando o JS devolve só `texto`/`imagem`, confira a coluna "Como reconhecer" de `references/taxonomias.md` com `read_page` (ou o screenshot do post) — enquete, newsletter, evento, documento e reshare só aparecem assim. Concluído quando cada post da janela tem todo campo medido preenchido ou `null` explícito.
 
 **5b. Classifique o inferido.** Leia o texto de cada post e preencha a tabela **Inferido** do mesmo arquivo, usando sempre um valor das taxonomias fechadas de `references/taxonomias.md`; sem sinal claro, `null`. Concluído quando todo campo inferido de todo post está preenchido com valor da taxonomia ou `null` explícito.
@@ -89,32 +91,50 @@ Cada execução cria a pasta do dia; pasta de data anterior fica intacta — é 
 
 Concluído quando cada empresa da seleção tem `posts.json` + `meta.json` na pasta do dia, com `status` preenchido.
 
-### 6. Sintetize o perfil
+### 6. Rode as métricas e sintetize o perfil
 
-De `posts.json`, gere `DADOS/catalog/<slug>.md` seguindo `assets/perfil-template.md` — uma empresa com `status` diferente de `ok` fica de fora. O relatório em prosa nasce **do JSON**, assim a `profills-post` lê o dado estruturado direto, sem interpretar prosa.
+Antes de escrever qualquer número, rode o script **uma vez por empresa**, sobre a pasta que você acabou de gravar:
 
-Na janela padrão (≤5 posts), o foco é **o que está fresco**: por post, o tema, o hook, o formato e o engajamento, mais qual post **puxou mais engajamento na janela** (o maior, simples) e sobre o quê. Média, desvio-padrão e outlier estatístico pertencem à janela ampliada.
+```bash
+node "<pasta desta skill>/scripts/metricas.js" "<DADOS>/catalog/raw/<slug>/<AAAA-MM-DD>"
+```
+
+"Pasta desta skill" é o diretório onde este `SKILL.md` está. Janela ampliada é detectada pelo `janela_dias` do `meta.json`; se precisar forçar, `--janela padrao|ampliada`.
+
+Ele lê `posts.json` + `meta.json` e devolve, em JSON: `n_posts`, `periodo`, `posts_por_semana`, `engajamento_medio`, `taxa_normalizada` (a fórmula de `references/benchmark-mercado.md`; `null` sem seguidores), `formato_dominante` + `formatos`, `hooks`, `hook_cabe_no_corte_pct` e — conforme a janela do passo 3 — `destaque_semana` ou `outliers` (com `media`, `desvio_padrao`, `limiar`; `amostra_insuficiente: true` quando a janela ampliada tem 5 posts ou menos).
+
+**A conta é do script; sua parte é a leitura.** Todo número que entra no perfil, no `_summary.md`, no dashboard e na sua resposta ao usuário é copiado desse JSON — você não recalcula média, taxa, cadência nem destaque em prosa.
+
+Exit `0` = coleta utilizável — mas leia o campo `avisos` sempre: `ok: false` significa que há checagem falhando (sem `seguidores`, amostra insuficiente, post fora da janela, screenshot inexistente ou suspeito de placeholder, `destaque_semana` gravado no post errado); conserte o que for erro seu e leve para o texto o que for limitação do dado ("sem seguidores: esta empresa não entra na comparação"). Exit `1` = `status` ≠ `ok`, sem perfil para esta empresa. Exit `2` = pasta ou arquivo errado, corrija o caminho.
+
+Com o JSON na mão, gere `DADOS/catalog/<slug>.md` seguindo `assets/perfil-template.md` — uma empresa com `status` diferente de `ok` fica de fora. O relatório em prosa nasce **do JSON**, assim a `profills-post` lê o dado estruturado direto, sem interpretar prosa.
+
+Na janela padrão (≤5 posts), o foco é **o que está fresco**: por post, o tema, o hook, o formato e o engajamento, mais o `destaque_semana` que o script apontou e sobre o quê ele era. Média, desvio-padrão e outlier estatístico pertencem à janela ampliada.
 
 Todo tema ou padrão citado carrega seu recibo: qual post, qual data. Afirmação sem post que a sustente não entra.
 
-**Re-catalogação**: a pasta do dia é nova, o perfil não. Compare com o perfil anterior e anexe um `## Change Log` no fim de `catalog/<slug>.md` — cadência subiu/caiu, novo formato dominante, taxa de engajamento mudou.
+O template é andaime: preencha **só o bloco de janela desta rodada** e apague o outro, apague o bloco de instruções do topo e **não deixe nenhum comentário HTML (`<!-- ... -->`) no arquivo entregue** — instrução de preenchimento não é conteúdo do perfil.
 
-Concluído quando cada empresa com `status: ok` tem `catalog/<slug>.md` com todas as seções do template preenchidas e cada afirmação com o post que a sustenta.
+**Re-catalogação**: a pasta do dia é nova, o perfil não. Rode o script também na pasta da coleta anterior e compare os dois JSON; anexe um `## Change Log` no fim de `catalog/<slug>.md` — cadência, formato dominante e taxa de engajamento, cada um com o número de antes e o de agora.
+
+Concluído quando cada empresa com `status: ok` tem `catalog/<slug>.md` com todas as seções do template preenchidas, cada afirmação com o post que a sustenta, todo número igual ao do JSON do `metricas.js` e nenhum comentário `<!-- ... -->` sobrando no arquivo.
 
 ### 7. Compare e feche
 
 Depois de todas as empresas, dois arquivos:
 
-1. `DADOS/catalog/_summary.md` — tabela comparativa (cadência, formato dominante, taxa de engajamento por empresa) + o eixo de mercado de `references/benchmark-mercado.md`: "esta empresa posta 1×/semana vs. o padrão B2B de 3-5×". Entre empresas, compare pela **taxa normalizada** (fórmula em `benchmark-mercado.md`) — audiências diferentes não se comparam em bruto. Empresa sem dados entra numa linha `sem dados: <nota do meta.json>`.
+1. `DADOS/catalog/_summary.md` — tabela comparativa (cadência, formato dominante, taxa de engajamento por empresa) + o eixo de mercado de `references/benchmark-mercado.md`: "esta empresa posta 1×/semana vs. o padrão B2B de 3-5×". Cada célula numérica é `posts_por_semana`, `formato_dominante` e `taxa_normalizada` do JSON do `metricas.js` — entre empresas só a taxa normalizada compara, porque audiências diferentes não se comparam em bruto. Empresa sem dados entra numa linha `sem dados: <nota do meta.json>`; empresa sem `seguidores` entra com a taxa em branco e a razão ("sem seguidores no meta.json"), nunca com likes brutos na coluna da taxa.
+
+   **Rodada com parte das empresas**: se o `_summary.md` já existe, **edite-o** — atualize a data do cabeçalho e só as linhas das empresas desta rodada, preservando as demais como estão (elas são o retrato da coleta delas, com a data delas). Criar do zero só quando o arquivo não existe. Se a tabela antiga não tiver uma coluna de data por empresa, acrescente-a ao migrar: sem ela, linhas de rodadas diferentes viram um comparativo falso.
 2. `DADOS/refs/INDEX.md` — na linha de cada empresa com `status: ok`, troque o campo `catálogo …` pela data desta rodada (`catálogo AAAA-MM-DD`); empresa com outro status mantém o campo como estava — sem perfil, sem carimbo. É esse campo que a `profills-radar` lê para não mandar re-catalogar quem acabou de sair.
 
-Concluído quando o `_summary.md` cobre todas as empresas da seleção (as com dados e as sem) e, no `INDEX.md`, só as linhas das empresas com `status: ok` mostram a data de hoje.
+Concluído quando o `_summary.md` cobre todas as empresas da seleção (as com dados e as sem) com os números do `metricas.js`, as linhas de empresas fora desta rodada continuam como estavam, e, no `INDEX.md`, só as linhas das empresas com `status: ok` mostram a data de hoje.
 
 ### 8. Monte o dashboard visual
 
-Renderize o catálogo como um artefato visual seguindo `references/dashboard.md`. O dado estruturado fica em disco para rastreabilidade; o dashboard é a camada visual para o humano digerir cadência, formatos, hooks e destaques de relance.
+Renderize o catálogo como um artefato visual seguindo `references/dashboard.md`. O dado estruturado fica em disco para rastreabilidade; o dashboard é a camada visual para o humano digerir cadência, formatos, hooks e destaques de relance. Todo valor plotado vem do JSON do `metricas.js` de cada empresa — o painel é vitrine da conta, não uma segunda conta.
 
-Concluído quando as 7 seções de `dashboard.md` existem no artefato publicado e o link está na conversa.
+Concluído quando as 7 seções de `dashboard.md` existem no artefato publicado, cada número bate com o JSON do `metricas.js` e o link está na conversa.
 
 ## Conduza pela mão
 

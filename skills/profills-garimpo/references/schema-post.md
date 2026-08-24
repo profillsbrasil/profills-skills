@@ -44,7 +44,7 @@ A coluna **Fonte** diz de onde o valor sai: `JS` = retorno do script de `navegac
 | `link_externo` | JS | URL externa do post (lnkd.in, blog), `null` se não houver |
 | `engajamento` | JS | likes, comentários, reposts — números na página **no momento da coleta** |
 | `idioma` | leitura | `PT` ou `EN` |
-| `hook`, `hook_cabe_no_corte` | leitura | primeira linha literal (até a primeira quebra ou ~210 chars); cabe se termina antes do corte do "ver mais" (limite em `../profills-post/SKILL.md`, "Restrições de formato") |
+| `hook`, `hook_cabe_no_corte` | leitura | primeira linha literal (até a primeira quebra de linha); cabe se termina antes do corte "ver mais" — o limite numérico é o `hook_max` de `../profills-post/scripts/checar-formato.js`, fonte única |
 | `cta` | leitura | a chamada final, se houver (`null` se não) |
 | `artigo_titulo` | leitura | título do card, só quando `formato` é `artigo` (`null` fora disso) |
 
@@ -61,10 +61,12 @@ A coluna **Fonte** diz de onde o valor sai: `JS` = retorno do script de `navegac
 
 ## Computado (na síntese, não na extração)
 
+Estes campos **não se preenchem à mão**: quem os calcula é `scripts/metricas.js` (passo 6 do `SKILL.md`), que devolve `destaque_semana` ou `outliers` conforme a janela. O que está abaixo é o significado do campo; a conta é do script.
+
 O discriminador é a **janela** fixada no passo 3 do `SKILL.md`, não a contagem de posts que apareceu: padrão (semanal, o default) usa `destaque_semana`; ampliada (o usuário pediu leitura de tendência) usa `outlier`.
 
 - `destaque_semana` — janela padrão: `true` **só no post de maior `likes + comentarios`** da janela da empresa. É o "pico da semana" — simples, não estatístico. Usa likes + comentários (sem reposts) de propósito: mede a reação dentro do feed da própria empresa, e não é comparável entre empresas — para isso existe a taxa normalizada de `benchmark-mercado.md`.
-- `outlier` — janela ampliada: `true` se `likes + comentarios` passou de `média + 1,5×desvio-padrão` da própria empresa; exige **>5 posts** para o desvio sustentar (menos que isso → sinalize amostra insuficiente e volte ao `destaque_semana`). Na janela padrão o campo não existe.
+- `outlier` — janela ampliada: `true` se `likes + comentarios` passou de `média + 1,5×desvio-padrão` da própria empresa; exige **>5 posts** para o desvio sustentar (menos que isso, o script devolve `amostra_insuficiente: true` e volta ao `destaque_semana`). Na janela padrão o campo não existe.
 
 ## Meta da coleta — `meta.json`
 
@@ -97,3 +99,7 @@ Todo `status` diferente de `ok` vem com `"nota"`: uma frase em português dizend
 ## Screenshot
 
 Todo post com mídia (imagem, carrossel, vídeo) ganha um screenshot em `screenshots/post-<id>.png`. O screenshot captura o que o texto não diz — a anatomia visual do carrossel, o print, o gráfico. Post de texto puro não precisa (`screenshot: null`).
+
+**Sem captura real, o campo é `null` — e ponto.** Quando a tool não devolveu o PNG (save indisponível, falha, post que não abriu), grave `screenshot: null` e descreva a imagem em `descricao_visual`: a descrição é o fallback documentado, e a `profills-post` trabalha com ela.
+
+**Placeholder é proibido.** PNG de 1×1, arquivo vazio, imagem gerada por você ou um texto no lugar do caminho ("descrito: ...") não são captura — são dado falso, e apagam o rastro de que a captura falhou. O `metricas.js` avisa quando o caminho não existe em disco ou quando o arquivo tem menos de 1 KB.

@@ -3,80 +3,124 @@
   "evals": [
     {
       "id": 1,
-      "prompt": "Analisa os posts da Cetro Máquinas no LinkedIn. (Contexto: DADOS resolve para linkedin-data/ no repo; DADOS/selection.md existe e tem uma linha só — `- [Cetro Máquinas](refs/cetromaquinas.md) — \\`cetromaquinas\\` · id 10456789 · máquinas de embalagem · BR`; DADOS/voz.md existe; nenhuma coleta anterior em DADOS/catalog/raw/cetromaquinas/.)",
-      "expected_output": "Lê selection.md e pega nome + slug `cetromaquinas` + id. Fixa a janela padrão (7 dias, até 5 posts). Antes de navegar, avisa em linguagem simples que vai abrir o LinkedIn no navegador do usuário só para ler, sem curtir nem publicar, e confirma com AskUserQuestion. Invoca a profills-navegador e navega só na tab do handoff — nada de tabs_create_mcp por conta própria. Em /company/cetromaquinas/posts/ anota os seguidores, troca a ordenação para Recentes, extrai via data-urn (anúncios ficam de fora por não terem urn de activity), converte a data relativa pelo parser de navegacao.md, salva raw/cetromaquinas/<hoje>/posts.json + meta.json com status ok. Sintetiza catalog/cetromaquinas.md pelo template marcando medido vs inferido, com destaque_semana e cada afirmação com o post que a sustenta; grava catálogo <hoje> na linha da empresa em refs/INDEX.md; publica o dashboard com as 7 seções e entrega o link; fecha perguntando com AskUserQuestion o que da Cetro o usuário não quer imitar e gravando em refs/cetromaquinas.md na seção Do Not Copy.",
-      "files": [],
+      "prompt": "Analisa os posts da Cetro Máquinas no LinkedIn. (Contexto: o navegador está logado e a página abre normal; nesta máquina a captura de tela do claude-in-chrome está indisponível — o save_to_disk não devolve arquivo nenhum.)",
+      "expected_output": "Lê DADOS/selection.md da fixture, pega Cetro Máquinas + slug `cetromaquinas` + id 66792350 e fixa a janela padrão (7 dias, até 5 posts) sem invocar a profills-radar. Avisa em linguagem simples que vai só ler o LinkedIn no navegador do usuário, confirma com AskUserQuestion e invoca a profills-navegador. Coleta na tab do handoff e grava raw/cetromaquinas/2026-08-24/posts.json + meta.json (seguidores, janela_dias 7, status ok). Como a captura falhou, grava `screenshot: null` e `descricao_visual` em cada post — não fabrica PNG placeholder. Roda scripts/metricas.js na pasta da coleta e escreve o perfil, o _summary.md, o INDEX.md e o dashboard copiando os números do JSON do script (taxa normalizada = média por post ÷ seguidores × 100), sem recalcular nada em prosa. O perfil sai limpo, sem o bloco de instrução nem comentário HTML do template. Fecha perguntando o que da Cetro não imitar e gravando em `## Do Not Copy`.",
+      "files": [
+        "evals/files/1"
+      ],
       "expectations": [
-        "Lê DADOS/selection.md, extrai nome/slug `cetromaquinas`/id sem invocar a profills-radar, e fixa explicitamente a janela padrão (7 dias, até 5 posts)",
-        "Antes de abrir o navegador, avisa em linguagem simples que só vai ler (sem curtir nem publicar) e confirma com AskUserQuestion",
-        "Invoca a profills-navegador antes da primeira navegação e trabalha só na tab do handoff (a garimpo não cria tab própria com tabs_create_mcp)",
-        "Grava raw/cetromaquinas/2026-08-24/posts.json (≤5 posts, datas relativas já convertidas para datas absolutas dentro da janela de 7 dias) e meta.json com seguidores e status ok",
-        "catalog/cetromaquinas.md segue o perfil-template com marcação [medido] vs [inferido], destaque da semana e cada afirmação inferida com o post/link que a sustenta",
-        "refs/INDEX.md tem, na linha da Cetro Máquinas, o catálogo com a data desta rodada (catálogo 2026-08-24)",
-        "Publica o dashboard via Artifact com as 7 seções de dashboard.md e entrega o link ao usuário",
-        "Fecha perguntando com AskUserQuestion o que da Cetro o usuário não quer imitar e grava a resposta na seção `## Do Not Copy` de refs/cetromaquinas.md"
+        "Usa a seleção da fixture (slug `cetromaquinas`, id 66792350) sem invocar a profills-radar, e o meta.json gravado em catalog/raw/cetromaquinas/2026-08-24/ traz janela_dias 7, seguidores e status ok, com no máximo 5 posts, todos datados entre 2026-08-18 e 2026-08-24",
+        "Avisa em linguagem simples que só vai ler (nada de curtir, comentar ou publicar), confirma com AskUserQuestion e só então invoca a profills-navegador, trabalhando na tab do handoff",
+        "NEGATIVA: nenhum screenshot fabricado — todo campo `screenshot` do posts.json é null com `descricao_visual` preenchida, e a pasta da coleta não contém nenhum arquivo de imagem (nem 1×1, nem vazio, nem menor que 1 KB)",
+        "ARTEFATO: `node scripts/metricas.js` rodado sobre outputs/linkedin-data/catalog/raw/cetromaquinas/2026-08-24 devolve JSON cujos `posts_por_semana`, `formato_dominante`, `engajamento_medio` e `taxa_normalizada` aparecem com o mesmo valor em catalog/cetromaquinas.md — nenhum número do perfil sem correspondente no JSON do script",
+        "A taxa de engajamento normalizada citada no perfil, no _summary.md, no dashboard e na resposta final é a mesma e bate com ((soma de likes+comentários+reposts ÷ n_posts) ÷ seguidores × 100) recalculado do posts.json + meta.json da própria rodada",
+        "NEGATIVA: a taxa não é a soma da janela dividida pelos seguidores — o número publicado é a média por post, e nenhum número do dashboard está ausente da saída do metricas.js",
+        "catalog/cetromaquinas.md tem as seções do perfil-template com marcação [medido] vs [inferido], cada tema com post-recibo (link + data), só o bloco de janela padrão, e nenhum comentário HTML `<!--` nem o bloco 'Como usar este template'",
+        "No diff contra a fixture, refs/INDEX.md só muda na linha da Cetro Máquinas (passa a 'catálogo 2026-08-24'); as outras 5 linhas seguem idênticas, e o placeholder de `## Do Not Copy` em refs/cetromaquinas.md foi substituído pela resposta do usuário datada, perguntada com AskUserQuestion"
       ]
     },
     {
       "id": 2,
-      "prompt": "Quero monitorar o que essas 8 empresas de embalagem andam postando: [lista de 8 nomes]. (Contexto: DADOS existe; DADOS/selection.md não existe; DADOS/refs/INDEX.md tem 6 empresas cadastradas.)",
-      "expected_output": "Não pede nem monta a lista sozinha: invoca a profills-radar, que é quem escolhe as empresas, segura a seleção em 5 e escreve DADOS/selection.md. Ao voltar, lê a seleção (nome, slug, id de cada uma), mantém a janela padrão (≤5 posts / 7 dias por empresa), avisa e confirma antes de abrir o navegador, invoca a profills-navegador e coleta uma empresa por vez salvando posts.json + meta.json antes de passar à próxima. No fim gera _summary.md comparando pela taxa normalizada de benchmark-mercado.md (nunca likes brutos) mais o eixo de mercado, atualiza o campo catálogo de cada empresa no refs/INDEX.md e publica o dashboard.",
-      "files": [],
+      "prompt": "Quero monitorar o que essas 8 empresas de embalagem andam postando: Cetro, Maqinox, Sulpack, Tecnoenvase, Tecnox, Skymsen, Selopack e Pratipack.",
+      "expected_output": "Não monta nem corta a lista sozinha: invoca a profills-radar, que decide as empresas, segura a seleção em 5 e escreve DADOS/selection.md (as 6 fichas da fixture existem; Selopack e Pratipack não têm dossiê). Ao voltar, lê a seleção, mantém a janela padrão, avisa e confirma antes de abrir o navegador, invoca a profills-navegador e coleta uma empresa por vez, salvando posts.json + meta.json antes da próxima. Roda o metricas.js por empresa, gera catalog/<slug>.md para cada uma com status ok, o _summary.md comparando pela taxa normalizada (média por post) mais o eixo de mercado, atualiza o campo catálogo só das empresas com status ok no INDEX.md e publica o dashboard de verdade, entregando o link.",
+      "files": [
+        "evals/files/2"
+      ],
       "expectations": [
-        "Não monta nem pede a lista sozinha: invoca a profills-radar, que é quem escolhe as empresas e segura a seleção em 5",
-        "DADOS/selection.md é escrito com exatamente 5 empresas, cada linha com nome, slug e id",
-        "Mantém a janela padrão: meta.json de cada empresa com janela_dias 7 e no máximo 5 posts por empresa, todos dentro da janela",
-        "Avisa e confirma com o usuário antes de abrir o navegador, e só então invoca a profills-navegador",
-        "Coleta uma empresa por vez, salvando posts.json + meta.json de cada uma antes de passar à próxima",
-        "_summary.md compara as empresas pela taxa de engajamento normalizada de benchmark-mercado.md (nunca likes brutos) e traz o eixo de mercado",
-        "refs/INDEX.md tem o campo catálogo atualizado com a data da rodada nas empresas catalogadas",
-        "Publica o dashboard visual da rodada (Artifact/HTML com as seções de dashboard.md) e o entrega ao usuário"
+        "Invoca a profills-radar em vez de montar ou cortar a lista sozinha, e DADOS/selection.md sai com exatamente 5 empresas (as 8 pedidas cruzam o teto), cada linha com nome, slug e id",
+        "Cada empresa da seleção tem catalog/raw/<slug>/2026-08-24/posts.json + meta.json (janela_dias 7, ≤5 posts dentro da janela), gravados um a um antes de passar à próxima",
+        "Toda empresa com status ok tem o perfil catalog/<slug>.md gerado pelo perfil-template — é ele o insumo da profills-post, e nenhum deles carrega comentário HTML `<!--` do template",
+        "Os números do _summary.md (posts/semana, formato dominante, taxa normalizada) são os campos `posts_por_semana`, `formato_dominante` e `taxa_normalizada` da saída do metricas.js de cada empresa, e a taxa confere ao ser recalculada como média por post ÷ seguidores × 100",
+        "NEGATIVA: nenhuma empresa é comparada por likes brutos, e empresa sem seguidores no meta.json entra com a taxa em branco e a razão declarada — não com o engajamento absoluto na coluna da taxa",
+        "NEGATIVA: empresa com status diferente de ok não ganha catalog/<slug>.md nem carimbo de data no INDEX.md; no diff contra a fixture, as linhas dessas empresas seguem idênticas",
+        "O dashboard existe como artefato verificável (arquivo HTML em disco ou URL de Artifact publicada) com as 7 seções de dashboard.md e é entregue na resposta final — alegar publicação sem deixar prova não conta",
+        "Fecha perguntando, uma empresa por vez, o que não imitar, e grava a resposta datada na seção `## Do Not Copy` dos dossiês em refs/, no lugar do comentário placeholder"
       ]
     },
     {
       "id": 3,
-      "prompt": "Atualiza o catálogo da Cetro Máquinas — já rodei semana passada. (Contexto: DADOS/selection.md tem a Cetro; existe DADOS/catalog/raw/cetromaquinas/2026-08-17/ com posts.json e meta.json, e existe DADOS/catalog/cetromaquinas.md do dia 17.)",
-      "expected_output": "Cria a pasta raw/cetromaquinas/<hoje>/ nova, preservando a de 2026-08-17. Sintetiza sobre o perfil existente em vez de reescrever do zero: compara com o perfil anterior e anexa uma entrada em ## Change Log no fim de catalog/cetromaquinas.md dizendo o que mudou (cadência, formato dominante, taxa de engajamento). Atualiza catálogo <hoje> na linha da empresa em refs/INDEX.md.",
-      "files": [],
+      "prompt": "Atualiza o catálogo da Cetro Máquinas — já rodei semana passada.",
+      "expected_output": "A fixture tem a coleta de 2026-08-17 (5 posts, todos artigo, 19.200 seguidores) e o perfil catalog/cetromaquinas.md escrito sobre ela. Cria a pasta raw/cetromaquinas/2026-08-24/ nova sem tocar na de 17/08, roda o metricas.js nas DUAS pastas e compara os dois JSON. Edita o perfil existente (não reescreve do zero), atualiza o cabeçalho para a coleta de hoje e anexa uma entrada `## Change Log` datada de 2026-08-24 com cadência, formato dominante e taxa normalizada — cada par de números vindo dos dois JSON (o de 17/08 é 5 posts/semana, artigo 100%, taxa 0,015%). Carimba 'catálogo 2026-08-24' só na linha da Cetro no INDEX.md e entrega o perfil sem comentário HTML.",
+      "files": [
+        "evals/files/3"
+      ],
       "expectations": [
-        "Existe DADOS/catalog/raw/cetromaquinas/2026-08-24/ (data de hoje) com posts.json e meta.json não vazios, com posts datados dentro da janela de 7 dias",
-        "A pasta raw/cetromaquinas/2026-08-17/ continua existindo e não foi sobrescrita pelo dado de hoje (conteúdo distinto e coerente com 17/08)",
-        "catalog/cetromaquinas.md foi sintetizado sobre o perfil existente (mesmo arquivo, seções do perfil-template preservadas, cabeçalho apontando para a coleta de hoje) em vez de um arquivo novo do zero",
-        "catalog/cetromaquinas.md tem uma seção ## Change Log no fim do arquivo com uma entrada datada de hoje (2026-08-24)",
-        "A entrada do Change Log compara com o perfil anterior nas três dimensões pedidas: cadência, formato dominante e taxa de engajamento",
-        "Os números citados no Change Log são rastreáveis aos posts.json/meta.json das duas coletas (não inventados)",
-        "refs/INDEX.md traz 'catálogo 2026-08-24' na linha da Cetro Máquinas, sem alterar as linhas das outras empresas"
+        "Existe catalog/raw/cetromaquinas/2026-08-24/ com posts.json e meta.json próprios, e a pasta 2026-08-17/ da fixture segue byte a byte idêntica (posts.json e meta.json inalterados)",
+        "Roda o metricas.js também sobre a pasta 2026-08-17 da fixture: os números 'antes' do Change Log vêm dessa saída, não de leitura do perfil em prosa",
+        "catalog/cetromaquinas.md é o mesmo arquivo editado — as seções da fixture (Formatos, Temas recorrentes, Hooks e ângulos, Destaque, Tom de voz) continuam lá e o cabeçalho passa a apontar para raw/cetromaquinas/2026-08-24/posts.json",
+        "O arquivo ganha uma seção `## Change Log` (inexistente na fixture) com entrada datada 2026-08-24 comparando as três dimensões: cadência, formato dominante e taxa normalizada",
+        "Os valores 'antes' do Change Log são exatamente os da coleta de 17/08 — 5 posts/semana, formato dominante artigo (5/5) e taxa normalizada 0,015% — e os 'agora' conferem com o metricas.js da coleta de hoje",
+        "NEGATIVA: o perfil entregue não contém nenhum comentário HTML `<!--` nem instrução de preenchimento do template, incluindo a linha 'Só ao re-catalogar' da seção Change Log",
+        "NEGATIVA: no diff contra a fixture, refs/INDEX.md muda só na linha da Cetro Máquinas ('catálogo 2026-08-17' → 'catálogo 2026-08-24'); as outras 5 linhas seguem idênticas"
       ]
     },
     {
       "id": 4,
-      "prompt": "Quero uma leitura de tendência da Skymsen: como o conteúdo dela evoluiu nos últimos meses. (Contexto: DADOS/selection.md tem a Skymsen com slug `skymsen` e id; sem coleta anterior.)",
-      "expected_output": "Reconhece o pedido de leitura de tendência e troca para a janela ampliada, combinando os dias com o usuário (~90) e avisando que a navegação fica mais longa; grava janela_dias no meta.json. Coleta mais que 5 posts e, na síntese, usa o bloco de janela ampliada do perfil-template: média, desvio-padrão e o campo outlier (média + 1,5×desvio) no lugar do destaque_semana, com a evolução do período. Se juntar 5 posts ou menos, sinaliza amostra insuficiente e volta ao destaque simples em vez de calcular desvio.",
-      "files": [],
+      "prompt": "Quero uma leitura de tendência da Skymsen: como o conteúdo dela evoluiu nos últimos meses.",
+      "expected_output": "Reconhece o gatilho de leitura de tendência, combina os dias com o usuário via AskUserQuestion (90 é a recomendada), avisa que a navegação fica mais longa e grava janela_dias 90 no meta.json. Coleta mais de 5 posts, usa o campo `outlier` (nunca destaque_semana) e roda o metricas.js, que devolve `outliers` com media, desvio_padrao e limiar — os três vão para o perfil copiados do JSON. A taxa normalizada continua sendo média por post ÷ seguidores × 100, não a soma dos 90 dias. Cada número de evolução citado sai de uma rodada do script por subperíodo; sem isso, a evolução é descrita em palavras, sem número inventado. Fecha o passo 7 (INDEX.md + _summary.md) e o dashboard com os números do script.",
+      "files": [
+        "evals/files/4"
+      ],
       "expectations": [
-        "Reconhece o pedido como leitura de tendência e troca a janela padrão (7 dias) pela ampliada, combinando o número de dias com o usuário numa pergunta com opções (~90) em vez de decidir em silêncio",
-        "Avisa ao usuário, antes de abrir o navegador, que a janela ampliada deixa a navegação mais longa",
-        "O meta.json da coleta grava janela_dias correspondente à janela ampliada combinada (90)",
-        "O posts.json da rodada contém mais de 5 posts, todos dentro da janela declarada",
-        "O posts.json usa o campo outlier (e não destaque_semana) e marca como outlier apenas o post acima de média + 1,5×desvio",
-        "Média, desvio-padrão e limiar de outlier declarados conferem quando recalculados de likes+comentários do próprio posts.json",
-        "catalog/<slug>.md declara janela ampliada com o número de dias e usa o bloco ampliado do perfil-template (média ± desvio e tabela de outlier no lugar do destaque simples), incluindo a leitura de evolução do período",
-        "Trata explicitamente a regra de amostra insuficiente (≤5 posts → volta ao destaque simples, sem desvio), constatando que a amostra desta rodada a supera"
+        "Reconhece o pedido como leitura de tendência, combina o número de dias com o usuário numa pergunta com opções (~90) em vez de decidir em silêncio, avisa que a navegação fica mais longa e grava janela_dias 90 no meta.json",
+        "O posts.json tem mais de 5 posts, todos dentro dos 90 dias declarados, e o metricas.js rodado na pasta devolve o bloco `outliers` (não `amostra_insuficiente`)",
+        "Média, desvio-padrão e limiar citados no perfil são idênticos aos campos `outliers.media`, `outliers.desvio_padrao` e `outliers.limiar` da saída do script, e conferem ao serem recalculados de likes+comentários do próprio posts.json",
+        "NEGATIVA: nenhum post do posts.json traz `destaque_semana` — na janela ampliada o campo é `outlier`, marcado só nos posts acima do limiar apontados pelo script",
+        "A taxa de engajamento normalizada publicada é a média por post ÷ seguidores × 100 (a soma dos 90 dias dividida por seguidores daria um número muito maior e não é a taxa)",
+        "NEGATIVA: todo número da leitura de evolução (engajamento do primeiro subperíodo vs. do último) sai de uma rodada do metricas.js sobre o subperíodo e confere com o posts.json — nenhuma média estimada de cabeça",
+        "catalog/skymsen.md declara 'janela ampliada (90 dias)' com o período real e usa só o bloco ampliado do perfil-template (média ± desvio e tabela de outlier), sem o bloco da janela padrão e sem comentário HTML",
+        "Fecha o passo 7 e o passo 8: refs/INDEX.md com 'catálogo 2026-08-24' só na linha da Skymsen (as outras linhas da fixture idênticas) e dashboard entregue como artefato verificável"
       ]
     },
     {
       "id": 5,
-      "prompt": "Cataloga a Sulpack. (Contexto: DADOS/selection.md tem a Sulpack; a página existe e está logada, mas não tem nenhuma publicação nos últimos 7 dias.)",
-      "expected_output": "Trata o silêncio como dado, não como erro: grava raw/sulpack-industria-de-maquinas-para-embalagens/<hoje>/meta.json com \"status\": \"sem_posts\" e uma \"nota\" de uma frase, e não gera catalog/<slug>.md para ela. Segue para a próxima empresa (ou fecha a rodada), inclui a Sulpack no _summary.md numa linha \"sem dados: <nota>\", e o dashboard mostra a empresa como sem dados em vez de gráfico vazio. Não amplia a janela por conta própria — só se o usuário pedir. No INDEX.md, a linha da Sulpack mantém o campo catálogo como estava (sem carimbo de data), porque não houve perfil.",
-      "files": [],
+      "prompt": "Cataloga a Sulpack. (Contexto: a página existe e está logada, mas não tem nenhuma publicação nos últimos 7 dias — a última é de março.)",
+      "expected_output": "Trata o silêncio como dado: grava raw/sulpack-industria-de-maquinas-para-embalagens/2026-08-24/ com posts.json `[]` e meta.json com \"status\": \"sem_posts\" e uma \"nota\" de uma frase, sem abortar. Não gera perfil por empresa. Edita o _summary.md que já existe na fixture: acrescenta a Sulpack numa linha 'sem dados: <nota>' e deixa as linhas das outras cinco empresas como estavam. No INDEX.md a linha da Sulpack mantém 'sem catálogo'. Não amplia a janela por conta própria — oferece a janela ampliada como opção ao usuário. O dashboard existe como arquivo e mostra a empresa em estado 'sem dados', sem gráfico forçado. Fecha explicando em linguagem de comercial que silêncio não é erro e oferecendo o próximo passo.",
+      "files": [
+        "evals/files/5"
+      ],
       "expectations": [
-        "Existe em disco DADOS/catalog/raw/sulpack-industria-de-maquinas-para-embalagens/2026-08-24/meta.json com \"status\": \"sem_posts\" e um campo \"nota\" de uma frase",
-        "O silêncio vira dado estruturado: posts.json da rodada existe na mesma pasta como array vazio, sem abortar a coleta com erro",
-        "Nenhum perfil por empresa DADOS/catalog/sulpack-industria-de-maquinas-para-embalagens.md é gerado",
-        "DADOS/catalog/_summary.md inclui a Sulpack numa linha 'sem dados: <nota>', preservando o comparativo já existente das outras empresas",
-        "Em DADOS/refs/INDEX.md a linha da Sulpack mantém o campo catálogo como estava ('sem catálogo'), sem carimbo de data desta rodada",
-        "A janela permanece a padrão de 7 dias — nenhuma ampliação por conta própria (janela_dias: 7 no meta.json e nenhuma coleta fora da janela)",
-        "O dashboard entregue existe como artefato verificável e mostra a Sulpack como 'sem dados' em vez de gráfico vazio"
+        "catalog/raw/sulpack-industria-de-maquinas-para-embalagens/2026-08-24/meta.json existe com \"status\": \"sem_posts\", \"janela_dias\": 7 e uma \"nota\" de uma frase; posts.json na mesma pasta é `[]` e a rodada termina sem erro",
+        "O metricas.js roda mesmo assim sobre a pasta e a resposta usa o que ele devolve (n_posts 0, posts_por_semana 0, aviso de status diferente de ok) em vez de improvisar a leitura",
+        "NEGATIVA: nenhum catalog/sulpack-industria-de-maquinas-para-embalagens.md é gerado e a linha da Sulpack no refs/INDEX.md continua 'sem catálogo' — no diff contra a fixture, o INDEX.md não muda em nenhuma linha",
+        "catalog/_summary.md é editado, não recriado: a Sulpack entra numa linha 'sem dados: <nota>' e as cinco empresas da fixture (Skymsen, Cetro Máquinas, Maqinox, Tecnox do Brasil, Tecnoenvase) mantêm exatamente os mesmos valores de posts/semana, formato dominante e engajamento do arquivo original",
+        "NEGATIVA: a janela não é ampliada por conta própria — a janela ampliada aparece só como opção oferecida ao usuário, e nenhum post fora dos 7 dias entra na coleta",
+        "O dashboard existe como artefato verificável (arquivo HTML em disco ou URL de Artifact publicada) e mostra a Sulpack em estado 'sem dados' nas seções, sem nenhum gráfico montado a partir de zero posts",
+        "A resposta final explica ao usuário, em linguagem de comercial, que a empresa parada é informação e não falha da coleta, e oferece o próximo passo com opções concretas"
+      ]
+    },
+    {
+      "id": 6,
+      "prompt": "Roda de novo só a Maqinox, o resto do catálogo eu já vi semana passada.",
+      "expected_output": "Rodada de uma empresa só com catalog/_summary.md já existente na fixture (snapshot de 2026-07-08 a 2026-07-14, com Skymsen, Cetro, Maqinox, Tecnox e Tecnoenvase). Coleta só a Maqinox, roda o metricas.js na pasta de hoje e EDITA o _summary.md: atualiza a data do cabeçalho e só a linha da Maqinox, preservando as outras quatro como estão — elas são o retrato da coleta delas. Como a tabela da fixture não tem coluna de data por empresa, acrescenta a coluna ao migrar, senão linhas de rodadas diferentes viram comparativo falso. No INDEX.md, só a linha da Maqinox ganha 'catálogo 2026-08-24'.",
+      "files": [
+        "evals/files/6"
+      ],
+      "expectations": [
+        "Coleta só a Maqinox: existe catalog/raw/maqinox-ind-stria-de-maquinas/2026-08-24/ com posts.json + meta.json, e nenhuma outra empresa ganha pasta de coleta nova",
+        "NEGATIVA: catalog/_summary.md é editado, não recriado do zero — as linhas de Skymsen, Cetro Máquinas, Tecnox do Brasil e Tecnoenvase seguem com os mesmos números da fixture (Skymsen 5 posts/semana e vídeo 5/5; Cetro 5 e artigo/link 5/5; Tecnox e Tecnoenvase em 0)",
+        "A linha da Maqinox no _summary.md traz os valores da rodada de hoje, copiados dos campos `posts_por_semana`, `formato_dominante` e `taxa_normalizada` da saída do metricas.js",
+        "A data do cabeçalho do _summary.md passa a refletir esta rodada, e a tabela ganha uma coluna de data por empresa (2026-07-14 nas quatro antigas, 2026-08-24 na Maqinox), sem a qual a comparação entre linhas seria falsa",
+        "O texto do _summary.md continua comparando pela taxa normalizada e pelo eixo de mercado (3-5 posts/semana, âncora de ~2%), e as seções em prosa das outras empresas não são reescritas",
+        "NEGATIVA: no diff contra a fixture, refs/INDEX.md muda só na linha da Maqinox ('sem catálogo' → 'catálogo 2026-08-24'); as outras 5 linhas, incluindo a da Cetro com 'catálogo parcial 2026-07-14 (smoke test)', seguem idênticas",
+        "A resposta final diz ao usuário, em uma frase, que só a linha da Maqinox foi atualizada e que os números das outras empresas continuam sendo os da coleta de 14/07"
+      ]
+    },
+    {
+      "id": 7,
+      "prompt": "Faz uma leitura de tendência da Sulpack, uns 90 dias. (Contexto: a página tem exatamente 4 publicações nesses 90 dias — 12/06, 03/07, 29/07 e 14/08 — e 38 seguidores.)",
+      "expected_output": "Combina a janela ampliada (90 dias) com o usuário e grava janela_dias 90. Coleta os 4 posts e roda o metricas.js, que devolve `amostra_insuficiente: true`, `outliers: null`, o destaque simples e o aviso de que a janela ampliada precisa de mais de 5 posts. Obedece o script: escreve o bloco ampliado do perfil sem média nem desvio-padrão, usando o destaque simples, e diz ao usuário que a amostra não sustenta estatística. Com 38 seguidores a taxa normalizada existe mas é ruidosa — declara a limitação em vez de vender o número. Não amplia a janela nem inventa posts para fechar a conta.",
+      "files": [
+        "evals/files/7"
+      ],
+      "expectations": [
+        "meta.json grava janela_dias 90 e posts_coletados 4; os 4 posts do posts.json são os das datas informadas, todos dentro da janela",
+        "Roda o metricas.js e usa o que ele devolveu: `amostra_insuficiente: true`, `outliers: null` e o aviso de amostra insuficiente aparecem na execução e guiam o texto",
+        "NEGATIVA: o perfil não traz média, desvio-padrão nem limiar de outlier, e nenhum post é marcado como `outlier` no posts.json — com 4 posts o campo não existe",
+        "catalog/sulpack-industria-de-maquinas-para-embalagens.md usa o destaque simples (o post de maior likes+comentários, o mesmo que o script apontou em `destaque_semana`) e declara em uma frase que a amostra de 4 posts não sustenta estatística",
+        "NEGATIVA: não amplia a janela por conta própria nem completa a amostra com posts fora dos 90 dias para chegar a mais de 5 — a limitação é dita ao usuário, não contornada",
+        "A taxa normalizada, se publicada, é a do campo `taxa_normalizada` do script (média por post ÷ 38 seguidores × 100) e vem acompanhada da ressalva de que uma base de 38 seguidores torna o número ruidoso",
+        "A resposta final explica em linguagem de comercial o que 4 posts em 90 dias dizem sobre a empresa e oferece o próximo passo, sem tratar a amostra pequena como falha da coleta"
       ]
     }
   ]

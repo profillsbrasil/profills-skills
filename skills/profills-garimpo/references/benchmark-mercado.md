@@ -6,13 +6,25 @@ Dados de mercado adaptados (traduzidos) do repositório MIT [coreyhaines31/marke
 
 ## Taxa de engajamento normalizada
 
-**Esta é a fonte única da fórmula no pipeline** — o `SKILL.md`, o `perfil-template.md`, o `dashboard.md` e o `schema-post.md` citam "taxa normalizada (`benchmark-mercado.md`)" e não repetem a conta.
+**Esta é a fonte única da fórmula no pipeline** — o `SKILL.md`, o `perfil-template.md`, o `dashboard.md` e o `schema-post.md` citam "taxa normalizada (`benchmark-mercado.md`)" e não repetem a conta. Quem a executa é `scripts/metricas.js`.
 
 Likes brutos entre empresas de audiências diferentes não se comparam — 13 likes numa página de 30k seguidores valem menos que 2 likes numa de 1,9k. A métrica de comparação entre empresas é sempre a taxa:
 
 ```
-taxa = (likes + comentários + reposts) ÷ seguidores × 100    (seguidores: meta.json da coleta)
+taxa = média por post de (likes + comentários + reposts) ÷ seguidores × 100
 ```
+
+**Média por post, nunca a soma da janela.** A soma cresce com o número de posts: a mesma empresa pareceria 5× melhor numa semana de 5 posts que numa de 1 post. Quem divide por seguidores é a média.
+
+Exemplo: 5 posts na janela somando 190 interações (likes + comentários + reposts), página com 12.400 seguidores.
+
+- média por post = 190 ÷ 5 = **38**
+- taxa = 38 ÷ 12.400 × 100 = **0,31%**
+- (a soma da janela daria 190 ÷ 12.400 × 100 = 1,53% — isso **não** é a taxa)
+
+`seguidores` vem do `meta.json` da coleta; sem ele a taxa não existe (`null`), e a empresa fica fora da comparação entre empresas — diga isso em vez de comparar bruto.
+
+**Quem faz essa conta é `scripts/metricas.js`**, no campo `taxa_normalizada`. Perfil, `_summary.md`, dashboard e resposta ao usuário copiam o número de lá; ninguém recalcula à mão.
 
 Âncora relatada para páginas B2B: **média de ~2%; 3-5% é bom**. Âncora frouxa por natureza: checagem em ago/2026 achou números incompatíveis entre vendors (metodologias divergem — por seguidor, por impressão, percentis). Use como ordem de grandeza; **não** segmente por vertical com números de vendor, e o sinal da própria empresa continua mandando mais.
 

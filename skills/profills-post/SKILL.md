@@ -42,7 +42,9 @@ Concluído quando você tem o caminho absoluto de `DADOS` e ele existe no disco.
 
 O usuário escolhe o tema e, opcionalmente, a empresa que inspira. Quando ele pedir posts a partir do catálogo sem nomear tema ("transforma isso em posts"), leia `DADOS/catalog/<slug>.md`, tire de lá 3-4 temas que engajaram na empresa e ofereça-os com `AskUserQuestion`, com a sua recomendação e o porquê.
 
-Concluído quando o tema cabe numa frase e a referência está definida — o nome de uma empresa do catálogo, ou "sem referência" dito em voz alta.
+Havendo empresa que inspira, **nomeie o padrão que você vai reusar** — o par ângulo + categoria de hook do post-referência, lido do `posts.json` (ex.: "vou reusar o padrão do post de gummies: ângulo `trend` com hook de pergunta"). É esse par que o passo 8 confere contra a variação que ele escolheu.
+
+Concluído quando o tema cabe numa frase, a referência está definida — o nome de uma empresa do catálogo, ou "sem referência" dito em voz alta — e, havendo post-referência, o par ângulo + hook está anunciado.
 
 ### 2. Reúna os três insumos
 
@@ -75,9 +77,19 @@ Concluído quando existem 3-5 rascunhos completos, cada um com ângulo próprio,
 
 ### 5. Passe pelo crivo
 
-Antes de humanizar, rode o crivo de `references/quality-gate.md` em cada rascunho: o teste "e daí?", o rótulo analgésico/vitamina, o passe de voz contra o `voz.md` e o painel de personas. Rascunho que não bate o corte volta para revisão, não para o usuário.
+Antes de humanizar, rode o crivo de `references/quality-gate.md` em cada rascunho: primeiro o **checklist mensurável** (o script `scripts/checar-formato.js`), depois o teste "e daí?", o rótulo analgésico/vitamina, o passe de voz contra o `voz.md` e o painel de personas. Rascunho que não bate o corte volta para revisão, não para o usuário.
 
-Concluído quando cada rascunho que segue adiante bateu o corte definido em `quality-gate.md`.
+O checklist é script, não olhômetro: escreva cada variação num `.txt` do seu diretório de trabalho e rode
+
+```
+node scripts/checar-formato.js <variacao.txt> --voz <DADOS/voz.md>
+```
+
+(`scripts/` é relativo à pasta desta skill; use o caminho absoluto dela se você não estiver rodando de dentro.)
+
+`ok: false` reprova a variação **antes** do painel de personas — conserte o que o campo `falhas` aponta (ele já traz o número medido e o limite) e rode de novo. Os limites vêm do próprio JSON (`limites`); não os recite de cabeça.
+
+Concluído quando cada rascunho que segue adiante tem `ok: true` no script e bateu o corte definido em `quality-gate.md`.
 
 ### 6. Humanize
 
@@ -89,27 +101,35 @@ Concluído quando todo rascunho aprovado passou pela skill.
 
 Renderize as variações como **previews realistas de feed** seguindo `references/comparador.md`: copie `assets/preview-template.html`, preencha só o bloco `DADOS` e publique via Artifact. Depois do artefato, pergunte no chat com `AskUserQuestion` qual ângulo ele leva — uma opção por ângulo, com o porquê de cada. Publicar no LinkedIn é ele; você entrega o rascunho.
 
-Concluído quando o artefato está publicado com uma opção por variação e o usuário escolheu uma delas.
+Salve **todas** as variações em `DADOS/drafts/<AAAA-MM-DD>-<tema-slug>/variacoes.md` (crie a pasta): uma seção por variação, com ângulo, categoria de hook e família de hook no cabeçalho dela e o texto integral abaixo. O artefato morre com a sessão; as descartadas ficam para a próxima rodada.
+
+Concluído quando o artefato está publicado com uma opção por variação, o `variacoes.md` existe no disco com todas elas (ângulo, categoria e família por variação) e o usuário escolheu uma.
 
 ### 8. Persista o escolhido
 
-Preencha os `[campos]` com o dado real dele, mostre o preview final (o mesmo template com uma opção só) e salve o texto em `DADOS/drafts/<AAAA-MM-DD>-<tema-slug>.md` — o texto exato do preview, pronto para colar, com uma linha de contexto no topo (tema, ângulo, empresa que inspirou). Crie a pasta `DADOS/drafts/` se ela ainda não existir. O preview morre com a sessão; o arquivo é o que ele encontra amanhã.
+Preencha os `[campos]` com o dado real dele, mostre o preview final (o mesmo template com uma opção só) e salve o texto em `DADOS/drafts/<AAAA-MM-DD>-<tema-slug>.md` — o texto exato do preview, pronto para colar. Crie a pasta `DADOS/drafts/` se ela ainda não existir. O preview morre com a sessão; o arquivo é o que ele encontra amanhã.
 
-Concluído quando o arquivo existe no disco, sem `[campos]` pendentes no texto.
+A **linha de contexto** no topo (antes do `---` que abre o texto) traz, nesta ordem: tema · ângulo · categoria de hook · empresa que inspirou · data · e a **origem de cada número** que aparece no texto (`voz.md`, catálogo `<slug>`, ou resposta do usuário em <data>). Número cuja origem você não sabe apontar não entra no post: vira `[número a confirmar]` e vocês resolvem juntos antes de salvar (o script reprova enquanto o campo estiver lá).
+
+Se a variação escolhida usa padrão diferente do que você anunciou no passo 1 (outro ângulo ou outra categoria de hook), **diga isso em uma frase ao salvar** — "você levou a história de cliente, não o padrão de pergunta da Cetro que eu tinha proposto". Não é erro, é registro.
+
+Antes de dar por pronto, rode `node scripts/checar-formato.js DADOS/drafts/<AAAA-MM-DD>-<tema-slug>.md --voz DADOS/voz.md` no arquivo salvo.
+
+Concluído quando o arquivo existe no disco, o script devolve `ok: true` nele, e a linha de contexto traz ângulo, categoria de hook e a origem de cada número.
 
 ### 9. Ajuste o que ele pedir
 
 Pedidos de iteração ("encurta o 2", "troca o gancho", "deixa mais direto") mexem só no trecho afetado: edite o seu bloco `DADOS` e republique **no mesmo caminho de arquivo**, para o artefato manter a URL. Rascunho já salvo no passo 8 é reescrito junto, no mesmo arquivo.
 
-Concluído quando o preview republicado mostra o ajuste e o arquivo em `DADOS/drafts/` bate com ele.
+Concluído quando o preview republicado mostra o ajuste, o arquivo em `DADOS/drafts/` bate com ele e o `checar-formato.js` volta `ok: true` no arquivo reescrito.
 
 ## Restrições de formato (LinkedIn)
 
-Aplicáveis a todo rascunho:
+O que é **medido** — tamanho do hook antes do corte "ver mais", faixa de caracteres do corpo, markdown, link no corpo, parágrafo longo demais para o celular, palavra banida, travessão, campo pendente — está em `scripts/checar-formato.js`, que é onde os limites vivem. Rode-o (passos 5, 8 e 9) e use os números que ele devolve; não recalcule nem reescreva os limites em prosa.
 
-- Hook nos primeiros ~210 caracteres, antes do corte "ver mais".
-- Corpo entre ~1.200 e 1.600 caracteres performa bem; acima de ~2.000 o engajamento cai.
-- Link no comentário, não no corpo (link no corpo derruba alcance) — sugira isso ao usuário.
-- Quebras de linha frequentes; no máximo 2 linhas visuais por parágrafo (mobile-first).
+O que **você julga**, porque o script não julga:
+
+- Link no comentário, não no corpo — o script pega o link; convencer o usuário a mover é com você.
 - **O LinkedIn não renderiza markdown.** Destaque é caractere unicode (𝗮𝘀𝘀𝗶𝗺) — `**asteriscos**` saem literais no feed. Use com muita parcimônia e nunca no hook: leitor de tela não lê unicode bold, e busca não o indexa.
+- Ritmo de leitura no celular: quebras frequentes, frase curta seguida de frase que explica.
 - Post com imagem/carrossel: frameworks, dimensões e limites em `references/formato-visual.md`.
