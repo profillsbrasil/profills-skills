@@ -35,7 +35,7 @@ Comece pela porta de entrada:
 
 ### 1. Diagnóstico silencioso
 
-Rode as checagens de `references/shell.md` e monte o quadro inteiro antes de falar com o usuário — ele recebe um quadro pronto, em vez de acompanhar seis comandos passando. Concluído quando você sabe o estado de cada uma das seis peças:
+Rode as checagens de `references/shell.md` — cada comando de fato executado, com a saída dele registrada, porque é essa saída que sustenta cada ✅/❌ da tabela — e monte o quadro inteiro antes de falar com o usuário — ele recebe um quadro pronto, em vez de acompanhar seis comandos passando. Concluído quando você sabe o estado de cada uma das seis peças:
 
 - **Plugin `profills-skills`** — `claude plugin list` mostra `profills-skills`. **Exceção "via repo"**: se o toplevel git do diretório atual tem `skills/profills-setup/SKILL.md`, você está dentro do repo-fonte, as skills já vêm dos symlinks de `.claude/skills` e o plugin não é necessário — marque ✅ com a nota "via repo" e não instale nada. Esse mesmo sinal decide onde criar a pasta de dados, no passo 3.
 - **humanize-pt-br** — `~/.claude/skills/humanize-pt-br/SKILL.md` ou `~/.agents/skills/humanize-pt-br/SKILL.md` existe.
@@ -72,7 +72,7 @@ Nesta ordem, um item por vez:
   claude plugin install profills-skills@profills-skills
   ```
   Instalado quando `claude plugin list` volta a mostrar `profills-skills`. Se um dos comandos falhar, a causa está na tabela de sintomas no fim deste arquivo. Depois de instalar, avise: "pode ser preciso reabrir o Claude Code para as skills novas aparecerem" (não dá para confirmar isso ao vivo nesta sessão).
-- **Node/npx ❌**: o Node.js é o motor dos scripts que a radar, a garimpo e a post rodam (índice, métricas, checagem de formato) e do `npx` que instala a `humanize-pt-br` — sem ele o pipeline não anda. Pergunte com `AskUserQuestion`, duas opções — **"Instalar o Node agora"** (recomendada: passo a passo por sistema em `references/instalacao.md`, ~3 min) ou **"Deixar para depois"**. Instalou: peça para abrir um terminal novo, refaça a checagem de `npx` e siga para o item seguinte. Deixou para depois: pule a `humanize-pt-br`, marque Node como pendente e diga em uma frase que radar, garimpo e post só vão funcionar depois de instalar — a única coisa que dá para fazer antes é o arquivo de voz.
+- **Node/npx ❌**: o Node.js é o motor dos scripts que a radar, a garimpo e a post rodam (índice, métricas, checagem de formato) e do `npx` que instala a `humanize-pt-br` — sem ele o pipeline não anda. Pergunte com `AskUserQuestion`, duas opções — **"Instalar o Node agora"** (recomendada: passo a passo por sistema em `references/instalacao.md`, ~3 min) ou **"Deixar para depois"**. Instalou: peça para abrir um terminal novo, refaça a checagem de `npx` e siga para o item seguinte. Deixou para depois: pule a `humanize-pt-br`, marque Node como pendente e diga em uma frase que radar, garimpo e post só vão funcionar depois de instalar. Pendência aberta no fim da rodada muda o fecho do passo 5: a única ação sugerida é a que destrava o pendente (instalar o Node, instalar o Git), nunca `/profills-voz` ou `/profills-radar`.
 - **humanize-pt-br ❌** (com npx disponível): explique que isso traz a skill que tira as marcas de IA dos rascunhos.
   ```
   npx skills add othavi0/skills --skill humanize-pt-br -g -y -a claude-code
