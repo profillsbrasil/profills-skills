@@ -52,7 +52,10 @@ function resumirSetor(texto) {
     const espaco = cabeca.lastIndexOf(' ');
     corte = (espaco > 0 ? cabeca.slice(0, espaco) : cabeca).trim();
   }
-  return corte.replace(/[\s,·-]+$/, '').trim() || null;
+  corte = corte.replace(/[\s,·-]+$/, '').trim();
+  // não termina em preposição/conjunção solta ("... para", "... e")
+  corte = corte.replace(/\s+(para|de|do|da|dos|das|e|em|com|por|a|o)$/i, '').trim();
+  return corte || null;
 }
 
 function normalizar(texto) {

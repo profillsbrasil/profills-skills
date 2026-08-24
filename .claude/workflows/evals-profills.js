@@ -73,7 +73,7 @@ const runPrompt = (e, cfg) => {
 }
 const gradePrompt = (e) => [
   'Você é o grader. Leia primeiro ' + SC + '/agents/grader.md. Eval: ' + e.dir + '/eval_metadata.json — o campo assertions é a lista FIXA de expectations (se estiver vazio, derive 4-8 de expected_output e grave-as de volta em assertions).',
-  'Duas execuções: ' + e.dir + '/atual/outputs/ (skill ATUAL: ' + REPO + '/skills/' + e.skill + ') e ' + e.dir + '/baseline/outputs/ (BASELINE: ' + plano.snapshot + '/' + e.skill + '). Grade as duas com as MESMAS asserções. Regra dura: afirmação do transcript sem evidência em arquivo de outputs/ ou na "## Resposta final" é FAIL. Quando a asserção citar um script da skill (metricas.js, checar-formato.js, indice.js), RODE o script sobre o artefato para decidir.',
+  'Duas execuções: ' + e.dir + '/atual/outputs/ (skill ATUAL: ' + REPO + '/skills/' + e.skill + ') e ' + e.dir + '/baseline/outputs/ (BASELINE: ' + plano.snapshot + '/' + e.skill + '). Grade as duas com as MESMAS asserções. Regra dura: afirmação do transcript sem evidência em arquivo de outputs/ ou na "## Resposta final" é FAIL. Quando a asserção citar um script da skill (metricas.js, checar-formato.js, indice.js), RODE o script sobre o artefato para decidir, sempre com --hoje ' + HOJE + ' (a data congelada do caso).',
   'Escreva o grading.json em DUAS cópias por execução: <run>/grading.json e <run>/run-1/grading.json (o aggregate_benchmark lê run-*/; o viewer lê a raiz). Formato: {"expectations":[{"text","passed","evidence"}],"summary":{"passed","failed","total","pass_rate"},"eval_feedback":{"weak_assertions":[],"missing_coverage":[],"notes":"uma frase"}}. Campos text/passed/evidence exatamente assim.',
 ].join('\n')
 

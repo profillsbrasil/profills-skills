@@ -81,7 +81,7 @@ Nesta ordem, um item por vez:
 - **`DADOS` ❌**: crie onde o sinal do passo 1 mandar — dentro do repo-fonte (`skills/profills-setup/SKILL.md` no toplevel), a pasta é `linkedin-data/` na raiz do repo; fora dele, é `~/Profills LinkedIn/` (no Windows, `C:\Users\NOME\Profills LinkedIn`). O comando por shell e o `.gitignore` do caso repo-fonte estão em `references/shell.md`. Pronta quando o `ls` (ou `Get-ChildItem`) da pasta, rodado depois de criar, mostra `refs/`, `catalog/raw/` e `drafts/` — "já resolvi" só depois de ver essa saída —, o usuário ouviu o caminho no formato do sistema dele e — no repo-fonte — `git check-ignore linkedin-data/selection.md` responde o caminho.
 - **unslop**: só entra quando o usuário pedir por nome. Aí `AskUserQuestion` com o conflito na mesa — **"Seguir só com a humanize-pt-br"** (recomendada: as duas brigam na regra de travessão) ou **"Instalar a unslop mesmo assim"** (comandos e o aviso em `references/instalacao.md`).
 
-Concluído quando cada linha ❌ da tabela virou ✅ ou virou uma decisão que o usuário tomou ("seguir sem Node").
+Concluído quando cada linha ❌ da tabela virou ✅ ou virou uma decisão que o usuário tomou ("deixar o Node para depois").
 
 ### 4. Atualizar
 

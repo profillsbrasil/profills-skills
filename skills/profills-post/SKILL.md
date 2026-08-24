@@ -115,7 +115,7 @@ As linhas de contexto trazem, nesta ordem: tema · ângulo · categoria de hook 
 
 Se a variação escolhida usa padrão diferente do que você anunciou no passo 1 (outro ângulo ou outra categoria de hook), **diga isso em uma frase ao salvar** — "você levou a história de cliente, não o padrão de pergunta da Cetro que eu tinha proposto". Não é erro, é registro.
 
-Antes de dar por pronto, rode `node "<pasta desta skill>/scripts/checar-formato.js" "<DADOS>/drafts/<AAAA-MM-DD>-<tema-slug>.md" --voz "<DADOS>/voz.md"` no arquivo salvo. Aviso não impede salvar: `corpo_curto` no arquivo final é a pergunta "ficou curto — quer engordar ou vai assim?", e a resposta dele decide.
+Antes de dar por pronto, rode `node "<pasta desta skill>/scripts/checar-formato.js" "<DADOS>/drafts/<AAAA-MM-DD>-<tema-slug>.md" --voz "<DADOS>/voz.md"` no arquivo salvo (`--voz` sempre que o `voz.md` existir; sem ele, o script avisa que o gate de banidas não foi medido). Aviso não impede salvar: `corpo_curto` no arquivo final é a pergunta "ficou curto — quer engordar ou vai assim?", e a resposta dele decide.
 
 Concluído quando o arquivo existe no disco no formato acima, o script devolve `ok: true` nele, os avisos foram conversados, e as linhas de contexto trazem ângulo, categoria de hook e a origem de cada número.
 

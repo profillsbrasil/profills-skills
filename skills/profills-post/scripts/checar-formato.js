@@ -187,7 +187,12 @@ function main() {
 
   const avisos = [];
   let termosBanidos = [];
-  if (voz) {
+  if (!/^\s*---\s*$/m.test(conteudo)) {
+    avisos.push('sem_cerca: o arquivo não tem a linha "---" que separa contexto de texto — medi o arquivo inteiro como post; se há linhas de contexto no topo, elas entraram na conta.');
+  }
+  if (voz && !fs.existsSync(voz)) {
+    avisos.push(`voz_nao_encontrada: ${voz} não existe — o gate de palavras banidas está NÃO MEDIDO, não aprovado.`);
+  } else if (voz) {
     const lidas = lerPalavrasBanidas(lerArquivo(voz, 'o arquivo de voz'));
     termosBanidos = lidas.termos;
     if (!lidas.secaoEncontrada) {

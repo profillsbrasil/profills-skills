@@ -13,7 +13,7 @@ O `posts.json` de cada empresa é um array destes objetos. Ele é o **artefato p
   "texto": "texto completo do post",
   "formato": "carrossel",
   "framework_carrossel": "Hack-List",
-  "hook": "primeira linha literal do post",
+  "hook": "primeiro parágrafo literal do post",
   "hook_categoria": "curiosity-gap",
   "hook_cabe_no_corte": true,
   "cta": "comenta aqui embaixo qual você usaria",
@@ -44,7 +44,7 @@ A coluna **Fonte** diz de onde o valor sai: `JS` = retorno do script de `navegac
 | `link_externo` | JS | URL externa do post (lnkd.in, blog), `null` se não houver |
 | `engajamento` | JS | likes, comentários, reposts — números na página **no momento da coleta**. Grave número (`240`); o `metricas.js` também aceita a string da UI (`"1.200"`, `"1,2 mil"`), mas o que ele não conseguir ler tira o post da média, do destaque e dos outliers, com aviso |
 | `idioma` | leitura | `PT` ou `EN` |
-| `hook`, `hook_cabe_no_corte` | leitura | primeira linha literal (até a primeira quebra de linha); cabe se termina antes do corte "ver mais" — o limite numérico é o `hook_max` de `../profills-post/scripts/checar-formato.js`, fonte única |
+| `hook`, `hook_cabe_no_corte` | leitura | primeiro parágrafo literal (até a primeira quebra dupla de linha — a mesma régua do `checar-formato.js` da post); cabe se termina antes do corte "ver mais" — o limite numérico é o `hook_max` de `../profills-post/scripts/checar-formato.js`, fonte única |
 | `cta` | leitura | a chamada final, se houver (`null` se não) |
 | `artigo_titulo` | leitura | título do card, só quando `formato` é `artigo` (`null` fora disso) |
 
