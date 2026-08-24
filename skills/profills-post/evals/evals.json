@@ -4,7 +4,7 @@
     {
       "id": 1,
       "prompt": "Gera uns posts sobre embalagens sustentáveis no estilo que a Cetro Máquinas usa. (Estado: DADOS/catalog/cetromaquinas.md e DADOS/catalog/raw/cetromaquinas/2026-08-20/posts.json existem; DADOS/voz.md existe; a seção '## Do Not Copy' de DADOS/refs/cetromaquinas.md ainda está com o comentário de placeholder.)",
-      "expected_output": "- Lê DADOS/catalog/cetromaquinas.md, o posts.json da coleta e DADOS/voz.md antes de gerar.\n- Trata o '## Do Not Copy' em placeholder como pergunta: faz uma AskUserQuestion com opções concretas tiradas dos posts da Cetro e grava a resposta em DADOS/refs/cetromaquinas.md antes de gerar.\n- Coleta os quatro elementos de matéria-prima (número real, insight contra-intuitivo, mecanismo, dor do ICP), perguntando o que faltar em vez de inventar.\n- Entrega 3-5 variações, cada uma com um ângulo distinto da tabela de ângulos e uma família de hook distinta (intelectual / de cena / direto ao leitor).\n- Passa cada rascunho pelo crivo de quality-gate.md (corte: todas as notas ≥7 e média ≥8) e depois pela skill humanize-pt-br.\n- Publica o comparador a partir de assets/preview-template.html, pergunta a escolha com AskUserQuestion e salva o escolhido em DADOS/drafts/<AAAA-MM-DD>-<tema-slug>.md.",
+      "expected_output": "- Lê DADOS/catalog/cetromaquinas.md, o posts.json da coleta e DADOS/voz.md antes de gerar.\n- Trata o '## Do Not Copy' em placeholder como pergunta: faz uma AskUserQuestion com opções concretas tiradas dos posts da Cetro e grava a resposta em DADOS/refs/cetromaquinas.md antes de gerar.\n- Coleta os quatro elementos de matéria-prima (número real, insight contra-intuitivo, mecanismo, dor do ICP), perguntando o que faltar em vez de inventar.\n- Entrega 3-5 variações, cada uma com um ângulo distinto da tabela de ângulos e as três famílias de hook cobertas (intelectual / de cena / direto ao leitor).\n- Passa cada rascunho pelo crivo de quality-gate.md (corte: todas as notas ≥7 e média ≥8) e depois pela skill humanize-pt-br.\n- Publica o comparador a partir de assets/preview-template.html, pergunta a escolha com AskUserQuestion e salva o escolhido em DADOS/drafts/<AAAA-MM-DD>-<tema-slug>.md.",
       "files": []
     },
     {
@@ -22,7 +22,7 @@
     {
       "id": 4,
       "prompt": "Transforma o catálogo da Skymsen em posts. (Estado: DADOS/catalog/skymsen.md existe com a coleta da semana; DADOS/voz.md existe; DADOS/drafts/ ainda não existe.)",
-      "expected_output": "- Sem tema dado, lê DADOS/catalog/skymsen.md e oferece 3-4 temas que engajaram com AskUserQuestion, com a recomendação e o porquê, em vez de escolher sozinho.\n- Fixado o tema, segue o fluxo: três insumos, matéria-prima, 3-5 variações com ângulo e família de hook distintos, crivo, humanize-pt-br, comparador.\n- Cria a pasta DADOS/drafts/ antes de salvar e grava DADOS/drafts/<AAAA-MM-DD>-<tema-slug>.md com o texto exato do preview, sem [campos] pendentes.",
+      "expected_output": "- Sem tema dado, lê DADOS/catalog/skymsen.md e oferece 3-4 temas que engajaram com AskUserQuestion, com a recomendação e o porquê, em vez de escolher sozinho.\n- Fixado o tema, segue o fluxo: três insumos, matéria-prima, 3-5 variações com ângulo e famílias de hook cobertas (as três) sem categoria repetida, crivo, humanize-pt-br, comparador.\n- Cria a pasta DADOS/drafts/ antes de salvar e grava DADOS/drafts/<AAAA-MM-DD>-<tema-slug>.md com o texto exato do preview, sem [campos] pendentes.",
       "files": []
     }
   ]

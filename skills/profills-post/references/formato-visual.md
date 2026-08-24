@@ -4,15 +4,9 @@ Leia quando o formato vencedor da referência (ou o pedido do usuário) envolve 
 
 ## Frameworks de carrossel (5)
 
-Os cinco valores são a taxonomia fechada da `profills-garimpo` (`../profills-garimpo/references/taxonomias.md`, Framework de carrossel). Escolha pelo que engajou no catálogo da empresa e gere o rascunho já estruturado slide a slide:
+Os cinco valores são a taxonomia fechada da `profills-garimpo` (`../profills-garimpo/references/taxonomias.md`, Framework de carrossel). Escolha pelo que engajou no catálogo da empresa e gere o rascunho já estruturado slide a slide.
 
-| Framework | Estrutura de slides |
-|---|---|
-| `Value-Stack` | 1 benefício/item por slide, empilhando valor |
-| `Problem-Proof` | problema → agitação → prova/solução |
-| `Hack-List` | lista numerada, cada slide nomeia uma tática |
-| `Rant-Callout` | opinião forte, slides curtos e enfáticos |
-| `Demo-Walkthrough` | passo a passo de um processo/produto |
+`Value-Stack`, `Problem-Proof`, `Hack-List`, `Rant-Callout`, `Demo-Walkthrough` — a estrutura de slides de cada um está na tabela de lá; leia-a antes de gerar.
 
 **Anatomia comum**: **slide 1** = hook (mesmas regras do hook de texto: 80/20, sem clichê) · **slides do meio** = 1 ideia por slide, título curto + no máximo 2-3 linhas · **último slide** = síntese + CTA (`salvamento` costuma ser o natural). 8-12 slides é a faixa que performa.
 

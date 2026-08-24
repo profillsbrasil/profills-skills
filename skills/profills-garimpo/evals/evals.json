@@ -28,7 +28,7 @@
     {
       "id": 5,
       "prompt": "Cataloga a Sulpack. (Contexto: DADOS/selection.md tem a Sulpack; a página existe e está logada, mas não tem nenhuma publicação nos últimos 7 dias.)",
-      "expected_output": "Trata o silêncio como dado, não como erro: grava raw/sulpack-industria-de-maquinas-para-embalagens/<hoje>/meta.json com \"status\": \"sem_posts\" e uma \"nota\" de uma frase, e não gera catalog/<slug>.md para ela. Segue para a próxima empresa (ou fecha a rodada), inclui a Sulpack no _summary.md numa linha \"sem dados: <nota>\", e o dashboard mostra a empresa como sem dados em vez de gráfico vazio. Não amplia a janela por conta própria — só se o usuário pedir.",
+      "expected_output": "Trata o silêncio como dado, não como erro: grava raw/sulpack-industria-de-maquinas-para-embalagens/<hoje>/meta.json com \"status\": \"sem_posts\" e uma \"nota\" de uma frase, e não gera catalog/<slug>.md para ela. Segue para a próxima empresa (ou fecha a rodada), inclui a Sulpack no _summary.md numa linha \"sem dados: <nota>\", e o dashboard mostra a empresa como sem dados em vez de gráfico vazio. Não amplia a janela por conta própria — só se o usuário pedir. No INDEX.md, a linha da Sulpack mantém o campo catálogo como estava (sem carimbo de data), porque não houve perfil.",
       "files": []
     }
   ]
