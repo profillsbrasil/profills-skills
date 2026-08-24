@@ -2,9 +2,10 @@
 // indice.js — a conta do índice de referências da profills-radar (Node >= 18, sem dependência).
 // Faz três coisas sobre DADOS/refs: valida o INDEX.md linha a linha (campos, ordem, id, datas,
 // existência da ficha, fichas órfãs, pesquisa vencida em 60 dias); reconstrói o INDEX.md a partir
-// das fichas quando ele sumiu (--reconstruir, preservando o campo catálogo e o alerta ⚠ de cada
-// empresa); e procura ficha parecida antes de criar uma nova (--procurar, sem acento e por distância).
-// Uso:     node scripts/indice.js <pasta refs> [--reconstruir] [--procurar "<nome>"] [--hoje AAAA-MM-DD]
+// das fichas quando ele sumiu (--reconstruir, recuperando o campo catálogo em catalog/raw/ e no
+// índice anterior — o alerta ⚠ não é recuperável do disco); e procura ficha parecida antes de criar
+// uma nova (--procurar, sem acento e por distância).
+// Uso:     node scripts/indice.js <pasta refs> [--reconstruir] [--catalog <pasta>] [--procurar "<nome>"] [--hoje AAAA-MM-DD]
 // Exemplo: node scripts/indice.js linkedin-data/refs --procurar "Maquimox"
 //          → {"acao":"procurar","termo":"Maquimox","ha_parecido":true,"candidatos":[{"slug":"maqinox-...","semelhanca":0.75}],"ok":true}
 // Saída: JSON em stdout. Exit 0 = ok · 1 = alguma checagem falhou · 2 = erro de uso/arquivo.
@@ -35,6 +36,23 @@ function diasEntre(inicio, fim) {
   const a = new Date(inicio + 'T00:00:00Z').getTime();
   const b = new Date(fim + 'T00:00:00Z').getTime();
   return Math.round((b - a) / 86400000);
+}
+
+// Todo arquivo entra aqui: INDEX.md salvo no Windows chega com \r\n e o \r sobra no fim do campo.
+function lerTexto(caminho) {
+  return fs.readFileSync(caminho, 'utf8').replace(/\r\n/g, '\n');
+}
+
+// O campo Setor da ficha é uma frase; a linha do índice quer um rótulo curto.
+function resumirSetor(texto) {
+  if (!texto) return null;
+  let corte = texto.split(/[;—(]/)[0].trim();
+  if (corte.length > 60) {
+    const cabeca = corte.slice(0, 60);
+    const espaco = cabeca.lastIndexOf(' ');
+    corte = (espaco > 0 ? cabeca.slice(0, espaco) : cabeca).trim();
+  }
+  return corte.replace(/[\s,·-]+$/, '').trim() || null;
 }
 
 function normalizar(texto) {
@@ -73,7 +91,7 @@ function semelhanca(a, b) {
 const PADROES_VAZIOS = /^(—|-|a confirmar|<[^>]*>)$/i;
 
 function lerFicha(pasta, arquivo) {
-  const texto = fs.readFileSync(path.join(pasta, arquivo), 'utf8');
+  const texto = lerTexto(path.join(pasta, arquivo));
   const linhas = texto.split('\n');
   const campo = (rotulos) => {
     for (const linha of linhas) {
@@ -124,6 +142,8 @@ function listarFichas(pasta) {
 // ---------- leitura do índice ----------
 
 const RE_LINHA = /^-\s+\[([^\]]+)\]\(([^)]+)\)\s+—\s+`([^`]+)`\s+·\s+(.+)$/;
+// Toda linha de lista do INDEX.md é candidata a linha de empresa: linha solta vira problema, não sumiço.
+const RE_ITEM = /^-\s+/;
 
 function parsearLinha(texto, numero) {
   const m = texto.match(RE_LINHA);
@@ -167,7 +187,7 @@ function parsearLinha(texto, numero) {
 function lerIndice(pasta) {
   const caminho = path.join(pasta, 'INDEX.md');
   if (!fs.existsSync(caminho)) return { existe: false, caminho, linhas: [], texto: null };
-  const texto = fs.readFileSync(caminho, 'utf8');
+  const texto = lerTexto(caminho);
   return { existe: true, caminho, texto, linhas: texto.split('\n') };
 }
 
@@ -227,7 +247,7 @@ function validar(pasta, hoje) {
 
   const vistos = new Map();
   indice.linhas.forEach((texto, i) => {
-    if (!/^-\s+\[/.test(texto)) return;
+    if (!RE_ITEM.test(texto)) return;
     const numero = i + 1;
     const r = parsearLinha(texto, numero);
     if (r.erro) {
@@ -273,10 +293,9 @@ function validar(pasta, hoje) {
 
   saida.n_empresas = saida.empresas.length;
   const noIndice = new Set(saida.empresas.map((e) => e.arquivo));
+  // Ficha órfã não é erro de índice: é ficha fora da lista (removida ou nunca indexada).
+  // Ela sai em fichas_orfas, para a skill oferecer a reindexação — e não derruba o ok.
   saida.fichas_orfas = fichas.filter((f) => !noIndice.has(f));
-  for (const orfa of saida.fichas_orfas) {
-    saida.problemas.push({ tipo: 'ficha_orfa', detalhe: `"${orfa}" existe em refs/ e não tem linha no índice` });
-  }
   if (saida.n_empresas === 0 && !saida.problemas.some((p) => p.tipo === 'cabecalho_ausente')) {
     saida.problemas.push({ tipo: 'indice_vazio', detalhe: 'o INDEX.md existe mas não tem nenhuma linha de empresa' });
   }
@@ -286,14 +305,52 @@ function validar(pasta, hoje) {
   process.exit(saida.ok ? 0 : 1);
 }
 
-function reconstruir(pasta, hoje) {
+// O campo catálogo é do disco, não do índice: cada coleta da profills-garimpo deixa
+// catalog/raw/<slug>/<AAAA-MM-DD>/. Vale a data mais recente que trouxe post — meta.json com
+// status "ok" ou posts.json com pelo menos um post. Coleta vazia (sem_posts, página não
+// gerenciada) não conta como catálogo.
+function catalogoNoDisco(raiz, slug) {
+  const pastaEmpresa = path.join(raiz, slug);
+  let datas;
+  try {
+    datas = fs
+      .readdirSync(pastaEmpresa, { withFileTypes: true })
+      .filter((d) => d.isDirectory() && /^\d{4}-\d{2}-\d{2}$/.test(d.name) && dataValida(d.name))
+      .map((d) => d.name)
+      .sort()
+      .reverse();
+  } catch (e) {
+    return null;
+  }
+  for (const data of datas) {
+    const dia = path.join(pastaEmpresa, data);
+    let meta = null;
+    try {
+      meta = JSON.parse(lerTexto(path.join(dia, 'meta.json')));
+    } catch (e) {
+      meta = null;
+    }
+    if (meta && meta.status === 'ok') return { data, prova: 'meta.json com status ok' };
+    try {
+      const posts = JSON.parse(lerTexto(path.join(dia, 'posts.json')));
+      if (Array.isArray(posts) && posts.length) return { data, prova: `posts.json com ${posts.length} post(s)` };
+    } catch (e) {
+      // pasta sem posts.json legível: não é catálogo, segue para a data anterior
+    }
+  }
+  return null;
+}
+
+function reconstruir(pasta, hoje, raizCatalogo) {
   const indice = lerIndice(pasta);
   const anteriores = new Map();
+  const linhasIlegiveis = [];
   if (indice.existe) {
     indice.linhas.forEach((texto, i) => {
-      if (!/^-\s+\[/.test(texto)) return;
+      if (!RE_ITEM.test(texto)) return;
       const r = parsearLinha(texto, i + 1);
-      if (!r.erro) anteriores.set(r.empresa.slug, { catalogo: r.empresa.catalogo, alerta: r.empresa.alerta });
+      if (r.erro) linhasIlegiveis.push({ linha: i + 1, trecho: texto.slice(0, 120) });
+      else anteriores.set(r.empresa.slug, { catalogo: r.empresa.catalogo, alerta: r.empresa.alerta });
     });
   }
 
@@ -304,9 +361,12 @@ function reconstruir(pasta, hoje) {
     hoje,
     arquivo: indice.caminho,
     indice_existia: indice.existe,
+    catalogo_raiz: raizCatalogo,
+    catalogo_raiz_existe: fs.existsSync(raizCatalogo),
     n_fichas: fichas.length,
     escritas: [],
     fichas_ignoradas: [],
+    avisos: [],
     problemas: [],
     ok: false,
   };
@@ -331,13 +391,25 @@ function reconstruir(pasta, hoje) {
       continue;
     }
     const anterior = anteriores.get(ficha.slug) || {};
-    const catalogo = anterior.catalogo ? `catálogo ${anterior.catalogo}` : 'sem catálogo';
+    const doDisco = catalogoNoDisco(raizCatalogo, ficha.slug);
+    // Entre a data do disco e a do índice anterior vale a mais recente: nenhuma das duas mente,
+    // e a do disco costuma ser a que o índice perdido não chegou a registrar.
+    let dataCatalogo = null;
+    let origem = 'sem catálogo';
+    if (doDisco && (!anterior.catalogo || doDisco.data >= anterior.catalogo)) {
+      dataCatalogo = doDisco.data;
+      origem = 'catalog/raw';
+    } else if (anterior.catalogo) {
+      dataCatalogo = anterior.catalogo;
+      origem = 'índice anterior';
+    }
+    const setor = resumirSetor(ficha.setor);
     const campos = [
       `id ${ficha.id || '—'}`,
-      ficha.setor || '[a confirmar]',
+      setor || '[a confirmar]',
       ficha.pais || '[a confirmar]',
       `pesquisa ${ficha.pesquisa || '[a confirmar]'}`,
-      catalogo,
+      dataCatalogo ? `catálogo ${dataCatalogo}` : 'sem catálogo',
     ];
     if (anterior.alerta) campos.push(`⚠ ${anterior.alerta}`);
     linhas.push(`- [${ficha.nome}](${ficha.slug}.md) — \`${ficha.slug}\` · ${campos.join(' · ')}`);
@@ -346,9 +418,11 @@ function reconstruir(pasta, hoje) {
       nome: ficha.nome,
       arquivo,
       id: ficha.id || '—',
+      setor,
       pesquisa: ficha.pesquisa,
-      catalogo: anterior.catalogo || null,
-      origem_catalogo: anterior.catalogo ? 'índice anterior' : 'sem catálogo',
+      catalogo: dataCatalogo,
+      origem_catalogo: origem,
+      prova_catalogo: origem === 'catalog/raw' ? doDisco.prova : null,
       alerta_preservado: anterior.alerta || null,
       campos_a_confirmar: ['setor', 'pais', 'pesquisa'].filter((c) => !ficha[c]),
     });
@@ -380,6 +454,26 @@ function reconstruir(pasta, hoje) {
   for (const i of saida.fichas_ignoradas) {
     saida.problemas.push({ tipo: 'ficha_ignorada', detalhe: `${i.arquivo}: ${i.motivo}` });
   }
+
+  // O ⚠ é frase escrita por você, não dado de coleta: nenhum arquivo do disco o devolve.
+  if (!indice.existe) {
+    saida.avisos.push({
+      tipo: 'alertas_perdidos',
+      empresas: [],
+      detalhe: 'alertas ⚠ do índice anterior, se existiam, precisam ser refeitos — nenhum arquivo do disco os guarda',
+    });
+  } else {
+    const semTextoAnterior = saida.escritas.filter((e) => !anteriores.has(e.slug)).map((e) => e.nome);
+    if (semTextoAnterior.length || linhasIlegiveis.length) {
+      saida.avisos.push({
+        tipo: 'alertas_perdidos',
+        empresas: semTextoAnterior,
+        linhas_ilegiveis: linhasIlegiveis,
+        detalhe: 'o índice anterior não tinha linha legível para estas empresas — um ⚠ que existisse nelas precisa ser refeito',
+      });
+    }
+  }
+
   saida.ok = saida.problemas.length === 0;
   process.stdout.write(JSON.stringify(saida, null, 2) + '\n');
   process.exit(saida.ok ? 0 : 1);
@@ -438,6 +532,7 @@ function principal(argv) {
   let pasta = null;
   let acao = 'validar';
   let termo = null;
+  let catalogo = null;
   let hoje = hojeISO();
 
   for (let i = 0; i < args.length; i++) {
@@ -450,24 +545,30 @@ function principal(argv) {
       acao = 'procurar';
       termo = args[++i];
       if (!termo) morrer('Uso: --procurar precisa de um nome, ex.: --procurar "Maquimox".');
+    } else if (a === '--catalog') {
+      catalogo = args[++i];
+      if (!catalogo) morrer('Uso: --catalog precisa de uma pasta, ex.: --catalog "<DADOS>/catalog/raw".');
     } else if (a === '--hoje') {
       hoje = args[++i];
       if (!hoje || !dataValida(hoje)) morrer('Uso: --hoje precisa de uma data AAAA-MM-DD, ex.: --hoje 2026-08-24.');
     } else if (a.startsWith('--')) {
-      morrer(`Opção desconhecida: ${a}. Uso: node scripts/indice.js <pasta refs> [--reconstruir] [--procurar "<nome>"] [--hoje AAAA-MM-DD]`);
+      morrer(`Opção desconhecida: ${a}. Uso: node scripts/indice.js <pasta refs> [--reconstruir] [--catalog <pasta>] [--procurar "<nome>"] [--hoje AAAA-MM-DD]`);
     } else if (pasta === null) {
       pasta = a;
     } else {
-      morrer(`Argumento sobrando: ${a}. Uso: node scripts/indice.js <pasta refs> [--reconstruir] [--procurar "<nome>"] [--hoje AAAA-MM-DD]`);
+      morrer(`Argumento sobrando: ${a}. Uso: node scripts/indice.js <pasta refs> [--reconstruir] [--catalog <pasta>] [--procurar "<nome>"] [--hoje AAAA-MM-DD]`);
     }
   }
 
-  if (!pasta) morrer('Uso: node scripts/indice.js <pasta refs> [--reconstruir] [--procurar "<nome>"] [--hoje AAAA-MM-DD]');
+  if (!pasta) morrer('Uso: node scripts/indice.js <pasta refs> [--reconstruir] [--catalog <pasta>] [--procurar "<nome>"] [--hoje AAAA-MM-DD]');
   pasta = path.resolve(pasta);
   if (acao !== 'validar' && !fs.existsSync(pasta)) morrer(`Pasta não encontrada: ${pasta}`);
   if (fs.existsSync(pasta) && !fs.statSync(pasta).isDirectory()) morrer(`Não é uma pasta: ${pasta}`);
 
-  if (acao === 'reconstruir') return reconstruir(pasta, hoje);
+  // catalog/raw/ é irmã de refs/ dentro de DADOS; --catalog sobrescreve quando não é.
+  const raizCatalogo = catalogo ? path.resolve(catalogo) : path.resolve(pasta, '..', 'catalog', 'raw');
+
+  if (acao === 'reconstruir') return reconstruir(pasta, hoje, raizCatalogo);
   if (acao === 'procurar') return procurar(pasta, termo);
   return validar(pasta, hoje);
 }

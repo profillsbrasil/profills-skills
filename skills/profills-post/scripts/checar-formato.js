@@ -4,10 +4,12 @@
  * Fonte única das contagens da profills-post: hook, tamanho do corpo, markdown,
  * link no corpo, parágrafo longo, palavras banidas, travessão e campos pendentes.
  * Uso: node scripts/checar-formato.js <arquivo-do-rascunho> [--voz <DADOS/voz.md>]
- * Aceita o .md salvo em drafts/ (usa o texto entre os dois "---") ou um .txt solto.
- * Saída: JSON em stdout. Exit 0 = ok:true · 1 = alguma checagem reprovou · 2 = erro de uso/arquivo.
- * Exemplo: {"ok":false,"falhas":["corpo_chars 811 abaixo do mínimo de 1200"],
- *           "hook_chars":68,"hook_cabe":true,"corpo_chars":811,"corpo_na_faixa":false, ...}
+ * Aceita o .md salvo em drafts/ (o texto é tudo que vem depois da primeira linha
+ * "---") ou um .txt solto (o arquivo inteiro é o texto).
+ * Saída: JSON em stdout, com "falhas" (reprovam) e "avisos" (conversa com o usuário,
+ * não reprovam). Exit 0 = ok:true · 1 = alguma checagem reprovou · 2 = erro de uso/arquivo.
+ * Exemplo: {"ok":true,"falhas":[],"avisos":["corpo_curto: corpo com 1074 chars ..."],
+ *           "hook_chars":68,"hook_cabe":true,"corpo_chars":1074, ...}
  * Os limites usados na conta voltam no campo "limites" — não os recopie em prosa.
  */
 
@@ -62,37 +64,24 @@ function lerArquivo(caminho, rotulo) {
 }
 
 /*
- * Extrai o texto que vai para o feed:
- * 1. arquivo com duas linhas "---" (o formato de drafts/) → o que está entre elas;
- * 2. senão, descarta o cabeçalho de contexto do topo (linhas "Tema: ...", "> ...") e usa o resto.
+ * Extrai o texto que vai para o feed, no formato prescrito no passo 8 da skill:
+ * linhas de contexto, uma linha que é exatamente "---", e o texto do post até o
+ * fim do arquivo. Sem nenhuma cerca "---" isolada, o arquivo inteiro é o texto.
+ * Uma segunda cerca isolada no fim do arquivo é sobra de formatação e sai fora.
  */
 function extrairTexto(conteudo) {
   const linhas = conteudo.split('\n');
-  const cercas = [];
-  linhas.forEach((linha, i) => {
-    if (linha.trim() === '---') cercas.push(i);
-  });
-  if (cercas.length >= 2) {
-    return linhas.slice(cercas[0] + 1, cercas[1]).join('\n').trim();
-  }
-  let inicio = 0;
-  while (inicio < linhas.length) {
-    const l = linhas[inicio].trim();
-    if (l === '' || l.startsWith('>') || /^(tema|ângulo|angulo|inspirado em|salvo em|origem)\s*:/i.test(l)) {
-      inicio += 1;
-    } else {
-      break;
-    }
-  }
-  return linhas.slice(inicio).join('\n').trim();
+  const primeiraCerca = linhas.findIndex((linha) => linha.trim() === '---');
+  const corpo = primeiraCerca === -1 ? linhas.slice() : linhas.slice(primeiraCerca + 1);
+  while (corpo.length && corpo[corpo.length - 1].trim() === '') corpo.pop();
+  if (corpo.length && corpo[corpo.length - 1].trim() === '---') corpo.pop();
+  return corpo.join('\n').trim();
 }
 
-// Hook = o que aparece antes do corte "ver mais": até a primeira quebra dupla
-// ou o fim da primeira linha, o que vier antes.
+// Hook = o primeiro parágrafo, ou seja, o texto até a primeira quebra dupla.
+// É o que o leitor lê antes de decidir clicar em "ver mais".
 function extrairHook(texto) {
-  const ateQuebraDupla = texto.split('\n\n')[0];
-  const primeiraLinha = texto.split('\n')[0];
-  return (primeiraLinha.length <= ateQuebraDupla.length ? primeiraLinha : ateQuebraDupla).trim();
+  return texto.split(/\n[ \t]*\n/)[0].trim();
 }
 
 function acharMarkdown(texto) {
@@ -104,12 +93,18 @@ function acharMarkdown(texto) {
   return marcas;
 }
 
+/*
+ * Link no corpo. O padrão de domínio solto roda SEM a flag "i" de propósito:
+ * "linha.Com" (ponto final seguido de palavra capitalizada) não é link, e casar
+ * isso reprovaria rascunho correto. URL explícita e "www." continuam valendo
+ * em qualquer caixa.
+ */
 function acharLinks(texto) {
   const achados = new Set();
   const padroes = [
     /https?:\/\/\S+/gi,
     /\bwww\.[a-z0-9-]+\.[a-z]{2,}\S*/gi,
-    /\b[a-z0-9-]{2,}\.(?:com\.br|com|br|net|org|io|co|app|me|ai)\b(?:\/\S*)?/gi,
+    /\b[a-z0-9-]{2,}\.(?:com\.br|com|br|net|org|io|co|app|me|ai)\b(?:\/\S*)?/g,
   ];
   for (const padrao of padroes) {
     const m = texto.match(padrao);
@@ -131,18 +126,23 @@ function acharLinhasLongas(texto) {
 }
 
 /*
- * Lê os termos da seção "## Palavras banidas" do voz.md.
+ * Lê os termos da seção "## Palavras banidas" do voz.md. O título casa sem
+ * olhar caixa e aceita texto depois ("## Palavras banidas (atualizada em ...)").
  * Item entre aspas → o que está entre aspas; item sem aspas → o texto antes
  * da data entre parênteses ou do travessão de explicação. Placeholder do
  * template (linha que começa com "<") é ignorado.
+ * Devolve também se a seção existe: sem ela, nenhum termo foi lido e o gate de
+ * banidas não está aprovado, só não medido.
  */
 function lerPalavrasBanidas(conteudoVoz) {
   const linhas = conteudoVoz.split('\n');
   const termos = [];
   let dentro = false;
+  let secaoEncontrada = false;
   for (const linha of linhas) {
     if (/^##\s+/.test(linha)) {
-      dentro = /^##\s+palavras\s+banidas\s*$/i.test(linha.trim());
+      dentro = /^##\s+palavras\s+banidas\b/i.test(linha.trim());
+      if (dentro) secaoEncontrada = true;
       continue;
     }
     if (!dentro) continue;
@@ -162,7 +162,7 @@ function lerPalavrasBanidas(conteudoVoz) {
     corpo = corpo.replace(/\s*\([^)]*\)\s*$/, '').trim();
     if (corpo) termos.push(corpo);
   }
-  return termos;
+  return { termos, secaoEncontrada };
 }
 
 function acharBanidas(texto, termos) {
@@ -185,8 +185,18 @@ function main() {
   const texto = extrairTexto(conteudo);
   if (!texto) morrer(`O arquivo ${arquivo} não tem texto de post — só cabeçalho ou está vazio.`);
 
+  const avisos = [];
   let termosBanidos = [];
-  if (voz) termosBanidos = lerPalavrasBanidas(lerArquivo(voz, 'o arquivo de voz'));
+  if (voz) {
+    const lidas = lerPalavrasBanidas(lerArquivo(voz, 'o arquivo de voz'));
+    termosBanidos = lidas.termos;
+    if (!lidas.secaoEncontrada) {
+      avisos.push(
+        `voz_sem_palavras_banidas: ${voz} não tem a seção "## Palavras banidas" — nenhum termo foi lido, ` +
+          'então o gate de banidas está NÃO MEDIDO, não aprovado.'
+      );
+    }
+  }
 
   const hook = extrairHook(texto);
   const hookChars = hook.length;
@@ -203,10 +213,12 @@ function main() {
     voz: voz ? path.resolve(voz) : null,
     ok: false,
     falhas: [],
+    avisos: [],
     hook_chars: hookChars,
     hook_cabe: hookChars <= LIMITES.hook_max,
     corpo_chars: corpoChars,
     corpo_na_faixa: corpoChars >= LIMITES.corpo_min && corpoChars <= LIMITES.corpo_max,
+    corpo_curto: corpoChars < LIMITES.corpo_min,
     acima_de_2000: corpoChars > LIMITES.corpo_teto,
     tem_markdown: marcasMarkdown.length > 0,
     markdown_marcas: marcasMarkdown,
@@ -224,12 +236,14 @@ function main() {
 
   const falhas = [];
   if (!resultado.hook_cabe) falhas.push(`hook com ${hookChars} chars, acima do corte de ${LIMITES.hook_max}`);
-  if (!resultado.corpo_na_faixa) {
-    falhas.push(
-      corpoChars < LIMITES.corpo_min
-        ? `corpo_chars ${corpoChars} abaixo do mínimo de ${LIMITES.corpo_min}`
-        : `corpo_chars ${corpoChars} acima do máximo de ${LIMITES.corpo_max}`
+  // Corpo curto é aviso, não falha: molde curto (Enquete) é curto por desenho.
+  if (resultado.corpo_curto) {
+    avisos.push(
+      `corpo_curto: corpo com ${corpoChars} chars, abaixo dos ${LIMITES.corpo_min} da faixa que costuma performar — ` +
+        'não reprova; pergunte ao usuário se quer engordar ou se vai assim.'
     );
+  } else if (corpoChars > LIMITES.corpo_max) {
+    falhas.push(`corpo_chars ${corpoChars} acima do máximo de ${LIMITES.corpo_max}`);
   }
   if (resultado.acima_de_2000) falhas.push(`corpo_chars ${corpoChars} passa de ${LIMITES.corpo_teto}, onde o engajamento cai`);
   if (resultado.tem_markdown) falhas.push(`markdown no texto (${marcasMarkdown.join(', ')}) — o LinkedIn não renderiza`);
@@ -246,6 +260,7 @@ function main() {
   if (campos.length) falhas.push(`campo pendente: ${campos.join(', ')}`);
 
   resultado.falhas = falhas;
+  resultado.avisos = avisos;
   resultado.ok = falhas.length === 0;
 
   process.stdout.write(JSON.stringify(resultado, null, 2) + '\n');

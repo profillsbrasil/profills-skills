@@ -82,14 +82,14 @@ Antes de humanizar, rode o crivo de `references/quality-gate.md` em cada rascunh
 O checklist é script, não olhômetro: escreva cada variação num `.txt` do seu diretório de trabalho e rode
 
 ```
-node scripts/checar-formato.js <variacao.txt> --voz <DADOS/voz.md>
+node "<pasta desta skill>/scripts/checar-formato.js" "<variacao.txt>" --voz "<DADOS>/voz.md"
 ```
-
-(`scripts/` é relativo à pasta desta skill; use o caminho absoluto dela se você não estiver rodando de dentro.)
 
 `ok: false` reprova a variação **antes** do painel de personas — conserte o que o campo `falhas` aponta (ele já traz o número medido e o limite) e rode de novo. Os limites vêm do próprio JSON (`limites`); não os recite de cabeça.
 
-Concluído quando cada rascunho que segue adiante tem `ok: true` no script e bateu o corte definido em `quality-gate.md`.
+O campo `avisos` **não reprova**: é conversa com o usuário. `corpo_curto` vira uma pergunta ("ficou curto — quer engordar ou vai assim?"), nunca um bloqueio; molde de Enquete é curto por desenho. `voz_sem_palavras_banidas` significa que o gate de banidas ficou **não medido** — diga isso em vez de dar por aprovado.
+
+Concluído quando cada rascunho que segue adiante tem `ok: true` no script, os avisos foram levados ao usuário e ele bateu o corte definido em `quality-gate.md`.
 
 ### 6. Humanize
 
@@ -109,13 +109,15 @@ Concluído quando o artefato está publicado com uma opção por variação, o `
 
 Preencha os `[campos]` com o dado real dele, mostre o preview final (o mesmo template com uma opção só) e salve o texto em `DADOS/drafts/<AAAA-MM-DD>-<tema-slug>.md` — o texto exato do preview, pronto para colar. Crie a pasta `DADOS/drafts/` se ela ainda não existir. O preview morre com a sessão; o arquivo é o que ele encontra amanhã.
 
-A **linha de contexto** no topo (antes do `---` que abre o texto) traz, nesta ordem: tema · ângulo · categoria de hook · empresa que inspirou · data · e a **origem de cada número** que aparece no texto (`voz.md`, catálogo `<slug>`, ou resposta do usuário em <data>). Número cuja origem você não sabe apontar não entra no post: vira `[número a confirmar]` e vocês resolvem juntos antes de salvar (o script reprova enquanto o campo estiver lá).
+O arquivo tem **formato fixo**, porque é dele que o script tira o texto do post: primeiro as **linhas de contexto** (`Tema:`, `Ângulo:`, `Hook:`, `Origem dos números:`), depois uma linha sozinha com `---`, e do `---` até o fim do arquivo **só o texto do post**, exatamente como ele vai colar. Nenhum comentário seu depois da cerca.
+
+As linhas de contexto trazem, nesta ordem: tema · ângulo · categoria de hook · empresa que inspirou · data · e a **origem de cada número** que aparece no texto (`voz.md`, catálogo `<slug>`, ou resposta do usuário em <data>). Número cuja origem você não sabe apontar não entra no post: vira `[número a confirmar]` e vocês resolvem juntos antes de salvar (o script reprova enquanto o campo estiver lá).
 
 Se a variação escolhida usa padrão diferente do que você anunciou no passo 1 (outro ângulo ou outra categoria de hook), **diga isso em uma frase ao salvar** — "você levou a história de cliente, não o padrão de pergunta da Cetro que eu tinha proposto". Não é erro, é registro.
 
-Antes de dar por pronto, rode `node scripts/checar-formato.js DADOS/drafts/<AAAA-MM-DD>-<tema-slug>.md --voz DADOS/voz.md` no arquivo salvo.
+Antes de dar por pronto, rode `node "<pasta desta skill>/scripts/checar-formato.js" "<DADOS>/drafts/<AAAA-MM-DD>-<tema-slug>.md" --voz "<DADOS>/voz.md"` no arquivo salvo. Aviso não impede salvar: `corpo_curto` no arquivo final é a pergunta "ficou curto — quer engordar ou vai assim?", e a resposta dele decide.
 
-Concluído quando o arquivo existe no disco, o script devolve `ok: true` nele, e a linha de contexto traz ângulo, categoria de hook e a origem de cada número.
+Concluído quando o arquivo existe no disco no formato acima, o script devolve `ok: true` nele, os avisos foram conversados, e as linhas de contexto trazem ângulo, categoria de hook e a origem de cada número.
 
 ### 9. Ajuste o que ele pedir
 
@@ -126,6 +128,8 @@ Concluído quando o preview republicado mostra o ajuste, o arquivo em `DADOS/dra
 ## Restrições de formato (LinkedIn)
 
 O que é **medido** — tamanho do hook antes do corte "ver mais", faixa de caracteres do corpo, markdown, link no corpo, parágrafo longo demais para o celular, palavra banida, travessão, campo pendente — está em `scripts/checar-formato.js`, que é onde os limites vivem. Rode-o (passos 5, 8 e 9) e use os números que ele devolve; não recalcule nem reescreva os limites em prosa.
+
+Sobre o tamanho do corpo, o que o script separa: ~1.200–1.600 caracteres performa bem, e acima de ~2.000 o engajamento cai. Ficar **abaixo** da faixa é aviso, não reprovação — post curto de propósito (Enquete) existe. Passar do topo da faixa reprova, e passar do teto o script marca à parte, porque é ali que o engajamento cai.
 
 O que **você julga**, porque o script não julga:
 

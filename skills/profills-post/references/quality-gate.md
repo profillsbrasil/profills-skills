@@ -9,15 +9,15 @@ Os nomes daqui (quality gate, Push/Shine, Expert Panel, ICP) são vocabulário i
 O resto deste arquivo é julgamento. Isto aqui é contagem, e contagem quem faz é o script:
 
 ```
-node scripts/checar-formato.js <arquivo-do-rascunho> [--voz <DADOS/voz.md>]
+node "<pasta desta skill>/scripts/checar-formato.js" "<arquivo>" --voz "<DADOS>/voz.md"
 ```
 
-Ele aceita o `.md` salvo em `drafts/` ou um `.txt` com o texto da variação, e devolve JSON. Os limites de cada checagem vêm no campo `limites` da própria saída — este arquivo não os repete, e você não os recita de cabeça.
+Ele aceita o `.md` salvo em `drafts/` (o texto do post é tudo que vem depois da primeira linha `---`) ou um `.txt` com o texto da variação, e devolve JSON. Os limites de cada checagem vêm no campo `limites` da própria saída — este arquivo não os repete, e você não os recita de cabeça.
 
 | Campo da saída | O que reprova |
 |---|---|
 | `hook_cabe` | hook estourou o corte "ver mais" |
-| `corpo_na_faixa` / `acima_de_2000` | corpo fora da faixa que performa |
+| `acima_de_2000` / corpo acima de `corpo_max` | corpo maior do que a faixa que performa |
 | `tem_markdown` | `**`, `#`, `- `, `[texto](url)` — o feed mostra literal |
 | `link_no_corpo` | link no texto em vez do comentário |
 | `paragrafo_longo` | bloco sem quebra, ilegível no celular |
@@ -26,6 +26,13 @@ Ele aceita o `.md` salvo em `drafts/` ou um `.txt` com o texto da variação, e 
 | `campos_pendentes` | `[campo]` não preenchido |
 
 **`ok: false` é ❌: a variação volta para revisão antes do painel de personas**, não depois. O campo `falhas` diz, em uma linha cada, o número medido e o limite — corrija por ali e rode de novo. Exit code: 0 = passou, 1 = reprovou, 2 = erro de uso/arquivo.
+
+O campo `avisos` é outra coisa: **não reprova nada**, é assunto para levar ao usuário.
+
+| Aviso | O que fazer |
+|---|---|
+| `corpo_curto` | corpo abaixo de `limites.corpo_min`. Pergunte ("ficou curto — quer engordar ou vai assim?") e siga a resposta dele. Molde de Enquete é curto por desenho. |
+| `voz_sem_palavras_banidas` | o `voz.md` passado não tem a seção **Palavras banidas**: nenhum termo foi lido, então o gate de banidas está **não medido**, não aprovado. Diga isso e ofereça a `profills-voz` para preencher a seção. |
 
 Duas coisas o script **não** faz e você faz na mão: o passe de **Isso não sou eu** do `voz.md` (é construção e tom, não palavra) e todo o julgamento das seções abaixo.
 

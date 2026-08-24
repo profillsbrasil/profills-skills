@@ -54,7 +54,7 @@ Mostre exatamente uma tabela, com **estas sete linhas, nesta ordem e com este te
 |---|---|---|
 | Plugin `profills-skills` | Traz as 6 skills: setup, voz, radar, navegador, garimpo, post | ✅/❌ |
 | humanize-pt-br | Tira as marcas de IA do texto final | ✅/❌ |
-| Node/npx | Motor que instala a humanize-pt-br | ✅/❌ |
+| Node/npx | Roda as contas das skills (radar, garimpo, post) e instala a humanize-pt-br | ✅/❌ |
 | Pasta de dados | Guarda empresas, catálogos e rascunhos | ✅/❌ |
 | Arquivo de voz | O que você vende, para quem e como você fala | ✅/❌ |
 | Extensão do Chrome | Deixa o Claude ler o LinkedIn no seu navegador | conferida na hora de coletar |
@@ -72,7 +72,7 @@ Nesta ordem, um item por vez:
   claude plugin install profills-skills@profills-skills
   ```
   Instalado quando `claude plugin list` volta a mostrar `profills-skills`. Se um dos comandos falhar, a causa está na tabela de sintomas no fim deste arquivo. Depois de instalar, avise: "pode ser preciso reabrir o Claude Code para as skills novas aparecerem" (não dá para confirmar isso ao vivo nesta sessão).
-- **Node/npx ❌**: a `humanize-pt-br` é instalada por `npx`, que vem junto com o Node.js. Pergunte com `AskUserQuestion`, duas opções — **"Instalar o Node agora"** (recomendada: é o que destrava a humanização; passo a passo por sistema em `references/instalacao.md`) ou **"Seguir sem"** (o resto do pipeline roda igual). Instalou: peça para abrir um terminal novo, refaça a checagem de `npx` e siga para o item seguinte. Seguiu sem: pule também a `humanize-pt-br` e diga em uma frase o que fica de fora.
+- **Node/npx ❌**: o Node.js é o motor dos scripts que a radar, a garimpo e a post rodam (índice, métricas, checagem de formato) e do `npx` que instala a `humanize-pt-br` — sem ele o pipeline não anda. Pergunte com `AskUserQuestion`, duas opções — **"Instalar o Node agora"** (recomendada: passo a passo por sistema em `references/instalacao.md`, ~3 min) ou **"Deixar para depois"**. Instalou: peça para abrir um terminal novo, refaça a checagem de `npx` e siga para o item seguinte. Deixou para depois: pule a `humanize-pt-br`, marque Node como pendente e diga em uma frase que radar, garimpo e post só vão funcionar depois de instalar — a única coisa que dá para fazer antes é o arquivo de voz.
 - **humanize-pt-br ❌** (com npx disponível): explique que isso traz a skill que tira as marcas de IA dos rascunhos.
   ```
   npx skills add othavi0/skills --skill humanize-pt-br -g -y -a claude-code

@@ -89,7 +89,7 @@
     },
     {
       "id": 6,
-      "prompt": "Quero o arquivo de voz, mas eu não tenho áudio nem mensagem nenhuma pra te mandar agora, tô no meio de uma feira. (Contexto: se você pedir pra ele gravar 1 minuto de áudio na hora, ele responde 'agora não dá, tá barulho demais aqui'. Ele conta por escrito, em uma linha: 'vendo máquina de envase e seladora pra fábrica de alimento, meu cliente é o gerente de produção'. Não dá número nenhum. Nas frases de teste ele rejeita 'robusta' e diz que o resto ficou bom.)",
+      "prompt": "Quero o arquivo de voz, mas eu não tenho áudio nem mensagem nenhuma pra te mandar agora, tô no meio de uma feira. (Contexto: se você pedir pra ele gravar 1 minuto de áudio na hora, ele responde 'agora não dá, tá barulho demais aqui'. Ele conta por escrito, em uma linha: 'vendo máquina de envase e seladora pra fábrica de alimento, meu cliente é o gerente de produção'. Não dá número nenhum. Nas frases de teste ele rejeita 'robusta' e diz que o resto ficou bom; quando perguntado direto se escreveria 'solução' e 'sinergia', responde 'não, nunca' para as duas; qualquer outra palavra perguntada ele aceita.)",
       "expected_output": "Branch Criar sem material: pede primeiro que ele grave o áudio de 1 minuto na hora e, só depois da recusa, segue com o que ele contou — avisando em texto que a voz sai inferida. Grava linkedin-data/voz.md com cada traço marcado como hipótese a confirmar, sem citação de material que não existe e sem número em Provas ([a confirmar]). Valida no passo 5 mostrando frases de teste específicas; como só uma rejeição sai espontânea, pergunta direto até ter 3 palavras banidas confirmadas, e grava as respostas (hipótese confirmada perde a marca). Fecha dizendo onde salvou, com uma sugestão só.",
       "files": [
         "evals/files/6"
@@ -100,7 +100,7 @@
         "No arquivo gravado, cada traço de voz aparece marcado como hipótese a confirmar; nenhum traço é apresentado como medido",
         "NEGATIVA: o arquivo não contém nenhuma citação entre aspas atribuída a áudio, WhatsApp ou post — nada de recibo inventado para material que não existe",
         "NEGATIVA: a seção Provas não traz número nenhum — fica [a confirmar], já que ele não deu nenhum",
-        "Valida mesmo assim: mostra frases de teste específicas e, como só 'robusta' foi rejeitada espontaneamente, pergunta direto até fechar 3 palavras banidas confirmadas, todas gravadas no arquivo com a data 2026-08-24",
+        "Valida mesmo assim: mostra frases de teste específicas e, como só 'robusta' foi rejeitada espontaneamente, pergunta direto e fecha exatamente as 3 palavras banidas que o contexto confirma (robusta, solução, sinergia), todas gravadas no arquivo com a data 2026-08-24",
         "A resposta final diz onde salvou e traz uma única sugestão de próximo passo"
       ]
     }
