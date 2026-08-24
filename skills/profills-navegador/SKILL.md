@@ -1,12 +1,11 @@
 ---
 name: profills-navegador
 description: >-
-  Use antes de qualquer ação de navegador via claude-in-chrome — pesquisar na
-  web, abrir um site, coletar posts — e antes da primeira tab de cada sessão.
-  Use também quando a tab abrir no computador errado ("abriu no outro PC"),
-  quando as tools mcp__claude-in-chrome__ não existirem ou não responderem,
-  ou numa máquina nova sem a extensão instalada. As skills profills-radar,
-  profills-garimpo e profills-post invocam esta antes de navegar.
+  Seleciona e prepara o navegador certo via claude-in-chrome antes da
+  primeira tab de cada sessão. Use antes de navegar (pesquisar na web,
+  abrir um site, coletar posts), quando a tab "abriu no outro PC", quando
+  as tools mcp__claude-in-chrome__ não existem ou não respondem, ou numa
+  máquina sem a extensão. A profills-garimpo invoca antes de coletar.
 metadata:
   version: 0.1.0
   author: othavio
@@ -15,46 +14,46 @@ metadata:
 
 # profills-navegador
 
-Garante que a navegação aconteça no **navegador certo, pronto**, antes de qualquer tab — o equivalente para navegador do que a dev-up é para dev server. O usuário final é o comercial: conduza pela mão, sem jargão.
+Garante que a navegação aconteça no **navegador certo, pronto**, antes de qualquer tab. O usuário final é o comercial: conduza pela mão, sem jargão.
 
 **O fato que muda tudo**: a extensão claude-in-chrome conecta **por conta Claude, não por máquina**. Todos os computadores do usuário com a extensão logada aparecem conectados ao mesmo tempo, e `tabs_create_mcp`/`navigate` **não recebem navegador como parâmetro** — a tab abre no navegador *selecionado como estado da sessão*. Sem selecionar explicitamente, ela abre num computador que o usuário não está olhando.
 
+**O cache da escolha**: `~/.config/profills-navegador/browser` guarda o último navegador que o usuário confirmou, em duas linhas — `deviceId=<id>` e `name=<nome do navegador>`. Gravar é `mkdir -p ~/.config/profills-navegador` e escrever as duas linhas. É escolha humana: desempata quando o sinal automático é ambíguo, e é oferecido em uma frase quando o sinal automático aponta para outro lugar — a correção "abriu no outro PC" custa um turno, e o anúncio existe para esse turno nunca vir.
+
 ## Fluxo
 
-1. **Carregue as tools numa chamada só** de ToolSearch: `list_connected_browsers`, `select_browser`, `switch_browser`, `tabs_context_mcp`, `tabs_create_mcp`, `navigate` (+ `read_page`/`get_page_text`/`computer` se a tarefa seguir daqui). Prefixo `mcp__claude-in-chrome__` não existe → extensão ausente nesta máquina: `references/instalacao.md`.
+1. **Carregue as tools numa chamada só** de ToolSearch, todas com o prefixo `mcp__claude-in-chrome__`: `list_connected_browsers`, `select_browser`, `switch_browser`, `tabs_context_mcp`, `tabs_create_mcp`, `navigate`, `read_page`, `get_page_text`, `find`, `computer`. Tools que não aparecem por nome, ou que aparecem e não respondem, são o estado **extensão ausente nesta máquina** → conduza `references/instalacao.md`.
+   *Concluído quando* as 10 tools respondem por nome, ou o roteiro de instalação começou com o usuário.
 
-2. **`list_connected_browsers`** — sempre, antes da primeira tab. Resolva o alvo nesta ordem, sem incomodar o usuário enquanto houver sinal confiável:
-   - **Exatamente um navegador `isLocal:true`** (o caso comum: sessão interativa, usuário sentado nesta máquina) → `select_browser` nele **automaticamente**, salve no cache e **anuncie**: "abrindo no navegador deste computador — se a página não aparecer aí, me avisa". Nada de pergunta.
-   - **Nenhum `isLocal`, cache válido** (`~/.config/profills-navegador/browser`, linhas `deviceId=...` e `name=...`, deviceId ainda na lista) → `select_browser` direto, anunciando qual.
-   - **Nenhum `isLocal`, sem cache** (lista vazia ou só PCs remotos) → o computador do usuário está sem a extensão. Explique e mande o link `https://chromewebstore.google.com/detail/claude/fcoeoabgfenejglbffodgkkbkcdhcgfn`, conduzindo por `references/instalacao.md`; se existirem remotos e ele preferir usar outro PC, caia no passo 3. Nunca escolha um remoto em silêncio.
-   - **Ambiguidade real** (2+ `isLocal`, ou o usuário disse que está em outro PC) → passo 3.
+2. **`list_connected_browsers`** — sempre, antes da primeira tab. Se o usuário acabou de dizer que a tab abriu no PC errado, vá direto ao passo 3: a correção dele vence cache e heurística. Fora isso, resolva o alvo nesta ordem, parando no primeiro caso que casar:
+   1. **Exatamente um navegador `isLocal:true`** (o caso comum: sessão interativa, usuário sentado nesta máquina) → `select_browser` nele e anuncie: "abrindo no navegador deste computador — se a página não aparecer aí, me avisa". Se o cache aponta para **outro** navegador que está na lista, a frase ganha a alternativa: "antes você escolheu o *PC escritório* — quer que eu use ele?". Grave o cache só depois que ele não trocou.
+   2. **Nenhum `isLocal`, cache válido** (o arquivo existe e o `deviceId` está na lista) → `select_browser` nele e anuncie: "estou usando o *PC escritório*, que você escolheu antes — quer trocar?".
+   3. **Cache órfão** (o `deviceId` sumiu da lista) → apague o arquivo, avise que o navegador salvo não está mais conectado e siga.
+   4. **Lista vazia, ou só PCs remotos e sem cache** — o computador do usuário está sem a extensão → conduza `references/instalacao.md`. Se ele preferir usar um dos PCs remotos, vá ao passo 3: escolher um remoto é decisão dele, dita em voz alta.
+   5. **Dois ou mais `isLocal`** → cache válido entre eles desempata; senão, passo 3.
 
-3. **Pergunta — só como exceção.** Nunca chega seca: explique antes o que vai acontecer e por quê (a pesquisa abre pela extensão do Claude; a conta tem a extensão em mais de um computador; você precisa saber em qual ele está). Depois a AskUserQuestion com uma opção por navegador (`name` + sistema, `isLocal` marcado como "máquina desta sessão") e a opção de escolher pelo próprio navegador — ela dispara `switch_browser`, que manda o pedido para **todos** os PCs: clicar **Connect** só no computador em que ele está, onde também dá para **nomear** o navegador ("PC escritório") — nomes acabam com a dúvida "Browser 1/2/3" de vez. Salve a escolha no cache.
+   *Concluído quando* `select_browser` retornou OK **e** o usuário ouviu por qual navegador — ou o passo 3 assumiu.
 
-   > A descrição da tool `list_connected_browsers` pede pergunta sempre que houver 2+ conectados. A seleção automática do `isLocal` é decisão documentada do dono desta skill (usuário leigo, fricção mínima) — aceitável porque o anúncio da seleção e a correção fácil são obrigatórios. Silencioso, nunca.
+3. **Pergunta — só como exceção.** Explique antes o que vai acontecer e por quê: a página abre pela extensão do Claude, a conta tem a extensão em mais de um computador, e você precisa saber em qual ele está. Depois `AskUserQuestion` com uma opção por navegador (`name` + sistema, o `isLocal` marcado como "máquina desta sessão") e sempre uma opção de socorro — "não sei / me ajuda a descobrir" — que dispara `switch_browser`: o pedido vai para **todos** os PCs e ele clica **Connect** só no computador que está usando, onde também dá para **nomear** o navegador ("PC escritório"). Nomes acabam com a dúvida "Browser 1/2/3" de vez. O `switch_browser` expira em 2 minutos sem clique: quando expirar, confirme que ele está de fato olhando o navegador e repita, ou volte à lista de opções. Grave a escolha no cache.
+
+   > A descrição da tool `list_connected_browsers` pede pergunta sempre que houver 2+ conectados. Resolver sozinho pelo `isLocal` e pelo cache é decisão documentada do dono desta skill (usuário leigo, fricção mínima) — aceitável porque toda seleção é anunciada e trocar custa uma frase.
+
+   *Concluído quando* o usuário escolheu, `select_browser`/`switch_browser` retornou OK e o cache guarda o `deviceId` novo.
 
 4. **Prontidão, não fé**: `tabs_context_mcp` sem `createIfEmpty` para ver o estado; crie **uma** tab própria com `tabs_create_mcp`; navegue; confirme que carregou lendo dado estruturado (`tabs_context_mcp`/`read_page`) — nunca por screenshot.
+   *Concluído quando* o dado estruturado lista a tab que você criou com a URL carregada — a URL alvo quando o pedido tem uma, `about:blank` quando outra skill vai navegar em seguida.
 
-5. **Handoff**: declare ao usuário (e à skill que invocou) o navegador selecionado pelo nome e a tab pronta pelo id. Pedido avulso de pesquisa ("pesquisa X") → continue a pesquisa nessa tab.
+5. **Handoff** — declare, campo a campo: o navegador (`name` e `deviceId`), o `tabId` da tab pronta, e as tools já carregadas, que a skill seguinte usa sem recarregar: `tabs_context_mcp`, `tabs_create_mcp`, `navigate`, `read_page`, `get_page_text`, `find`, `computer`.
+   *Concluído quando* os três campos estão declarados. Invocada por outra skill, devolva o controle sem sugestão própria ("navegador pronto, voltando ao que você pediu"); chamada direto pelo usuário, feche com uma única sugestão de próximo passo.
 
 ## Disciplina de tabs
 
-A skill só mexe nas tabs que **ela** criou, identificadas por id exato — nunca fecha tab alheia, nunca "parece a minha". Não feche a última tab do grupo da sessão: isso derruba o grupo inteiro (deixe `about:blank` se necessário).
+Mexa apenas nas tabs que **esta skill** criou nesta sessão, identificadas pelo id exato. Mantenha ao menos uma tab viva no grupo da sessão — fechar a última derruba o grupo inteiro (deixe uma `about:blank` no lugar).
 
 ## Fatos contra o erro clássico
 
 | Suposição tentadora | Realidade |
 |---|---|
-| "A tab abre no PC onde esta sessão roda" | Abre no navegador **selecionado na sessão** — que pode ser outro PC da conta. |
-| "`list_connected_browsers` lista perfis da mesma máquina" | Lista navegadores de **todas as máquinas** da conta (deviceId, nome, SO, isLocal). |
-| "`isLocal:true` é garantia" | É o melhor sinal **em sessão interativa**. Em sessão remota/background diz só onde o processo roda — por isso o anúncio da seleção é obrigatório. |
-| "`connectedAt` indica o navegador ativo" | Instável — reconexões (sleep/reload/rede) mudam o timestamp sem relação com uso. |
-| "A seleção persiste entre sessões" | Não conte com isso. Re-selecione a cada sessão (cache primeiro). |
-
-## Erros nomeados
-
-| Sintoma | O que é | Ação |
-|---|---|---|
-| Tools `mcp__claude-in-chrome__*` ausentes, ou lista de navegadores vazia | Extensão não instalada/conectada | `references/instalacao.md` |
-| Usuário: "abriu no outro computador" | Navegador errado selecionado — erro de **seleção**, não de sessão/authwall | Refazer passo 3, atualizar cache |
-| `switch_browser` expirou (2 min sem clique) | Ninguém clicou Connect | Confirmar que o usuário está vendo o navegador; repetir ou cair na lista |
+| "`isLocal:true` é garantia" | É o melhor sinal **em sessão interativa**. Em sessão remota/background diz só onde o processo roda — por isso anunciar a seleção é obrigatório. |
+| "`connectedAt` indica o navegador ativo" | Instável — reconexões (sleep, reload, queda de rede) mudam o timestamp sem relação com uso. |
+| "A seleção persiste entre sessões" | A seleção é estado da sessão e morre com ela; o que atravessa é o cache em disco. |

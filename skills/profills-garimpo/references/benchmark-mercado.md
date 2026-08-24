@@ -6,6 +6,8 @@ Dados de mercado adaptados (traduzidos) do repositório MIT [coreyhaines31/marke
 
 ## Taxa de engajamento normalizada
 
+**Esta é a fonte única da fórmula no pipeline** — o `SKILL.md`, o `perfil-template.md`, o `dashboard.md` e o `schema-post.md` citam "taxa normalizada (`benchmark-mercado.md`)" e não repetem a conta.
+
 Likes brutos entre empresas de audiências diferentes não se comparam — 13 likes numa página de 30k seguidores valem menos que 2 likes numa de 1,9k. A métrica de comparação entre empresas é sempre a taxa:
 
 ```
@@ -31,9 +33,10 @@ taxa = (likes + comentários + reposts) ÷ seguidores × 100    (seguidores: met
 ## Regras de algoritmo (para contextualizar, não julgar)
 
 - A primeira hora concentra o alcance; comentário vale mais que reação, que vale mais que clique.
-- Link no corpo do post derruba alcance — quando visto num post, vale citar no perfil da empresa (a `profills-post` sugere link no comentário).
 - Documento/carrossel tende a ter alcance forte.
-- Hook até ~210 caracteres, antes do corte "ver mais" — relatado que 60-80% dos leitores decidem ali se clicam. Post entre 1.200-1.600 caracteres performa bem; acima de ~2.000 cai o engajamento (queda relatada na casa de ~35%).
+- É relatado que 60-80% dos leitores decidem no corte do "ver mais" se clicam — é o que dá sentido a medir `hook_cabe_no_corte` (o limite em caracteres vive em `../profills-post/SKILL.md`, "Restrições de formato").
+
+As restrições de **escrita** de post (tamanho de corpo, link no comentário, markdown) vivem na `profills-post`, que é quem escreve. Aqui ficam só os números de mercado contra os quais o catálogo compara.
 
 ## Como usar no `_summary.md`
 

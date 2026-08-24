@@ -3,20 +3,26 @@
   "evals": [
     {
       "id": 1,
-      "prompt": "Gera uns posts sobre embalagens sustentáveis no estilo que a Cetro Máquinas usa.",
-      "expected_output": "Lê o catálogo da Cetro (hooks/formato/ângulos que engajaram) + voz.md (voz). Coleta a matéria-prima antes de gerar: 1 número real, 1 insight contra-intuitivo, 1 mecanismo, a dor do ICP — perguntando o que faltar, sem inventar. Gera 3-5 variações, uma por ângulo distinto E com hooks de mecanismos diferentes (≥1 intelectual, 1 de cena, 1 direto ao leitor), na voz do usuário — não cópia. Passa pelo quality gate (So what? + analgésico/vitamina + palavras banidas + Expert Panel ≥8), encadeia humanize-pt-br, mostra o comparador visual e salva o escolhido em DADOS/drafts/.",
+      "prompt": "Gera uns posts sobre embalagens sustentáveis no estilo que a Cetro Máquinas usa. (Estado: DADOS/catalog/cetromaquinas.md e DADOS/catalog/raw/cetromaquinas/2026-08-20/posts.json existem; DADOS/voz.md existe; a seção '## Do Not Copy' de DADOS/refs/cetromaquinas.md ainda está com o comentário de placeholder.)",
+      "expected_output": "- Lê DADOS/catalog/cetromaquinas.md, o posts.json da coleta e DADOS/voz.md antes de gerar.\n- Trata o '## Do Not Copy' em placeholder como pergunta: faz uma AskUserQuestion com opções concretas tiradas dos posts da Cetro e grava a resposta em DADOS/refs/cetromaquinas.md antes de gerar.\n- Coleta os quatro elementos de matéria-prima (número real, insight contra-intuitivo, mecanismo, dor do ICP), perguntando o que faltar em vez de inventar.\n- Entrega 3-5 variações, cada uma com um ângulo distinto da tabela de ângulos e uma família de hook distinta (intelectual / de cena / direto ao leitor).\n- Passa cada rascunho pelo crivo de quality-gate.md (corte: todas as notas ≥7 e média ≥8) e depois pela skill humanize-pt-br.\n- Publica o comparador a partir de assets/preview-template.html, pergunta a escolha com AskUserQuestion e salva o escolhido em DADOS/drafts/<AAAA-MM-DD>-<tema-slug>.md.",
       "files": []
     },
     {
       "id": 2,
-      "prompt": "Escreve um post inspirado no que a Cetro postou sobre o mercado de gummies.",
-      "expected_output": "Puxa o post-referência específico do posts.json, reusa o PADRÃO (ângulo trend, hook de pergunta) sobre o tema do usuário na voz dele, respeita o Do Not Copy do dossiê, evita hooks aposentados, fecha com CTA da taxonomia (verbo nomeado), humaniza e apresenta as opções.",
+      "prompt": "Escreve um post inspirado no que a Cetro postou sobre o mercado de gummies. (Estado: o posts.json da Cetro contém esse post com angulo 'trend' e hook_categoria 'question'; DADOS/refs/cetromaquinas.md já traz em '## Do Not Copy': evitar o tom institucional; DADOS/voz.md existe.)",
+      "expected_output": "- Localiza o post-referência no posts.json e nomeia o padrão que vai reusar (ângulo trend + hook question), escrevendo texto novo sobre o tema do usuário.\n- Respeita o Do Not Copy já preenchido: nenhuma variação usa o tom institucional, e não faz nova pergunta sobre isso.\n- Nenhum hook cai na lista de aposentados de moldes.md.\n- Fecha com um dos 4 CTAs de moldes.md, obedecendo a regra do verbo nomeado e pedindo uma ação só.\n- Passa pelo crivo, encadeia humanize-pt-br, publica o preview e salva o escolhido em DADOS/drafts/.",
       "files": []
     },
     {
       "id": 3,
-      "prompt": "Preciso de ideias de post sobre automação industrial pro meu LinkedIn.",
-      "expected_output": "Tema sem empresa de referência: se não há catálogo, sugere rodar profills-garimpo ou trabalha só com o tema; se falta voz.md, invoca a skill profills-voz para montar o arquivo de voz (ou, se o usuário não puder agora, pergunta o essencial via AskUserQuestion e oferece a skill para depois). Gera variações por ângulo, humaniza, e compara visualmente.",
+      "prompt": "Preciso de ideias de post sobre automação industrial pro meu LinkedIn. (Estado: DADOS existe, mas DADOS/catalog/ está vazio e DADOS/voz.md não existe.)",
+      "expected_output": "- Invoca a skill profills-voz por causa do voz.md ausente; se o usuário não puder agora, pergunta o essencial (tom, público, o que vende) com AskUserQuestion e oferece a skill para depois.\n- Sem catálogo: diz isso em uma frase, oferece rodar a profills-garimpo e segue só com o tema em vez de travar.\n- Coleta a matéria-prima; se o usuário não tem número real, usa a rota de escape ([número a confirmar] no rascunho e ângulo 'dado' fora das variações) em vez de inventar número.\n- Entrega 3-5 variações por ângulo distinto, passa pelo crivo, encadeia humanize-pt-br, publica o comparador e salva o escolhido em DADOS/drafts/.",
+      "files": []
+    },
+    {
+      "id": 4,
+      "prompt": "Transforma o catálogo da Skymsen em posts. (Estado: DADOS/catalog/skymsen.md existe com a coleta da semana; DADOS/voz.md existe; DADOS/drafts/ ainda não existe.)",
+      "expected_output": "- Sem tema dado, lê DADOS/catalog/skymsen.md e oferece 3-4 temas que engajaram com AskUserQuestion, com a recomendação e o porquê, em vez de escolher sozinho.\n- Fixado o tema, segue o fluxo: três insumos, matéria-prima, 3-5 variações com ângulo e família de hook distintos, crivo, humanize-pt-br, comparador.\n- Cria a pasta DADOS/drafts/ antes de salvar e grava DADOS/drafts/<AAAA-MM-DD>-<tema-slug>.md com o texto exato do preview, sem [campos] pendentes.",
       "files": []
     }
   ]

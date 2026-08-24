@@ -20,16 +20,28 @@ Os princípios operacionais de cada skill (medido vs inferido, inspirar-não-cop
 
 `profills-radar` → `profills-garimpo` → `profills-post`. As skills não se chamam por API — **acoplam-se por arquivos**, todos dentro de `DADOS` (ver regra em Invariantes). Mudar nome/formato de um destes quebra a skill seguinte:
 
-- `DADOS/selection.md` — radar → garimpo. Efêmero (gitignored), sobrescrito a cada run. Garimpo sem seleção invoca a radar, nunca pede lista direto ao usuário.
-- `DADOS/refs/INDEX.md` + `refs/<slug>.md` — índice resume e aponta, dossiê guarda o detalhe (nunca duplicar entre os dois). A seção `## Do Not Copy` do dossiê é lida pela **profills-post**.
-- `DADOS/catalog/raw/<slug>/<AAAA-MM-DD>/posts.json` + `meta.json` — o dado estruturado primário e o contexto da página (seguidores = denominador da taxa de engajamento normalizada). Schema v2 (2026-08) em `profills-garimpo/references/schema-post.md`. Perfil, summary e dashboard nascem dele.
+- `DADOS/selection.md` — radar → garimpo. Efêmero (gitignored), sobrescrito a cada run. Cada linha leva nome, slug e **id numérico** (`—` se não resolvido) — o id é o fallback de slug da garimpo. Garimpo sem seleção invoca a radar, nunca pede lista direto ao usuário.
+- `DADOS/refs/INDEX.md` + `refs/<slug>.md` — índice resume e aponta, dossiê guarda o detalhe (nunca duplicar entre os dois). A **radar** é dona do formato e cria o índice quando não existe; a linha leva `id <numérico ou —>` logo após o slug (é de lá que a seleção copia o id); a **garimpo** escreve só o campo `catálogo AAAA-MM-DD` da linha ao fim de cada coleta, e só para empresa com `status: ok`. A seção `## Do Not Copy` do dossiê é perguntada pela **garimpo** ao fim do catálogo e lida pela **profills-post** (vazio = nunca perguntado → a post pergunta).
+- `DADOS/catalog/raw/<slug>/<AAAA-MM-DD>/posts.json` + `meta.json` — o dado estruturado primário e o contexto da página (seguidores = denominador da taxa de engajamento normalizada; `status` ∈ `ok|sem_posts|pagina_nao_gerenciada|erro_navegacao` — `STATUS.txt` está aposentado). Schema v2 (2026-08) em `profills-garimpo/references/schema-post.md`. Perfil, summary e dashboard nascem dele.
 - `DADOS/catalog/<slug>.md` (template `perfil-template.md`) — o perfil por empresa; é isto (+ o `posts.json` bruto) que a **profills-post** consome. `_summary.md` é o comparativo para o humano/dashboard — a profills-post não o lê.
 - `DADOS/voz.md` — a voz do usuário, criada e mantida pela skill **profills-voz** (template em `profills-voz/assets/voz-template.md`). **Ainda não existe** até a primeira run; a profills-post invoca a skill quando não o encontra. As seções `Palavras banidas` e `Isso não sou eu` são checadas pelo quality gate da profills-post; `Dores do ICP` alimenta o teste analgésico/vitamina.
 - `DADOS/drafts/<AAAA-MM-DD>-<tema-slug>.md` — saída persistida da profills-post: o texto final aprovado, pronto para colar.
 
+**Quem invoca quem** (fonte única — a description de uma skill só cita invocação que existe aqui):
+
+| Skill | Invoca | Quando |
+|---|---|---|
+| profills-garimpo | profills-radar | `selection.md` ausente ou vazio |
+| profills-garimpo | profills-navegador | antes da primeira empresa |
+| profills-post | profills-voz | `voz.md` ausente |
+| profills-post | humanize-pt-br | passo de humanização |
+| radar, garimpo, post, voz | profills-setup | `DADOS` não existe |
+
+Ninguém mais invoca ninguém: a garimpo segue neutra sem `voz.md`; radar e post não navegam. Skill invocada por outra devolve o controle sem sugestão própria; chamada pelo usuário termina com **uma** sugestão.
+
 ## Invariantes que atravessam arquivos
 
-- **Pasta de dados (`DADOS`)**: se o diretório atual está num repo git com `linkedin-data/` na raiz (`git rev-parse --show-toplevel`), `DADOS` é essa pasta; senão é `~/Profills LinkedIn/`. Se nenhuma das duas existe, invoque a skill `profills-setup` — ela cria a pasta e confere o resto da instalação.
+- **Pasta de dados (`DADOS`)** — dona: `profills-setup/SKILL.md`; as outras 4 skills carregam a cópia **literal** (o plugin roda onde este arquivo não existe) e a igualdade se confere com `grep -h "^\*\*Pasta de dados" skills/*/SKILL.md | sort -u | wc -l` (tem de dar 1): se o diretório atual está num repo git com `linkedin-data/` na raiz (`git rev-parse --show-toplevel`), `DADOS` é essa pasta; senão é `~/Profills LinkedIn/`. Se nenhuma das duas existe, invoque a skill `profills-setup` — ela cria a pasta e confere o resto da instalação.
 - **Taxonomias fechadas** (`profills-garimpo/references/taxonomias.md`) — valores fixos para formato/hook/ângulo/gatilho, compartilhados por schema, perfis, dashboard e moldes da profills-post. Mudar um valor quebra a comparabilidade com todos os `posts.json` históricos; se precisar, migrar o histórico junto.
 - **Não propor scraper/API/Firecrawl como "melhoria"** da coleta. O navegador real logado é decisão fundamentada (`profills-garimpo/references/compliance.md` + `research/`), não limitação técnica.
 - **Fatos de navegação validados ao vivo** (filtro por `data-urn`, ordenação Populares→Recentes, parser de data relativa) vivem só em `profills-garimpo/references/navegacao.md`. Quando a UI do LinkedIn mudar, atualizar **lá** — não rederivar nem criar segunda cópia.
@@ -50,7 +62,8 @@ Os princípios operacionais de cada skill (medido vs inferido, inspirar-não-cop
 
 - **2026-08-21**: repo virou plugin instalável (`.claude-plugin/plugin.json` + `marketplace.json`, source `./`); `.agents/skills/` migrou para `skills/` (fonte canônica) e `.agents/` foi removido do repo — setup é só Claude Code. Nasceu a skill `profills-setup` (instala/confere/atualiza o plugin, instala a `humanize-pt-br`, cria e confere `DADOS`). A pasta de dados fora do repo passou a ser `~/Profills LinkedIn/` (dentro do repo continua `linkedin-data/`) via a regra `DADOS` acima. **Não instalar o plugin dentro deste repo** — os symlinks de `.claude/skills/` já servem as skills localmente; instalar por cima duplicaria tudo.
 - Git: histórico de 6 commits (inicial, pipeline completo, renomeio para `profills-*`, skill `profills-navegador` — os dois últimos via PR mergeado), árvore sincronizada com `profillsbrasil/profills-skills`. O `.gitignore` da raiz ignora só runtime do harness (`.claude/scheduled_tasks.lock`, `settings.local.json`) — os symlinks de `.claude/skills/*` **são** versionados. O de `linkedin-data/` ignora screenshots/imagens brutas e `selection.md` (efêmero), versionando `refs/`, `catalog/*.md`, `catalog/raw/**/*.json`, `drafts/` e `voz.md`.
-- Schema reconciliado em 2026-08 (**v2**): `schema-post.md` agora bate com os `posts.json` reais (`hashtags`, `link_externo`, `destaque_semana`…; `outlier` só em janela ampliada). As coletas de **2026-07-14 não têm `meta.json`** — taxa de engajamento normalizada só existe de agosto em diante.
+- Schema reconciliado em 2026-08 (**v2**): `schema-post.md` agora bate com os `posts.json` reais (`hashtags`, `link_externo`, `destaque_semana`…; `outlier` só em janela ampliada). As coletas de **2026-07-14 não têm `meta.json` com seguidores** (as duas sem posts ganharam um `meta.json` só de `status`/`nota` em 2026-08-24, migrado do `STATUS.txt`) — taxa de engajamento normalizada só existe de agosto em diante.
 - **"Scan rápido" vs "modo profundo" foi aposentado em 2026-08** — o conceito nunca teve definição e duplicava a distinção real, **janela padrão (semanal) vs. ampliada** (formalizada no schema v2: `destaque_semana` vs `outlier`). Não reintroduzir os termos antigos.
 - Smoke test de 2026-07-14 gerou `_summary.md` e os `raw/`, mas **os perfis por empresa (`catalog/<slug>.md`) nunca foram gerados** — o passo 5 da profills-garimpo ainda não tem instância real.
-- **`## Do Not Copy` está vazio (placeholder) em todos os 6 dossiês.** A profills-post depende dessa seção; silêncio ali hoje significa "nunca perguntado ao usuário", não "nada a evitar".
+- **`## Do Not Copy` está vazio (placeholder) em todos os 6 dossiês** — nunca foi perguntado. Desde 2026-08-24 a garimpo pergunta ao fim do catálogo e a post pergunta quando encontra vazio; os 6 dossiês só se preenchem na próxima coleta.
+- **2026-08-24**: auditoria das 6 skills (writing-for-agents + doc oficial + pesquisa da comunidade) e refatoração: descriptions só com gatilhos (~300 chars), tabela "quem invoca quem" acima como fonte única, `id` na seleção, `status` no `meta.json`, fontes únicas para parser de data (`navegacao.md`), taxonomias (`taxonomias.md`, slugs) e taxa de engajamento (`benchmark-mercado.md`). Frontmatter fica só com `name/description/metadata` (padrão aberto agentskills.io — `metadata` é campo oficial, não lixo).

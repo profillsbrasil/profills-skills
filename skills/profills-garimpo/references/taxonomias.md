@@ -6,18 +6,20 @@ Adaptado (traduzido) do repositório MIT [coreyhaines31/marketingskills](https:/
 
 ## Formato do post
 
-| Valor | O que é |
-|---|---|
-| `texto` | só texto |
-| `imagem` | texto + 1 imagem |
-| `carrossel` | documento/PDF de múltiplos slides (classifique também o `framework_carrossel`) |
-| `video` | vídeo nativo |
-| `documento` | anexo de documento não-carrossel |
-| `poll` | enquete |
-| `artigo` | link para artigo/newsletter do LinkedIn |
-| `newsletter` | edição de newsletter nativa da página (assinatura em série) |
-| `evento` | criação/divulgação de evento do LinkedIn |
-| `reshare` | repost de outro post (marque de quem, se relevante) |
+A coluna **Como reconhecer** separa o que o JS de `navegacao.md` já devolve em `formato` do que exige você olhar o post — sem essa checagem manual, todo `poll`, `newsletter`, `evento`, `documento` e `reshare` cai em `texto` ou `imagem`.
+
+| Valor | O que é | Como reconhecer |
+|---|---|---|
+| `texto` | só texto | JS |
+| `imagem` | texto + 1 imagem | JS |
+| `carrossel` | documento/PDF de múltiplos slides (classifique também o `framework_carrossel`) | JS |
+| `video` | vídeo nativo | JS |
+| `artigo` | link para artigo/newsletter do LinkedIn | JS |
+| `documento` | anexo de documento não-carrossel | manual: card de arquivo com uma página só, sem navegação entre slides |
+| `poll` | enquete | manual: bloco de opções com barra de porcentagem e "N votos" |
+| `newsletter` | edição de newsletter nativa da página (assinatura em série) | manual: o card de artigo traz nome da newsletter + "Edição N" ou botão Assinar |
+| `evento` | criação/divulgação de evento do LinkedIn | manual: card com data/hora e botão de participação |
+| `reshare` | repost de outro post (marque de quem, se relevante) | manual: post embutido com o autor original dentro do card |
 
 ## Framework de carrossel
 

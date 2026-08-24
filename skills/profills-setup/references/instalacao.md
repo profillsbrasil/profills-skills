@@ -18,12 +18,12 @@ Depois: abrir um terminal novo, rodar `claude` e fazer login pelo navegador. Fun
 O repositório `profillsbrasil/profills-skills` é público — não há credencial a configurar. Causas reais, na ordem de probabilidade:
 
 1. **Sem internet** ou proxy corporativo bloqueando `github.com` — testar abrindo github.com no navegador.
-2. **Comando na forma curta** `marketplace add profillsbrasil/profills-skills`: essa forma clona por SSH (`git@github.com:`) e falha com `Permission denied (publickey)` em máquina sem chave SSH — o caso de todo PC de comercial. Use sempre a URL completa, que clona por HTTPS: `claude plugin marketplace add https://github.com/profillsbrasil/profills-skills` (testado: clona sem credencial).
+2. **Comando na forma curta** `marketplace add profillsbrasil/profills-skills`: essa forma clona por SSH (`git@github.com:`) e falha com `Permission denied (publickey)` em máquina sem chave SSH — o caso de todo PC de comercial. Use sempre a forma com URL completa do passo 3 do `SKILL.md`, que clona por HTTPS (testado: clona sem credencial).
 3. **O repo ficou privado** (decisão futura): aí o Git precisa de credencial. Caminho mais simples para não-dev: instalar o GitHub CLI (cli.github.com), rodar `gh auth login` (login pelo navegador) e repetir o comando.
 
 ## Node.js ausente (para `humanize-pt-br`)
 
-`npx` vem com Node.js — sem ele, o comando de instalação da `humanize-pt-br` não roda. `humanize-pt-br` **não é pré-requisito das outras peças**: siga o resto do fluxo mesmo sem Node, e volte a esta peça depois.
+Passo a passo para quando o usuário escolher instalar o Node:
 
 - Link: nodejs.org → baixar a versão **LTS** (não a "Current").
 - Windows e Mac: instalador gráfico, next-next-finish.
@@ -32,9 +32,9 @@ O repositório `profillsbrasil/profills-skills` é público — não há credenc
 
 ## unslop (opcional, só se o usuário pedir por nome)
 
-Ofereça só a pedido — é redundante com `humanize-pt-br` e as duas têm uma regra em conflito conhecida: `unslop` traz "must always apply" e uma regra própria sobre travessão, que pode brigar com o que `humanize-pt-br` decide. Se o usuário pedir mesmo assim:
+O conflito que a pergunta do passo 3 põe na mesa: `unslop` traz "must always apply" e uma regra própria sobre travessão, que pode brigar com o que a `humanize-pt-br` decide. Quando o usuário escolhe instalar assim mesmo:
 
-1. Avise o conflito em uma frase: "essa skill pode brigar com a humanize-pt-br em alguns casos (regra de travessão) — se notar o texto final estranho, é o primeiro lugar pra olhar".
+1. Registre o conflito em uma frase: "essa skill pode brigar com a humanize-pt-br em alguns casos (regra de travessão) — se notar o texto final estranho, é o primeiro lugar pra olhar".
 2. Não há fonte oficial única — duas versões públicas existem, ambas instaláveis pelo mesmo padrão de comando da `humanize-pt-br`:
    ```
    npx skills add cursor/plugins --skill unslop -g -y -a claude-code

@@ -5,7 +5,7 @@ Pipeline de conteúdo para o LinkedIn da Profills: acompanha o que as empresas d
 ## Pré-requisitos
 
 - [Claude Code](https://claude.com/claude-code) instalado e com login feito.
-- Google Chrome com a extensão **Claude para Chrome** instalada — é o navegador que a coleta usa para ler os posts do LinkedIn.
+- Google Chrome ou um derivado (Brave, Edge, Arc, Vivaldi, Opera) com a extensão **Claude para Chrome** instalada — é o navegador que a coleta usa para ler os posts do LinkedIn.
 
 ## Instalar
 
@@ -33,7 +33,7 @@ claude plugin update profills-skills@profills-skills
 | `profills-garimpo` | Cataloga o que essas empresas postam e monta um dashboard comparando tudo. |
 | `profills-post` | Gera rascunhos de post em português, no seu estilo, a partir do catálogo. |
 | `profills-voz` | Cria e mantém o arquivo com o que você vende, para quem, e como você fala de verdade. |
-| `profills-navegador` | Garante que o Chrome com a extensão certa está pronto antes de qualquer coleta. |
+| `profills-navegador` | Garante que o navegador certo, com a extensão, está pronto antes de qualquer coleta. |
 | `profills-setup` | Instala, confere e atualiza tudo — e cria a pasta de dados na primeira vez. |
 
 Para editar as skills, clone o repo; `.claude/skills` já aponta para `skills/`.
