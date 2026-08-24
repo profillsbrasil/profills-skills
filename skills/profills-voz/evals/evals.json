@@ -5,25 +5,63 @@
       "id": 1,
       "prompt": "Quero criar meu arquivo de voz pros posts saírem com a minha cara. (Contexto: o diretório atual é um clone do repo profills-skills, com linkedin-data/ na raiz, então DADOS é linkedin-data/; linkedin-data/voz.md não existe; o usuário chamou a skill direto.)",
       "expected_output": "Confere que voz.md não existe e segue a branch Criar. Explica em uma frase o que é o arquivo, pede o material mais bruto que ele tiver com AskUserQuestion (áudio de 1 minuto como caminho mais fácil), extrai marcadores com trecho-recibo, completa a entrevista curta (identidade, provas com número ou [a confirmar], um AskUserQuestion por eixo de tom com duas frases-exemplo concretas e recomendação, tom por contexto e linguagem do cliente). Grava linkedin-data/voz.md pelo template, com traços 'X, mas nunca Y' e sem placeholder sobrando, e só então valida mostrando 2-3 frases de teste com perguntas específicas ('você usaria a palavra robusta?'), gravando as rejeições em Palavras banidas e Isso não sou eu até ter ≥3 banidas confirmadas. Fecha dizendo onde salvou e com UMA sugestão só (/profills-post).",
-      "files": []
+      "files": [],
+      "expectations": [
+        "Confere no disco que DADOS=linkedin-data/ e que voz.md não existe, e segue explicitamente a branch Criar antes de qualquer pergunta",
+        "Pede o material mais bruto com AskUserQuestion, com o áudio de ~1 minuto como opção recomendada e justificada, e explica em uma frase o que é o arquivo antes de perguntar",
+        "Extrai os marcadores de voz do material com trecho-recibo por marcador, deixando vazio/hipótese o que o material não mostra em vez de inventar",
+        "Faz um AskUserQuestion por eixo de tom (os 4 eixos), cada um com duas frases-exemplo concretas e uma recomendação justificada",
+        "Grava linkedin-data/voz.md pelo template, com todas as seções (Identidade, Voz, Tom por contexto, Linguagem do cliente, Provas, Palavras banidas, Isso não sou eu) preenchidas e nenhum placeholder <...> sobrando",
+        "Os traços de voz no arquivo estão no formato 'X, mas nunca Y' e cada um traz um trecho literal do material como recibo",
+        "Valida depois de escrever, mostrando 2-3 frases de teste com perguntas específicas (não 'ficou bom?'), e grava as rejeições até o arquivo ter ≥3 entradas confirmadas em Palavras banidas e ≥1 em Isso não sou eu",
+        "Fecha dizendo onde salvou o arquivo e oferecendo UMA única sugestão de próximo passo (/profills-post)"
+      ]
     },
     {
       "id": 2,
       "prompt": "(A profills-post invocou a profills-voz no meio da geração de um rascunho sobre manutenção preventiva, porque não achou o arquivo de voz. Contexto: DADOS é ~/Profills LinkedIn/ e existe; ~/Profills LinkedIn/voz.md não existe; a profills-post já perguntou ao usuário o tom, o público e o que ele vende antes de invocar.)",
       "expected_output": "Segue a branch Criar aproveitando tom, público e produto já respondidos à profills-post — pula essas partes da entrevista em vez de repetir as perguntas — e pede só o material bruto que falta. Grava ~/Profills LinkedIn/voz.md pelo template e valida mostrando frases de teste. No fim diz em uma frase onde salvou e DEVOLVE O CONTROLE para a profills-post continuar o rascunho de manutenção preventiva, sem sugestão própria de próximo passo.",
-      "files": []
+      "files": [],
+      "expectations": [
+        "Verifica que voz.md não existe em DADOS e segue explicitamente a branch Criar",
+        "Não repete as perguntas de tom, público e o que vende — declara que aproveita as respostas já dadas à profills-post e pula essas partes da entrevista",
+        "Pede ao usuário o material bruto que falta, oferecendo as opções em ordem de força do sinal (áudio de 1 minuto como recomendada)",
+        "Grava o arquivo de voz em DADOS seguindo o template: todas as seções do template presentes e nenhum <placeholder> sobrando",
+        "Os três traços de voz estão no formato \"X, mas nunca Y\", cada um com trecho-recibo do material",
+        "As quatro linhas da tabela Tom por contexto estão preenchidas com fala real (nenhuma vazia ou marcada [a confirmar])",
+        "Valida mostrando frases de teste concretas, julgadas uma a uma, e as rejeições aparecem gravadas no arquivo em Palavras banidas e Isso não sou eu",
+        "A resposta final é uma frase que diz onde salvou e devolve o controle à profills-post para continuar o rascunho de manutenção preventiva, sem sugerir próximo passo próprio"
+      ]
     },
     {
       "id": 3,
       "prompt": "Adiciona no meu arquivo de voz que a gente fechou o cliente número 50. (Contexto: DADOS/voz.md já existe, com a linha '- 40 clientes ativos desde 2023' na seção Provas e cabeçalho 'Montado em 2026-08-04'.)",
       "expected_output": "Branch Atualizar: edita só a seção Provas, preservando o resto do arquivo. A prova antiga fica na mesma linha com a data, no formato do template ('~~40 clientes ativos desde 2023~~ → 50 clientes ativos (atualizado <data de hoje>)'), em vez de sumir. Atualiza o cabeçalho com 'atualizado em <data de hoje>', grava o arquivo e mostra ao usuário o antes/depois da linha mexida.",
-      "files": []
+      "files": [],
+      "expectations": [
+        "O arquivo DADOS/voz.md foi efetivamente gravado no disco com a atualização (não só afirmada no transcript)",
+        "A prova antiga não sumiu: ficou na mesma linha, riscada, com a data, no formato do template (~~40 clientes ativos desde 2023~~ → 50 clientes ativos (atualizado <data de hoje>))",
+        "A atualização foi feita na linha existente da seção Provas, sem criar item novo duplicado para os 50 clientes",
+        "O cabeçalho do arquivo registra a data de hoje com 'atualizado em 2026-08-24'",
+        "Só a seção Provas foi mexida: as demais seções do template (Identidade, Voz, Tom por contexto, Linguagem do cliente, Palavras banidas, Isso não sou eu) seguem presentes e preenchidas, sem placeholders <...> do template",
+        "A resposta final ao usuário mostra o antes E o depois da linha mexida como dois estados distinguíveis"
+      ]
     },
     {
       "id": 4,
       "prompt": "Esse rascunho tá bom mas eu nunca falaria 'solução robusta', não sou eu. (Contexto: DADOS/voz.md existe, com Palavras banidas e Isso não sou eu já preenchidas por uma validação anterior.)",
       "expected_output": "Branch Calibrar: pergunta qual palavra ou frase exatamente doeu, acrescenta 'solução robusta' em Palavras banidas com a data de hoje, e leva a construção rejeitada para Isso não sou eu com o exemplo. Se algum traço 'X, mas nunca Y' se mostrou errado, reescreve esse traço. Atualiza o cabeçalho com a data, grava o arquivo e mostra ao usuário a linha nova — sem reescrever o arquivo inteiro.",
-      "files": []
+      "files": [],
+      "expectations": [
+        "Identifica o pedido como rejeicao de voz e segue explicitamente a branch Calibrar (nao Criar nem Atualizar)",
+        "Formula a pergunta especifica sobre qual palavra ou frase exatamente doeu, em vez de pergunta vaga",
+        "O arquivo gravado tem, na secao '## Palavras banidas', uma entrada para 'solucao robusta' com a data de hoje (2026-08-24)",
+        "A secao '## Isso nao sou eu' ganhou entrada nomeando a construcao rejeitada, com o exemplo 'solucao robusta' e a data 2026-08-24",
+        "Os tracos 'X, mas nunca Y' foram confrontados com a rejeicao: o traco contraditado foi reescrito no arquivo, ou o transcript registra a checagem de que nenhum precisava mudar",
+        "O cabecalho do arquivo gravado registra a data de hoje (2026-08-24)",
+        "A edicao foi pontual: as demais secoes e as entradas antigas com datas anteriores continuam no arquivo final, sem reescrita completa",
+        "A resposta final ao usuario mostra literalmente as linhas novas que entraram no arquivo"
+      ]
     }
   ]
 }

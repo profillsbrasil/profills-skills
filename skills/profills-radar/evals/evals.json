@@ -5,31 +5,80 @@
       "id": 1,
       "prompt": "Quero começar a acompanhar o que meus concorrentes andam postando no LinkedIn pra tirar ideias de conteúdo. (Contexto: DADOS existe com refs/, catalog/ e drafts/, mas DADOS/refs/INDEX.md não existe e DADOS/voz.md também não; a empresa do usuário vende máquinas de embalagem para indústria de alimentos.)",
       "expected_output": "Branch Primeira run: cria DADOS/refs/INDEX.md com o cabeçalho antes de qualquer linha. Como voz.md não existe, pergunta em prosa o que ele vende e para quem, pesquisa 4-6 empresas reais do setor via WebSearch/WebFetch e só então usa AskUserQuestion (multiSelect) com uma opção por empresa e a razão de uma frase, mais a opção 'tenho outras em mente' — não pede '3 a 5 empresas' antes de pesquisar. Para cada aprovada: pesquisa contexto/similares/tendências, resolve slug e id, escreve DADOS/refs/<slug>.md pelo template e a linha no INDEX.md terminando em 'pesquisa <hoje> · sem catálogo'. Oferece as similares descobertas e fecha escrevendo DADOS/selection.md (máx. 5, com o campo id em cada linha), dizendo pelo nome quais entraram e sugerindo a profills-garimpo como próximo passo.",
-      "files": []
+      "files": [],
+      "expectations": [
+        "Identifica a branch Primeira run (INDEX.md ausente) e cria DADOS/refs/INDEX.md com o cabeçalho ('# Índice de referências — empresas do LinkedIn' + '## Empresas') antes de qualquer linha de empresa",
+        "Como DADOS/voz.md não existe, pergunta em prosa (não via AskUserQuestion) o que a empresa vende e para quem, antes de montar candidatas",
+        "Antes de qualquer AskUserQuestion, executa WebSearch/WebFetch nesta sessão para levantar/confirmar 4-6 candidatas reais do setor, cada uma com nome, o que faz e razão de uma frase — em vez de pedir '3 a 5 empresas' ao usuário às cegas",
+        "Oferece as candidatas com AskUserQuestion (multiSelect), uma opção por empresa com a razão de uma frase, mais a opção 'tenho outras em mente'",
+        "Para cada empresa aprovada existe um DADOS/refs/<slug>.md escrito nesta run pelo template, com Contexto, Similares e Tendências vindos de pesquisa desta sessão",
+        "Cada linha do INDEX.md traz o campo id e termina em 'pesquisa <data de hoje, 2026-08-24> · sem catálogo'",
+        "Oferece com AskUserQuestion as empresas similares descobertas na pesquisa antes de fechar a seleção",
+        "Escreve DADOS/selection.md com no máximo 5 empresas, cada linha carregando o campo id, e fecha dizendo pelo nome quais entraram e sugerindo a profills-garimpo como próximo passo"
+      ]
     },
     {
       "id": 2,
       "prompt": "(A profills-garimpo invocou a profills-radar porque DADOS/selection.md não existe. Contexto: DADOS/refs/INDEX.md tem 6 empresas do setor de máquinas de embalagem, todas com 'pesquisa 2026-06-01'; cinco linhas terminam em 'sem catálogo' e a da Cetro Máquinas em 'catálogo 2026-07-14'.)",
       "expected_output": "Branch Seleção: não pede links nem nomes novos. Apresenta as 6 empresas do índice com AskUserQuestion (multiSelect), cada opção com nome, setor e o campo catálogo ('catalogada em 14/07' ou 'nunca catalogada'). Segura em 5 se ele marcar mais, explicando que passar disso vira sessão longa de navegação. Como todas têm pesquisa de mais de 60 dias (2026-06-01), oferece a re-pesquisa antes de seguir. Escreve DADOS/selection.md com o cabeçalho 'Seleção ativa — <AAAA-MM-DD>' e uma linha por empresa no formato '[Nome](refs/<slug>.md) — `<slug>` · id <id ou —> · <setor> · <país>'. Termina devolvendo o controle à profills-garimpo, sem sugerir próximo passo por conta própria.",
-      "files": []
+      "files": [],
+      "expectations": [
+        "Fica na branch Selecao: nao pede ao usuario links, URLs ou nomes de empresas novas, trabalhando so com o que ja esta no INDEX.md",
+        "Apresenta as 6 empresas do indice numa AskUserQuestion multiSelect, cada opcao com nome, setor e o campo catalogo ('catalogada em 14/07' para a Cetro, 'nunca catalogada' para as outras cinco)",
+        "A selecao final tem no maximo 5 empresas E o teto de 5 e comunicado ao usuario com a razao de que passar disso vira sessao longa de navegacao",
+        "Detecta que a pesquisa de 2026-06-01 passou de 60 dias e oferece a re-pesquisa ao usuario antes de seguir",
+        "Escreve DADOS/selection.md (linkedin-data/selection.md) com o cabecalho exato 'Selecao ativa - 2026-08-24'",
+        "Cada linha de selection.md segue o formato completo '[Nome](refs/<slug>.md) - `<slug>` - id <id ou —> - <setor> - <pais>', incluindo o campo id",
+        "Fecha devolvendo o controle a profills-garimpo, sem inventar um proximo passo fora do pipeline"
+      ]
     },
     {
       "id": 3,
       "prompt": "Adiciona a Maquimox nas minhas referências e me diz o que descobriu dela. (Contexto: DADOS/refs/INDEX.md já tem 6 empresas; a busca no LinkedIn retorna duas páginas plausíveis com esse nome, uma com 1.200 seguidores em Curitiba e outra com 40 seguidores em São José dos Pinhais.)",
       "expected_output": "Branch Gestão → Adicionar, executando os três passos de 'Como entra uma empresa nova': pesquisa contexto/similares/tendências com busca desta sessão; como há duas páginas plausíveis, mostra as candidatas com nome, seguidores e cidade e pede ao usuário para confirmar qual é, em vez de escolher sozinho; depois de confirmada, resolve slug e id, escreve DADOS/refs/<slug>.md com todas as seções do template preenchidas (deixando '## Do Not Copy' com o comentário e '## Histórico' vazia) e acrescenta a linha no INDEX.md terminando em 'pesquisa <hoje> · sem catálogo'. Resume o que achou chamando a empresa pelo nome e termina com uma sugestão só.",
-      "files": []
+      "files": [],
+      "expectations": [
+        "Trata o pedido como Gestão -> Adicionar: nao escreve DADOS/selection.md nem cataloga posts, so mexe na lista de referencias",
+        "Executa os tres eixos de pesquisa com busca desta sessao (contexto, similares, tendencias): a ficha traz Contexto, Similares com 2+ empresas nomeadas e Tendencias do setor preenchidos, e o transcript registra as chamadas de busca que os sustentam",
+        "Diante das duas paginas homonimas, apresenta as candidatas com nome, seguidores e cidade e pede confirmacao ao usuario em vez de escolher em silencio",
+        "Cria DADOS/refs/maquimox.md com todas as secoes do template presentes e preenchidas (ou com o motivo declarado da lacuna), sem restos de instrucao do template",
+        "Registra o endereco no LinkedIn (slug maquimox) e trata o id numerico explicitamente (valor ou marcador de ausencia), coerente com a linha do indice",
+        "Deixa '## Do Not Copy' sem conteudo inventado (so o comentario-placeholder) e '## Historico' sem conteudo",
+        "Acrescenta ao INDEX.md exatamente uma linha nova para a Maquimox, preservando as 6 existentes, terminando em 'pesquisa 2026-08-24 - sem catalogo'",
+        "A resposta final chama a empresa pelo nome (sem expor o slug ao usuario), resume o que a pesquisa achou e termina com uma unica sugestao"
+      ]
     },
     {
       "id": 4,
       "prompt": "Quais empresas eu acompanho mesmo? (Contexto: DADOS/refs/INDEX.md tem 6 empresas, todas com 'pesquisa 2026-07-14'; só a Cetro Máquinas tem 'catálogo 2026-07-14' e a Sulpack tem a nota '⚠ presença digital fraca (~38 seguidores)'.)",
       "expected_output": "Branch Gestão → Listar: lê o índice e mostra as 6 empresas pelo nome, com setor, data da última pesquisa e quando cada uma foi catalogada pela última vez (cinco 'nunca catalogada'), repassando o alerta de presença fraca da Sulpack. Não escreve DADOS/selection.md, não pesquisa nada de novo e não expõe slug cru como se fosse o nome da empresa. Termina com uma sugestão só.",
-      "files": []
+      "files": [],
+      "expectations": [
+        "Lista as 6 empresas do INDEX.md pelos nomes de exibicao (Cetro Maquinas, Maqinox, Tecnoenvase, Tecnox do Brasil, Skymsen, Sulpack), sem expor slug cru no lugar do nome",
+        "Informa o setor de cada uma das 6 empresas, coerente com o INDEX.md",
+        "Informa a data da ultima pesquisa (2026-07-14) das empresas",
+        "Marca Cetro Maquinas como ja catalogada (14/07/2026, parcial) e exatamente cinco empresas como nunca catalogadas",
+        "Repassa ao usuario o alerta de presenca digital fraca da Sulpack (~38 seguidores)",
+        "Nao escreve DADOS/selection.md nem cria/altera qualquer arquivo em linkedin-data/",
+        "Nao dispara pesquisa nova (WebSearch/WebFetch/navegador) para responder",
+        "Termina com uma unica sugestao de proximo passo (nao um menu de opcoes)"
+      ]
     },
     {
       "id": 5,
       "prompt": "Atualiza os dados da Tecnox do Brasil, faz meses que pesquisei ela. (Contexto: DADOS/refs/tecnox-do-brasil.md existe com pesquisa de 2026-07-14 e seções Contexto, Similares e Tendências preenchidas; a linha dela no INDEX.md termina em 'pesquisa 2026-07-14 · sem catálogo'.)",
       "expected_output": "Branch Gestão → Atualizar: refaz os três eixos de pesquisa (contexto, similares, tendências) por busca desta sessão, move o conteúdo anterior da ficha para '## Histórico' marcado com 2026-07-14 em vez de sobrescrever, escreve o resultado novo no topo, atualiza '**Última pesquisa**' e troca o campo pesquisa da linha do INDEX.md pela data de hoje — mantendo 'sem catálogo' intacto, que é campo da profills-garimpo. A ficha termina com duas datas: a de hoje no topo e 2026-07-14 no histórico. Termina com uma sugestão só.",
-      "files": []
+      "files": [],
+      "expectations": [
+        "Identifica a rota Gestão → Atualizar (re-pesquisar uma empresa já na lista) e age direto sobre a Tecnox, sem invocar a profills-garimpo nem pedir nova lista ao usuário",
+        "Refaz os três eixos de pesquisa (contexto, similares, tendências do setor) por busca desta sessão, com chamadas de busca/fetch registradas no transcript",
+        "O conteúdo anterior das três seções vai para '## Histórico' sob '### 2026-07-14', com o texto de julho preservado (não sobrescrito nem apagado)",
+        "O resultado novo da pesquisa fica no topo, nas seções Contexto, Similares e Tendências do setor, e difere do texto antigo nas três",
+        "O campo '**Última pesquisa**' do cabeçalho da ficha passa de 2026-07-14 para 2026-08-24",
+        "No INDEX.md muda apenas o campo pesquisa da linha da Tecnox para 2026-08-24, mantendo 'sem catálogo' intacto e nenhuma outra linha alterada",
+        "A ficha final carrega exatamente duas datas: 2026-08-24 no topo e 2026-07-14 no histórico",
+        "A resposta final ao usuário termina com uma sugestão só (catalogar a Tecnox com a profills-garimpo)"
+      ]
     }
   ]
 }
