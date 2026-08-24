@@ -6,6 +6,7 @@
 - **Porte**: <nº de seguidores / funcionários, se souber>
 - **País / idioma dos posts**: <BR / global · PT / EN>
 - **Última pesquisa**: <AAAA-MM-DD>
+- **Confirmação do usuário**: <a frase dele entre aspas + a data em que ele disse> — `[a confirmar]` enquanto ele não tiver respondido nesta sessão; nunca escreva "o usuário confirmou" sem a frase
 
 ## Por que é referência
 

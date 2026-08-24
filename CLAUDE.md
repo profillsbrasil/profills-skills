@@ -25,7 +25,7 @@ Os princípios operacionais de cada skill (medido vs inferido, inspirar-não-cop
 - `DADOS/catalog/raw/<slug>/<AAAA-MM-DD>/posts.json` + `meta.json` — o dado estruturado primário e o contexto da página (seguidores = denominador da taxa de engajamento normalizada; `status` ∈ `ok|sem_posts|pagina_nao_gerenciada|erro_navegacao` — `STATUS.txt` está aposentado). Schema v2 (2026-08) em `profills-garimpo/references/schema-post.md`. Perfil, summary e dashboard nascem dele.
 - `DADOS/catalog/<slug>.md` (template `perfil-template.md`) — o perfil por empresa; é isto (+ o `posts.json` bruto) que a **profills-post** consome. `_summary.md` é o comparativo para o humano/dashboard — a profills-post não o lê.
 - `DADOS/voz.md` — a voz do usuário, criada e mantida pela skill **profills-voz** (template em `profills-voz/assets/voz-template.md`). **Ainda não existe** até a primeira run; a profills-post invoca a skill quando não o encontra. As seções `Palavras banidas` e `Isso não sou eu` são checadas pelo quality gate da profills-post; `Dores do ICP` alimenta o teste analgésico/vitamina.
-- `DADOS/drafts/<AAAA-MM-DD>-<tema-slug>.md` — saída persistida da profills-post: o texto final aprovado, pronto para colar.
+- `DADOS/drafts/<AAAA-MM-DD>-<tema-slug>.md` — saída persistida da profills-post: linhas de contexto (tema, ângulo, hook, origem dos números), uma linha `---`, e o texto final pronto para colar — é este formato que `post/scripts/checar-formato.js` lê. `DADOS/drafts/<AAAA-MM-DD>-<tema-slug>/variacoes.md` guarda as 3-5 variações geradas (o usuário pode voltar à "outra").
 
 **Quem invoca quem** (fonte única — a description de uma skill só cita invocação que existe aqui):
 
@@ -55,7 +55,8 @@ Ninguém mais invoca ninguém: a garimpo segue neutra sem `voz.md`; radar e post
 ## Convenções
 
 - Tudo em pt-BR — SKILL.md, references, dados, commits.
-- Cada skill tem `evals/evals.json` (3 casos prompt → expected_output). Mudança de comportamento numa skill atualiza os evals dela.
+- Cada skill tem `evals/evals.json` (5-8 casos: prompt → expected_output → `expectations` verificáveis, com fixture em `evals/files/<id>/` quando o caso depende de estado em disco). Mudança de comportamento numa skill atualiza os evals dela **e roda o runner**: `Workflow({name: "evals-profills", args: {skills: ["profills-x"], baseline: "main", iteration: N}})` (`.claude/workflows/evals-profills.js`, usa o plugin `skill-creator@claude-plugins-official`; workspace em `../profills-evals-workspace/`, fora do repo). Primeira execução real em 2026-08-24, com os 28 evals/211 asserções de então: atual 98% × anterior 88% (artefatos fora do repo; hoje são 40 evals/306 expectations).
+- Contas e checagens que precisam sair iguais toda vez ficam em `scripts/*.js` da skill (Node puro): `garimpo/scripts/metricas.js`, `post/scripts/checar-formato.js`, `radar/scripts/indice.js`. O SKILL.md manda rodar e usa a saída; não recalcula em prosa.
 - O template `profills-post/assets/preview-template.html` é motor testado: preencher só o bloco `DADOS` (instruções no topo do próprio arquivo), nunca reescrever o HTML.
 
 ## Estado do repo (2026-08-21) e pegadinhas

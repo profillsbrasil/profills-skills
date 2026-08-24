@@ -3,64 +3,105 @@
   "evals": [
     {
       "id": 1,
-      "prompt": "Quero criar meu arquivo de voz pros posts saírem com a minha cara. (Contexto: o diretório atual é um clone do repo profills-skills, com linkedin-data/ na raiz, então DADOS é linkedin-data/; linkedin-data/voz.md não existe; o usuário chamou a skill direto.)",
-      "expected_output": "Confere que voz.md não existe e segue a branch Criar. Explica em uma frase o que é o arquivo, pede o material mais bruto que ele tiver com AskUserQuestion (áudio de 1 minuto como caminho mais fácil), extrai marcadores com trecho-recibo, completa a entrevista curta (identidade, provas com número ou [a confirmar], um AskUserQuestion por eixo de tom com duas frases-exemplo concretas e recomendação, tom por contexto e linguagem do cliente). Grava linkedin-data/voz.md pelo template, com traços 'X, mas nunca Y' e sem placeholder sobrando, e só então valida mostrando 2-3 frases de teste com perguntas específicas ('você usaria a palavra robusta?'), gravando as rejeições em Palavras banidas e Isso não sou eu até ter ≥3 banidas confirmadas. Fecha dizendo onde salvou e com UMA sugestão só (/profills-post).",
-      "files": [],
+      "prompt": "Quero criar meu arquivo de voz pros posts saírem com a minha cara. (Contexto: o usuário grava o áudio de 1 minuto que você pedir e a transcrição é esta: \"Ó, a gente vende máquina de embalar pra fábrica de alimento, essas de envase e seladora. O cara me manda um vídeo da linha dele no WhatsApp e eu falo na hora se resolve ou não resolve. Não adianta eu empurrar máquina que não cabe no galpão dele, isso aí dá dor de cabeça pros dois. A gente já colocou máquina numa pá de fábrica aqui na região, não sei te dizer quantas de cabeça. O que mais pega é linha parada: o cara tá com pedido pra entregar e a máquina no meio da produção parada. A gente vai lá, olha a linha antes de vender. Erra? Erra, a gente erra também, mas não some depois que erra.\" Nas perguntas de eixo de tom ele escolhe sempre a frase do extremo mais casual e mais direto. Nas frases de teste que você mostrar no fim, ele rejeita 'solução robusta' ('isso é papo de catálogo'), rejeita 'excelência operacional' e diz que nunca chamaria cliente de 'parceiro'; o resto ele aprova.)",
+      "expected_output": "Resolve DADOS pelo git (linkedin-data/ do repo), confere no disco que voz.md não existe e segue a branch Criar. Explica em uma frase o que é o arquivo, pede o material bruto com AskUserQuestion (áudio de 1 minuto como recomendada), extrai os marcadores com trecho-recibo literal do áudio e completa só o que o áudio não mostrou, um AskUserQuestion por eixo de tom com duas frases-exemplo concretas. Grava linkedin-data/voz.md pelo template — traços 'X, mas nunca Y' com citação literal do áudio, as 4 linhas de Tom por contexto preenchidas, nenhum placeholder sobrando e, como ele não soube o número de fábricas, a prova correspondente como [a confirmar] em vez de número estimado. Só então valida mostrando 2-3 frases de teste com perguntas específicas e regrava o arquivo com as rejeições: 'solução robusta', 'excelência operacional' e 'parceiro' em Palavras banidas com a data de hoje, e a construção rejeitada em Isso não sou eu. Fecha dizendo onde salvou, com uma única sugestão (/profills-post).",
+      "files": [
+        "evals/files/1"
+      ],
       "expectations": [
-        "Confere no disco que DADOS=linkedin-data/ e que voz.md não existe, e segue explicitamente a branch Criar antes de qualquer pergunta",
-        "Pede o material mais bruto com AskUserQuestion, com o áudio de ~1 minuto como opção recomendada e justificada, e explica em uma frase o que é o arquivo antes de perguntar",
-        "Extrai os marcadores de voz do material com trecho-recibo por marcador, deixando vazio/hipótese o que o material não mostra em vez de inventar",
-        "Faz um AskUserQuestion por eixo de tom (os 4 eixos), cada um com duas frases-exemplo concretas e uma recomendação justificada",
-        "Grava linkedin-data/voz.md pelo template, com todas as seções (Identidade, Voz, Tom por contexto, Linguagem do cliente, Provas, Palavras banidas, Isso não sou eu) preenchidas e nenhum placeholder <...> sobrando",
-        "Os traços de voz no arquivo estão no formato 'X, mas nunca Y' e cada um traz um trecho literal do material como recibo",
-        "Valida depois de escrever, mostrando 2-3 frases de teste com perguntas específicas (não 'ficou bom?'), e grava as rejeições até o arquivo ter ≥3 entradas confirmadas em Palavras banidas e ≥1 em Isso não sou eu",
-        "Fecha dizendo onde salvou o arquivo e oferecendo UMA única sugestão de próximo passo (/profills-post)"
+        "Antes de perguntar qualquer coisa, resolve DADOS pelo git e confere no disco que voz.md não existe; o arquivo do fim existe em linkedin-data/voz.md (a pasta de dados da fixture) e não em outro caminho",
+        "Os traços de voz do arquivo estão no formato 'X, mas nunca Y' e cada recibo é um trecho que aparece literalmente na transcrição do áudio do prompt (ex.: 'não some depois que erra', 'não cabe no galpão dele') — nenhum recibo é paráfrase ou citação inventada",
+        "NEGATIVA: nenhum número entra no arquivo sem o usuário ter dado — como ele disse 'não sei te dizer quantas de cabeça', a prova de fábricas atendidas fica [a confirmar] e não aparece número estimado (nem 'dezenas', 'mais de 40', 'uma pá') na seção Provas",
+        "A seção Palavras banidas do arquivo final tem exatamente as três rejeições reais do prompt ('solução robusta', 'excelência operacional', 'parceiro'), cada uma com a data 2026-08-24",
+        "NEGATIVA: nenhuma entrada em Palavras banidas ou Isso não sou eu sem rejeição correspondente no prompt — a lista não foi inflada com palavras que o usuário nunca julgou",
+        "A tabela Tom por contexto tem as 4 linhas preenchidas com frase real e o arquivo não contém nenhum placeholder do template (nenhum '<' seguido de letra)",
+        "RESPOSTA FINAL: mostra as frases de teste julgadas uma a uma e diz que o arquivo foi regravado depois delas; ARTEFATO: o linkedin-data/voz.md de outputs/ carrega as duas camadas — os traços extraídos do áudio e as três rejeições datadas de 2026-08-24 —, prova de que a validação veio depois da gravação e não no lugar dela",
+        "A resposta final diz o caminho onde salvou e traz UMA única sugestão de próximo passo (/profills-post), sem emendar outras"
       ]
     },
     {
       "id": 2,
-      "prompt": "(A profills-post invocou a profills-voz no meio da geração de um rascunho sobre manutenção preventiva, porque não achou o arquivo de voz. Contexto: DADOS é ~/Profills LinkedIn/ e existe; ~/Profills LinkedIn/voz.md não existe; a profills-post já perguntou ao usuário o tom, o público e o que ele vende antes de invocar.)",
-      "expected_output": "Segue a branch Criar aproveitando tom, público e produto já respondidos à profills-post — pula essas partes da entrevista em vez de repetir as perguntas — e pede só o material bruto que falta. Grava ~/Profills LinkedIn/voz.md pelo template e valida mostrando frases de teste. No fim diz em uma frase onde salvou e DEVOLVE O CONTROLE para a profills-post continuar o rascunho de manutenção preventiva, sem sugestão própria de próximo passo.",
-      "files": [],
+      "prompt": "(A profills-post invocou a profills-voz no meio da geração de um rascunho sobre manutenção preventiva, porque não achou o arquivo de voz. Contexto: antes de invocar, a profills-post já colheu do usuário — o que vende: 'máquina de envase e seladora pra fábrica de alimento'; para quem: 'gerente de produção de fábrica de alimentos de 10 a 80 funcionários'; tom: 'direto, sem enrolação e sem palavra difícil'. O usuário diz que não tem áudio agora, mas cola duas mensagens de WhatsApp que mandou hoje pra clientes: [1] \"bom dia Marcelo, o técnico sai daqui 7h e chega aí antes do almoço. leva a peça da esteira já, se não for ela a gente troca o sensor e resolve hoje mesmo\" [2] \"cara, eu não vou te vender a de 40 pacotes por minuto não, tu não tem pedido pra isso ainda. pega a de 20 e quando apertar a gente troca\" Nas frases de teste ele rejeita 'solução robusta' e a abertura 'Em um mercado cada vez mais competitivo', e diz que nunca escreveria 'excelência'.)",
+      "expected_output": "Confere que voz.md não existe na pasta de dados e segue a branch Criar, aproveitando tom, público e produto já respondidos à profills-post em vez de repetir essas perguntas. Trata as duas mensagens de WhatsApp como fonte 2 da escala, sem travar exigindo o áudio, e extrai os traços com trecho-recibo literal delas. Grava linkedin-data/voz.md pelo template — todas as seções, Tom por contexto com as 4 linhas de fala real, provas sem número inventado — valida mostrando frases de teste e grava as rejeições. Fecha em uma frase dizendo o caminho exato onde salvou e devolvendo o controle à profills-post para continuar o rascunho de manutenção preventiva, sem sugestão própria de próximo passo.",
+      "files": [
+        "evals/files/2"
+      ],
       "expectations": [
-        "Verifica que voz.md não existe em DADOS e segue explicitamente a branch Criar",
-        "Não repete as perguntas de tom, público e o que vende — declara que aproveita as respostas já dadas à profills-post e pula essas partes da entrevista",
-        "Pede ao usuário o material bruto que falta, oferecendo as opções em ordem de força do sinal (áudio de 1 minuto como recomendada)",
-        "Grava o arquivo de voz em DADOS seguindo o template: todas as seções do template presentes e nenhum <placeholder> sobrando",
-        "Os três traços de voz estão no formato \"X, mas nunca Y\", cada um com trecho-recibo do material",
-        "As quatro linhas da tabela Tom por contexto estão preenchidas com fala real (nenhuma vazia ou marcada [a confirmar])",
-        "Valida mostrando frases de teste concretas, julgadas uma a uma, e as rejeições aparecem gravadas no arquivo em Palavras banidas e Isso não sou eu",
-        "A resposta final é uma frase que diz onde salvou e devolve o controle à profills-post para continuar o rascunho de manutenção preventiva, sem sugerir próximo passo próprio"
+        "O arquivo foi gravado em linkedin-data/voz.md (a pasta de dados da fixture) e o caminho anunciado ao usuário na resposta final é exatamente esse mesmo caminho",
+        "A seção Identidade traz o que vende e para quem exatamente como a profills-post já colheu (máquina de envase e seladora; gerente de produção de fábrica de alimentos de 10 a 80 funcionários)",
+        "NEGATIVA — RESPOSTA FINAL: nenhuma pergunta nova sobre tom, público ou o que ele vende aparece na resposta final, que diz ter reaproveitado o que a profills-post já colheu; e nada em outputs/ registra essas perguntas",
+        "Os traços 'X, mas nunca Y' têm recibo que aparece literalmente numa das duas mensagens de WhatsApp do prompt (ex.: 'o técnico sai daqui 7h', 'eu não vou te vender a de 40 pacotes por minuto não')",
+        "Aceita as mensagens de WhatsApp como material válido e segue a extração, em vez de travar exigindo o áudio de 1 minuto",
+        "NEGATIVA: as provas do arquivo não trazem nenhum número que o usuário não deu — como ele não deu nenhum, a seção Provas fica com [a confirmar]",
+        "A tabela Tom por contexto tem as 4 linhas preenchidas com fala real (nenhuma vazia, nenhuma [a confirmar]) e o arquivo final não tem placeholder do template sobrando",
+        "A resposta final é uma frase que diz onde salvou e devolve o controle à profills-post para continuar o rascunho de manutenção preventiva, sem sugerir próximo passo próprio (nada de /profills-post nem de 'quer que eu…')"
       ]
     },
     {
       "id": 3,
-      "prompt": "Adiciona no meu arquivo de voz que a gente fechou o cliente número 50. (Contexto: DADOS/voz.md já existe, com a linha '- 40 clientes ativos desde 2023' na seção Provas e cabeçalho 'Montado em 2026-08-04'.)",
-      "expected_output": "Branch Atualizar: edita só a seção Provas, preservando o resto do arquivo. A prova antiga fica na mesma linha com a data, no formato do template ('~~40 clientes ativos desde 2023~~ → 50 clientes ativos (atualizado <data de hoje>)'), em vez de sumir. Atualiza o cabeçalho com 'atualizado em <data de hoje>', grava o arquivo e mostra ao usuário o antes/depois da linha mexida.",
-      "files": [],
+      "prompt": "Adiciona no meu arquivo de voz que a gente fechou o cliente número 50 essa semana.",
+      "expected_output": "Branch Atualizar: edita só a linha de prova que o fato toca, dentro da seção Provas, preservando o resto do arquivo byte a byte. A prova antiga fica na mesma linha, riscada, no formato do template: '~~40 clientes ativos desde 2023~~ → 50 clientes ativos (atualizado 2026-08-24)'. Atualiza o cabeçalho para 'atualizado em 2026-08-24' mantendo 'Montado em 2026-08-04', grava e mostra ao usuário o antes/depois da linha mexida.",
+      "files": [
+        "evals/files/3"
+      ],
       "expectations": [
-        "O arquivo DADOS/voz.md foi efetivamente gravado no disco com a atualização (não só afirmada no transcript)",
-        "A prova antiga não sumiu: ficou na mesma linha, riscada, com a data, no formato do template (~~40 clientes ativos desde 2023~~ → 50 clientes ativos (atualizado <data de hoje>))",
-        "A atualização foi feita na linha existente da seção Provas, sem criar item novo duplicado para os 50 clientes",
-        "O cabeçalho do arquivo registra a data de hoje com 'atualizado em 2026-08-24'",
-        "Só a seção Provas foi mexida: as demais seções do template (Identidade, Voz, Tom por contexto, Linguagem do cliente, Palavras banidas, Isso não sou eu) seguem presentes e preenchidas, sem placeholders <...> do template",
-        "A resposta final ao usuário mostra o antes E o depois da linha mexida como dois estados distinguíveis"
+        "A linha '- 40 clientes ativos desde 2023' da fixture virou, na mesma posição da seção Provas, '- ~~40 clientes ativos desde 2023~~ → 50 clientes ativos (atualizado 2026-08-24)', e '50 clientes' aparece uma única vez no arquivo",
+        "O cabeçalho registra 'atualizado em 2026-08-24' e mantém 'Montado em 2026-08-04'",
+        "NEGATIVA: o diff contra a fixture (evals/files/3/linkedin-data/voz.md) toca apenas a linha da prova e a linha do cabeçalho — todas as demais linhas do arquivo seguem idênticas, sem reescrita nem reformatação",
+        "As outras provas da fixture ('entrega média em 14 dias' e a linha [a confirmar]) continuam no arquivo, e as entradas datadas de 2026-08-15 em Palavras banidas e Isso não sou eu seguem intactas",
+        "NEGATIVA: não reabre a entrevista de voz nem trata o pedido como Calibrar — nenhuma pergunta sobre tom, material bruto ou palavras banidas",
+        "A resposta final mostra o antes E o depois da linha mexida como dois estados distinguíveis"
       ]
     },
     {
       "id": 4,
-      "prompt": "Esse rascunho tá bom mas eu nunca falaria 'solução robusta', não sou eu. (Contexto: DADOS/voz.md existe, com Palavras banidas e Isso não sou eu já preenchidas por uma validação anterior.)",
-      "expected_output": "Branch Calibrar: pergunta qual palavra ou frase exatamente doeu, acrescenta 'solução robusta' em Palavras banidas com a data de hoje, e leva a construção rejeitada para Isso não sou eu com o exemplo. Se algum traço 'X, mas nunca Y' se mostrou errado, reescreve esse traço. Atualiza o cabeçalho com a data, grava o arquivo e mostra ao usuário a linha nova — sem reescrever o arquivo inteiro.",
-      "files": [],
+      "prompt": "Esse rascunho tá bom mas eu nunca falaria 'solução robusta', não sou eu. (Contexto: quando você perguntar o que exatamente doeu, ele responde: 'foi a palavra robusta mesmo, e aquele começo \"Em um mercado cada vez mais competitivo\" também não é meu jeito de falar não'.)",
+      "expected_output": "Branch Calibrar: pergunta qual palavra ou frase exatamente doeu, grava 'solução robusta' em Palavras banidas com a data de hoje e a abertura 'Em um mercado cada vez mais competitivo' em Isso não sou eu com o exemplo e a data. Confronta os traços com a rejeição: o traço 'Técnico, mas nunca genérico', cujo recibo era justamente 'a gente entrega uma solução robusta pra linha de envase', está contraditado e é reescrito com outro recibo. Atualiza o cabeçalho para 2026-08-24, edita pontualmente (sem reescrever o arquivo) e mostra ao usuário as linhas novas, dizendo que é isso que faz o próximo rascunho errar menos.",
+      "files": [
+        "evals/files/4"
+      ],
       "expectations": [
-        "Identifica o pedido como rejeicao de voz e segue explicitamente a branch Calibrar (nao Criar nem Atualizar)",
-        "Formula a pergunta especifica sobre qual palavra ou frase exatamente doeu, em vez de pergunta vaga",
-        "O arquivo gravado tem, na secao '## Palavras banidas', uma entrada para 'solucao robusta' com a data de hoje (2026-08-24)",
-        "A secao '## Isso nao sou eu' ganhou entrada nomeando a construcao rejeitada, com o exemplo 'solucao robusta' e a data 2026-08-24",
-        "Os tracos 'X, mas nunca Y' foram confrontados com a rejeicao: o traco contraditado foi reescrito no arquivo, ou o transcript registra a checagem de que nenhum precisava mudar",
-        "O cabecalho do arquivo gravado registra a data de hoje (2026-08-24)",
-        "A edicao foi pontual: as demais secoes e as entradas antigas com datas anteriores continuam no arquivo final, sem reescrita completa",
-        "A resposta final ao usuario mostra literalmente as linhas novas que entraram no arquivo"
+        "Identifica o pedido como rejeição de voz e segue explicitamente a branch Calibrar (não Criar, não Atualizar), com edição pontual em vez de reescrita do arquivo",
+        "Faz a pergunta específica sobre qual palavra ou frase exatamente doeu antes de gravar qualquer coisa",
+        "A seção Palavras banidas ganhou 'solução robusta' com a data 2026-08-24 e as três entradas de 2026-08-15 da fixture ('sinergia', 'expertise', 'cutting-edge') continuam idênticas — NEGATIVA: nenhuma outra palavra foi acrescentada à lista",
+        "A seção Isso não sou eu ganhou entrada nomeando a construção rejeitada, com o exemplo 'Em um mercado cada vez mais competitivo' e a data 2026-08-24, preservando a entrada de 2026-08-15",
+        "O traço da fixture cujo recibo era 'a gente entrega uma solução robusta pra linha de envase' foi detectado como contraditado e reescrito: essa citação não aparece mais como recibo de traço na seção Voz do arquivo final",
+        "O cabeçalho registra 'atualizado em 2026-08-24' e mantém 'Montado em 2026-08-04'",
+        "NEGATIVA: nada além da rejeição foi inventado — Identidade, Tom por contexto, Linguagem do cliente e Provas seguem idênticas à fixture (evals/files/4/linkedin-data/voz.md)",
+        "A resposta final mostra literalmente as linhas que entraram no arquivo e diz que é isso que faz o próximo rascunho errar menos"
+      ]
+    },
+    {
+      "id": 5,
+      "prompt": "atualiza lá no meu arquivo de voz que a gente já deve ter uns 50 clientes agora, acho que é por aí. (Contexto: quando você perguntar o número exato, ele responde 'ah cara, não tenho isso na mão agora, depois eu vejo no sistema'.)",
+      "expected_output": "Branch Atualizar, mas o número é ambíguo ('uns 50', 'acho que é por aí'): volta como pergunta antes de entrar. Como o usuário não confirma o número, a prova não é substituída — a linha '40 clientes ativos desde 2023' fica como está, e a pendência, se registrada, entra como [a confirmar]. Diz ao usuário, em uma frase, que o número não entrou ainda e o que falta para entrar (o número do sistema).",
+      "files": [
+        "evals/files/5"
+      ],
+      "expectations": [
+        "Devolve o número ambíguo como pergunta ao usuário antes de escrever qualquer coisa no arquivo",
+        "NEGATIVA: o arquivo final não contém '50 clientes' como prova, em nenhuma forma (nem '~50', nem 'cerca de 50', nem 'uns 50') — número não confirmado não entra",
+        "NEGATIVA: a substituição riscada não acontece — não existe '~~40 clientes ativos desde 2023~~' no arquivo final, porque não houve número confirmado para substituir",
+        "O arquivo final difere da fixture (evals/files/5/linkedin-data/voz.md) no máximo por uma pendência marcada [a confirmar] na seção Provas e pela data do cabeçalho; todas as demais seções seguem idênticas",
+        "A resposta final diz claramente que o número não entrou ainda e o que falta para entrar (o número exato do sistema)",
+        "Trata o pedido como fato pendente, não como rejeição de voz: não abre Calibrar nem mexe em Palavras banidas ou Isso não sou eu"
+      ]
+    },
+    {
+      "id": 6,
+      "prompt": "Quero o arquivo de voz, mas eu não tenho áudio nem mensagem nenhuma pra te mandar agora, tô no meio de uma feira. (Contexto: se você pedir pra ele gravar 1 minuto de áudio na hora, ele responde 'agora não dá, tá barulho demais aqui'. Ele conta por escrito, em uma linha: 'vendo máquina de envase e seladora pra fábrica de alimento, meu cliente é o gerente de produção'. Não dá número nenhum. Nas frases de teste ele rejeita 'robusta' e diz que o resto ficou bom; quando perguntado direto se escreveria 'solução' e 'sinergia', responde 'não, nunca' para as duas; qualquer outra palavra perguntada ele aceita.)",
+      "expected_output": "Branch Criar sem material: pede primeiro que ele grave o áudio de 1 minuto na hora e, só depois da recusa, segue com o que ele contou — avisando em texto que a voz sai inferida. Grava linkedin-data/voz.md com cada traço marcado como hipótese a confirmar, sem citação de material que não existe e sem número em Provas ([a confirmar]). Valida no passo 5 mostrando frases de teste específicas; como só uma rejeição sai espontânea, pergunta direto até ter 3 palavras banidas confirmadas, e grava as respostas (hipótese confirmada perde a marca). Fecha dizendo onde salvou, com uma sugestão só.",
+      "files": [
+        "evals/files/6"
+      ],
+      "expectations": [
+        "Pede que ele grave o áudio de 1 minuto na hora antes de aceitar seguir sem material — a via inferida só começa depois da recusa dele",
+        "Avisa ao usuário, em texto explícito, que sem material a voz sai inferida e precisa de confirmação",
+        "No arquivo gravado, cada traço de voz aparece marcado como hipótese a confirmar; nenhum traço é apresentado como medido",
+        "NEGATIVA: o arquivo não contém nenhuma citação entre aspas atribuída a áudio, WhatsApp ou post — nada de recibo inventado para material que não existe",
+        "NEGATIVA: a seção Provas não traz número nenhum — fica [a confirmar], já que ele não deu nenhum",
+        "Valida mesmo assim: mostra frases de teste específicas e, como só 'robusta' foi rejeitada espontaneamente, pergunta direto e fecha exatamente as 3 palavras banidas que o contexto confirma (robusta, solução, sinergia), todas gravadas no arquivo com a data 2026-08-24",
+        "A resposta final diz onde salvou e traz uma única sugestão de próximo passo"
       ]
     }
   ]

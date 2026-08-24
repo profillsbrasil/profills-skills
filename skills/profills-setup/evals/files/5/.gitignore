@@ -1,0 +1,3 @@
+# Runtime do Claude Code — não versionar (os symlinks de .claude/skills/ SÃO versionados)
+.claude/scheduled_tasks.lock
+.claude/settings.local.json

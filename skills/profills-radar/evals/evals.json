@@ -3,81 +3,130 @@
   "evals": [
     {
       "id": 1,
-      "prompt": "Quero começar a acompanhar o que meus concorrentes andam postando no LinkedIn pra tirar ideias de conteúdo. (Contexto: DADOS existe com refs/, catalog/ e drafts/, mas DADOS/refs/INDEX.md não existe e DADOS/voz.md também não; a empresa do usuário vende máquinas de embalagem para indústria de alimentos.)",
-      "expected_output": "Branch Primeira run: cria DADOS/refs/INDEX.md com o cabeçalho antes de qualquer linha. Como voz.md não existe, pergunta em prosa o que ele vende e para quem, pesquisa 4-6 empresas reais do setor via WebSearch/WebFetch e só então usa AskUserQuestion (multiSelect) com uma opção por empresa e a razão de uma frase, mais a opção 'tenho outras em mente' — não pede '3 a 5 empresas' antes de pesquisar. Para cada aprovada: pesquisa contexto/similares/tendências, resolve slug e id, escreve DADOS/refs/<slug>.md pelo template e a linha no INDEX.md terminando em 'pesquisa <hoje> · sem catálogo'. Oferece as similares descobertas e fecha escrevendo DADOS/selection.md (máx. 5, com o campo id em cada linha), dizendo pelo nome quais entraram e sugerindo a profills-garimpo como próximo passo.",
-      "files": [],
+      "prompt": "Quero começar a acompanhar o que meus concorrentes andam postando no LinkedIn pra tirar ideias de conteúdo. (Contexto: quando você perguntar o que a empresa dele vende e para quem, o usuário responde «vendo máquinas de embalagem para indústria de alimentos, meu cliente é fábrica de pequeno e médio porte»; ele aprova as 4 primeiras candidatas que você propuser, responde «são essas mesmas, pode seguir» quando você pedir para confirmar as páginas do LinkedIn, e não quer nenhuma similar por enquanto.)",
+      "expected_output": "Branch Primeira run, decidida pela saída do indice.js (pasta refs/ vazia: indice_existe false e fichas_orfas vazio). Pergunta em prosa o que ele vende e para quem, pesquisa 4-6 candidatas reais do setor via WebSearch/WebFetch nesta sessão — o disco não tem nenhuma empresa para reaproveitar — e oferece com AskUserQuestion (multiSelect), uma opção por empresa com a razão de uma frase, mais 'tenho outras em mente'. Cada aprovada passa inteira por Como entra uma empresa nova: --procurar, os três eixos de pesquisa, slug/id resolvidos, ficha em DADOS/refs/<slug>.md pelo template com Última pesquisa 2026-08-24 e Confirmação do usuário com a frase dele entre aspas, mais a linha no INDEX.md terminando em 'pesquisa 2026-08-24 · sem catálogo'. Oferece as similares, escreve DADOS/selection.md (máx. 5, com id em cada linha) e fecha nomeando quem entrou e sugerindo a profills-garimpo.",
+      "files": [
+        "evals/files/1"
+      ],
       "expectations": [
-        "Identifica a branch Primeira run (INDEX.md ausente) e cria DADOS/refs/INDEX.md com o cabeçalho ('# Índice de referências — empresas do LinkedIn' + '## Empresas') antes de qualquer linha de empresa",
-        "Como DADOS/voz.md não existe, pergunta em prosa (não via AskUserQuestion) o que a empresa vende e para quem, antes de montar candidatas",
-        "Antes de qualquer AskUserQuestion, executa WebSearch/WebFetch nesta sessão para levantar/confirmar 4-6 candidatas reais do setor, cada uma com nome, o que faz e razão de uma frase — em vez de pedir '3 a 5 empresas' ao usuário às cegas",
-        "Oferece as candidatas com AskUserQuestion (multiSelect), uma opção por empresa com a razão de uma frase, mais a opção 'tenho outras em mente'",
-        "Para cada empresa aprovada existe um DADOS/refs/<slug>.md escrito nesta run pelo template, com Contexto, Similares e Tendências vindos de pesquisa desta sessão",
-        "Cada linha do INDEX.md traz o campo id e termina em 'pesquisa <data de hoje, 2026-08-24> · sem catálogo'",
-        "Oferece com AskUserQuestion as empresas similares descobertas na pesquisa antes de fechar a seleção",
-        "Escreve DADOS/selection.md com no máximo 5 empresas, cada linha carregando o campo id, e fecha dizendo pelo nome quais entraram e sugerindo a profills-garimpo como próximo passo"
+        "ARTEFATO: `node scripts/indice.js <DADOS>/refs` sobre o estado inicial da fixture devolve `indice_existe: false` com `fichas_orfas` vazio, e o linkedin-data/refs/INDEX.md em outputs/ abre exatamente com o cabeçalho fixo `# Índice de referências — empresas do LinkedIn` seguido de `## Empresas` — o índice nasceu nesta run, pela branch Primeira run; RESPOSTA FINAL: diz que a lista estava vazia e que esta é a primeira rodada",
+        "Como não há voz.md, pergunta em prosa (não por AskUserQuestion) o que a empresa vende e para quem, e usa a resposta do contexto para definir o setor antes de montar candidatas",
+        "As candidatas oferecidas foram levantadas por WebSearch/WebFetch desta sessão: a fixture deixa refs/ e catalog/ vazios, então nenhuma empresa proposta pode ter vindo do disco, e cada candidata leva nome, o que faz e uma razão de uma frase",
+        "Cada empresa aprovada tem um arquivo novo em linkedin-data/refs/<slug>.md com Contexto, Similares (2+ empresas nomeadas) e Tendências do setor preenchidos e `**Última pesquisa**: 2026-08-24`",
+        "O campo `**Confirmação do usuário**` de cada ficha traz a frase literal do usuário entre aspas com a data 2026-08-24, ou `[a confirmar]` — nenhuma ficha escreve 'o usuário confirmou' em paráfrase, sem a frase dele",
+        "Rodar `node scripts/indice.js <DADOS>/refs --hoje 2026-08-24` sobre o resultado devolve `ok: true`, `n_empresas` igual ao número de fichas criadas e `fichas_orfas: []`; toda linha do INDEX.md termina em `pesquisa 2026-08-24 · sem catálogo` e traz o campo `id`",
+        "NEGATIVA: nenhuma ficha nem linha de índice carrega data de pesquisa anterior a 2026-08-24, e nenhuma empresa aparece sem ter passado pela aprovação do usuário nesta sessão",
+        "NEGATIVA: nada é escrito em linkedin-data/catalog/ — a Primeira run da radar não cataloga posts",
+        "linkedin-data/selection.md existe com no máximo 5 empresas, cada linha no formato completo com o campo id, e todo slug citado tem o refs/<slug>.md correspondente no disco; a resposta final nomeia quem entrou e sugere a profills-garimpo"
       ]
     },
     {
       "id": 2,
-      "prompt": "(A profills-garimpo invocou a profills-radar porque DADOS/selection.md não existe. Contexto: DADOS/refs/INDEX.md tem 6 empresas do setor de máquinas de embalagem, todas com 'pesquisa 2026-06-01'; cinco linhas terminam em 'sem catálogo' e a da Cetro Máquinas em 'catálogo 2026-07-14'.)",
-      "expected_output": "Branch Seleção: não pede links nem nomes novos. Apresenta as 6 empresas do índice com AskUserQuestion (multiSelect), cada opção com nome, setor e o campo catálogo ('catalogada em 14/07' ou 'nunca catalogada'). Segura em 5 se ele marcar mais, explicando que passar disso vira sessão longa de navegação. Como todas têm pesquisa de mais de 60 dias (2026-06-01), oferece a re-pesquisa antes de seguir. Escreve DADOS/selection.md com o cabeçalho 'Seleção ativa — <AAAA-MM-DD>' e uma linha por empresa no formato '[Nome](refs/<slug>.md) — `<slug>` · id <id ou —> · <setor> · <país>'. Termina devolvendo o controle à profills-garimpo, sem sugerir próximo passo por conta própria.",
-      "files": [],
+      "prompt": "(A profills-garimpo invocou a profills-radar porque DADOS/selection.md não existe. Contexto: na pergunta da seleção o usuário marca TODAS as 6 empresas; depois de ouvir a razão do teto ele responde «tá bom, então prioriza Cetro Máquinas, Skymsen, Maqinox, Tecnox do Brasil e Tecnoenvase».)",
+      "expected_output": "Branch Seleção, montada com o empresas[] do indice.js — sem pedir link, URL ou nome novo. Apresenta as 6 com AskUserQuestion (multiSelect), cada opção com nome, setor e o campo catálogo, e o alerta da Sulpack. Como ele marca as 6, diz em texto que o usuário lê que o teto é 5 porque passar disso vira sessão longa de navegação no LinkedIn, aceita a ordem de prioridade dele, escreve as 5 primeiras e diz pelo nome quem ficou de fora (Sulpack). Usa dias_desde_pesquisa (84 dias, todas vencidas) para oferecer a re-pesquisa antes de seguir. Escreve DADOS/selection.md com o cabeçalho 'Seleção ativa — 2026-08-24' e uma linha por empresa copiando nome, slug, id, setor e país do índice. Devolve o controle à profills-garimpo sem inventar próximo passo.",
+      "files": [
+        "evals/files/2"
+      ],
       "expectations": [
-        "Fica na branch Selecao: nao pede ao usuario links, URLs ou nomes de empresas novas, trabalhando so com o que ja esta no INDEX.md",
-        "Apresenta as 6 empresas do indice numa AskUserQuestion multiSelect, cada opcao com nome, setor e o campo catalogo ('catalogada em 14/07' para a Cetro, 'nunca catalogada' para as outras cinco)",
-        "A selecao final tem no maximo 5 empresas E o teto de 5 e comunicado ao usuario com a razao de que passar disso vira sessao longa de navegacao",
-        "Detecta que a pesquisa de 2026-06-01 passou de 60 dias e oferece a re-pesquisa ao usuario antes de seguir",
-        "Escreve DADOS/selection.md (linkedin-data/selection.md) com o cabecalho exato 'Selecao ativa - 2026-08-24'",
-        "Cada linha de selection.md segue o formato completo '[Nome](refs/<slug>.md) - `<slug>` - id <id ou —> - <setor> - <pais>', incluindo o campo id",
-        "Fecha devolvendo o controle a profills-garimpo, sem inventar um proximo passo fora do pipeline"
+        "As opções vêm do `empresas[]` da saída do indice.js: apresenta as 6 empresas do índice numa AskUserQuestion multiSelect, cada opção com nome, setor e o campo catálogo (Cetro 'catalogada em 14/07/2026', as outras cinco 'nunca catalogada'), e repassa o alerta ⚠ de presença digital fraca da Sulpack",
+        "Não pede ao usuário link, URL ou nome de empresa nova em momento algum",
+        "Com as 6 marcadas, o teto de 5 aparece em texto que o usuário lê (na pergunta ou na resposta final) junto com a razão — passar de 5 vira sessão longa de navegação no LinkedIn",
+        "linkedin-data/selection.md tem exatamente 5 linhas de empresa e são exatamente as 5 que o usuário priorizou (Cetro Máquinas, Skymsen, Maqinox, Tecnox do Brasil, Tecnoenvase)",
+        "A resposta final diz pelo nome qual empresa ficou de fora (Sulpack) e que ela entra na próxima rodada",
+        "Cada linha de selection.md copia nome, slug, id, setor e país exatamente como estão em evals/files/2/linkedin-data/refs/INDEX.md, sem encurtar nem reescrever, e o cabeçalho é '# Seleção ativa — 2026-08-24'",
+        "A oferta de re-pesquisa cita o número de dias que veio do script (84 dias desde 2026-06-01, `pesquisa_vencida: true` nas 6) em vez de uma conta feita de cabeça",
+        "NEGATIVA: linkedin-data/refs/INDEX.md e as 6 fichas ficam byte-a-byte iguais aos de evals/files/2/linkedin-data/refs/ — a seleção não edita índice nem ficha",
+        "NEGATIVA: fecha devolvendo o controle à profills-garimpo, sem sugerir um próximo passo por conta própria"
       ]
     },
     {
       "id": 3,
-      "prompt": "Adiciona a Maquimox nas minhas referências e me diz o que descobriu dela. (Contexto: DADOS/refs/INDEX.md já tem 6 empresas; a busca no LinkedIn retorna duas páginas plausíveis com esse nome, uma com 1.200 seguidores em Curitiba e outra com 40 seguidores em São José dos Pinhais.)",
-      "expected_output": "Branch Gestão → Adicionar, executando os três passos de 'Como entra uma empresa nova': pesquisa contexto/similares/tendências com busca desta sessão; como há duas páginas plausíveis, mostra as candidatas com nome, seguidores e cidade e pede ao usuário para confirmar qual é, em vez de escolher sozinho; depois de confirmada, resolve slug e id, escreve DADOS/refs/<slug>.md com todas as seções do template preenchidas (deixando '## Do Not Copy' com o comentário e '## Histórico' vazia) e acrescenta a linha no INDEX.md terminando em 'pesquisa <hoje> · sem catálogo'. Resume o que achou chamando a empresa pelo nome e termina com uma sugestão só.",
-      "files": [],
+      "prompt": "Adiciona a Maquimox nas minhas referências. (Contexto: quando você perguntar se é a mesma empresa que já está na lista, o usuário responde «é essa mesma, eu que escrevo errado».)",
+      "expected_output": "Branch Gestão → Adicionar, que começa por `node scripts/indice.js <DADOS>/refs --procurar \"Maquimox\"`: a saída traz ha_parecido true com a Maqinox indústria de Máquinas (semelhança 0,75). Pergunta ao usuário, nomeando a Maqinox, se é a mesma empresa escrita de outro jeito, antes de criar qualquer coisa. Como ele confirma que é a mesma, não cria ficha nova nem linha nova: diz desde quando ela já está na lista (pesquisa de 14/07/2026, 41 dias pelo dias_desde_pesquisa do script) e, como a pesquisa não está vencida, apenas oferece atualizar se ele quiser. Nenhum arquivo de refs/ muda. Termina com uma sugestão só.",
+      "files": [
+        "evals/files/3"
+      ],
       "expectations": [
-        "Trata o pedido como Gestão -> Adicionar: nao escreve DADOS/selection.md nem cataloga posts, so mexe na lista de referencias",
-        "Executa os tres eixos de pesquisa com busca desta sessao (contexto, similares, tendencias): a ficha traz Contexto, Similares com 2+ empresas nomeadas e Tendencias do setor preenchidos, e o transcript registra as chamadas de busca que os sustentam",
-        "Diante das duas paginas homonimas, apresenta as candidatas com nome, seguidores e cidade e pede confirmacao ao usuario em vez de escolher em silencio",
-        "Cria DADOS/refs/maquimox.md com todas as secoes do template presentes e preenchidas (ou com o motivo declarado da lacuna), sem restos de instrucao do template",
-        "Registra o endereco no LinkedIn (slug maquimox) e trata o id numerico explicitamente (valor ou marcador de ausencia), coerente com a linha do indice",
-        "Deixa '## Do Not Copy' sem conteudo inventado (so o comentario-placeholder) e '## Historico' sem conteudo",
-        "Acrescenta ao INDEX.md exatamente uma linha nova para a Maquimox, preservando as 6 existentes, terminando em 'pesquisa 2026-08-24 - sem catalogo'",
-        "A resposta final chama a empresa pelo nome (sem expor o slug ao usuario), resume o que a pesquisa achou e termina com uma unica sugestao"
+        "ARTEFATO: `node scripts/indice.js <DADOS>/refs --procurar \"Maquimox\"` sobre a fixture devolve `ha_parecido: true` com a Maqinox indústria de Máquinas (semelhança 0,75); RESPOSTA FINAL: é essa empresa, pelo nome, que a resposta aponta como a correspondência já existente na lista — nenhuma outra empresa e nenhum dado vindo de busca na web ocupa esse lugar",
+        "Pergunta ao usuário, nomeando a Maqinox, se é a mesma empresa escrita de outro jeito — em vez de criar ficha nova em silêncio",
+        "NEGATIVA: não cria linkedin-data/refs/maquimox.md nem qualquer outra ficha nova em refs/",
+        "NEGATIVA: linkedin-data/refs/INDEX.md continua byte-a-byte igual ao de evals/files/3/linkedin-data/refs/INDEX.md — as mesmas 6 linhas, nenhuma linha nova para a Maquimox",
+        "A ficha maqinox-ind-stria-de-maquinas.md fica igual à da fixture; a nota que ela já carrega sobre a grafia 'Maquimox' não é duplicada nem reescrita",
+        "A resposta final diz desde quando a empresa já está na lista (pesquisa de 14/07/2026) e não afirma que a Maquimox foi adicionada agora",
+        "Como o script mostra 41 dias desde a pesquisa (abaixo dos 60), não dispara re-pesquisa por conta própria: se falar em atualizar, é oferta ao usuário, não fato consumado",
+        "NEGATIVA: não escreve linkedin-data/selection.md nem invoca a profills-garimpo; fecha com uma sugestão só"
       ]
     },
     {
       "id": 4,
-      "prompt": "Quais empresas eu acompanho mesmo? (Contexto: DADOS/refs/INDEX.md tem 6 empresas, todas com 'pesquisa 2026-07-14'; só a Cetro Máquinas tem 'catálogo 2026-07-14' e a Sulpack tem a nota '⚠ presença digital fraca (~38 seguidores)'.)",
-      "expected_output": "Branch Gestão → Listar: lê o índice e mostra as 6 empresas pelo nome, com setor, data da última pesquisa e quando cada uma foi catalogada pela última vez (cinco 'nunca catalogada'), repassando o alerta de presença fraca da Sulpack. Não escreve DADOS/selection.md, não pesquisa nada de novo e não expõe slug cru como se fosse o nome da empresa. Termina com uma sugestão só.",
-      "files": [],
+      "prompt": "Quais empresas eu acompanho mesmo?",
+      "expected_output": "Branch Gestão → Listar: roda o indice.js e mostra as 6 empresas do empresas[] pelo nome de exibição, com setor, data da última pesquisa (2026-07-14) e o estado de catálogo — Cetro catalogada em 14/07/2026, as outras cinco nunca catalogadas — repassando o alerta de presença digital fraca da Sulpack. Não pesquisa nada novo, não escreve arquivo nenhum e não estima o que o índice não carrega. Termina com uma sugestão só.",
+      "files": [
+        "evals/files/4"
+      ],
       "expectations": [
-        "Lista as 6 empresas do INDEX.md pelos nomes de exibicao (Cetro Maquinas, Maqinox, Tecnoenvase, Tecnox do Brasil, Skymsen, Sulpack), sem expor slug cru no lugar do nome",
-        "Informa o setor de cada uma das 6 empresas, coerente com o INDEX.md",
-        "Informa a data da ultima pesquisa (2026-07-14) das empresas",
-        "Marca Cetro Maquinas como ja catalogada (14/07/2026, parcial) e exatamente cinco empresas como nunca catalogadas",
-        "Repassa ao usuario o alerta de presenca digital fraca da Sulpack (~38 seguidores)",
-        "Nao escreve DADOS/selection.md nem cria/altera qualquer arquivo em linkedin-data/",
-        "Nao dispara pesquisa nova (WebSearch/WebFetch/navegador) para responder",
-        "Termina com uma unica sugestao de proximo passo (nao um menu de opcoes)"
+        "A lista sai da saída do indice.js (uma rodada de validação sobre <DADOS>/refs), não de uma leitura solta do arquivo",
+        "Nomeia as 6 empresas pelos nomes de exibição do índice (Cetro Máquinas, Maqinox indústria de Máquinas, Tecnoenvase Máquinas e Equipamentos, Tecnox do Brasil, Skymsen, Sulpack Indústria de Máquinas), sem expor slug cru no lugar do nome",
+        "Para cada uma das 6 informa o setor e a data da última pesquisa (2026-07-14), campo a campo coerentes com evals/files/4/linkedin-data/refs/INDEX.md — não vale uma frase coletiva que cubra só parte das empresas",
+        "Marca a Cetro Máquinas como catalogada em 14/07/2026 e exatamente cinco empresas como nunca catalogadas",
+        "Repassa o alerta ⚠ de presença digital fraca da Sulpack (~38 seguidores) e não atribui alerta a nenhuma das outras cinco",
+        "NEGATIVA: não inventa dado que o índice não tem — nenhum número de seguidores, contagem de posts, porte ou data que não esteja no INDEX.md aparece na resposta (o ~38 da Sulpack é a única exceção, porque vem do alerta)",
+        "NEGATIVA: a árvore linkedin-data/ fica byte-a-byte igual à do estado inicial — nenhum selection.md criado, nenhuma ficha ou índice alterado",
+        "Não dispara WebSearch, WebFetch nem navegador para responder, e termina com uma única sugestão de próximo passo"
       ]
     },
     {
       "id": 5,
-      "prompt": "Atualiza os dados da Tecnox do Brasil, faz meses que pesquisei ela. (Contexto: DADOS/refs/tecnox-do-brasil.md existe com pesquisa de 2026-07-14 e seções Contexto, Similares e Tendências preenchidas; a linha dela no INDEX.md termina em 'pesquisa 2026-07-14 · sem catálogo'.)",
-      "expected_output": "Branch Gestão → Atualizar: refaz os três eixos de pesquisa (contexto, similares, tendências) por busca desta sessão, move o conteúdo anterior da ficha para '## Histórico' marcado com 2026-07-14 em vez de sobrescrever, escreve o resultado novo no topo, atualiza '**Última pesquisa**' e troca o campo pesquisa da linha do INDEX.md pela data de hoje — mantendo 'sem catálogo' intacto, que é campo da profills-garimpo. A ficha termina com duas datas: a de hoje no topo e 2026-07-14 no histórico. Termina com uma sugestão só.",
-      "files": [],
+      "prompt": "Atualiza os dados da Tecnox do Brasil, faz meses que pesquisei ela.",
+      "expected_output": "Branch Gestão → Atualizar: refaz os três eixos (contexto, similares, tendências) por busca desta sessão, move o conteúdo anterior das três seções para '## Histórico' sob '### 2026-07-14' com o texto de julho palavra por palavra, escreve o novo no topo, troca '**Última pesquisa**' para 2026-08-24 e muda só o campo pesquisa da linha da Tecnox no INDEX.md, mantendo 'sem catálogo'. '## Por que é referência' e '## Do Not Copy' não são tocados. O script volta ok: true depois da edição e a resposta fecha com uma sugestão só.",
+      "files": [
+        "evals/files/5"
+      ],
       "expectations": [
-        "Identifica a rota Gestão → Atualizar (re-pesquisar uma empresa já na lista) e age direto sobre a Tecnox, sem invocar a profills-garimpo nem pedir nova lista ao usuário",
-        "Refaz os três eixos de pesquisa (contexto, similares, tendências do setor) por busca desta sessão, com chamadas de busca/fetch registradas no transcript",
-        "O conteúdo anterior das três seções vai para '## Histórico' sob '### 2026-07-14', com o texto de julho preservado (não sobrescrito nem apagado)",
-        "O resultado novo da pesquisa fica no topo, nas seções Contexto, Similares e Tendências do setor, e difere do texto antigo nas três",
-        "O campo '**Última pesquisa**' do cabeçalho da ficha passa de 2026-07-14 para 2026-08-24",
-        "No INDEX.md muda apenas o campo pesquisa da linha da Tecnox para 2026-08-24, mantendo 'sem catálogo' intacto e nenhuma outra linha alterada",
-        "A ficha final carrega exatamente duas datas: 2026-08-24 no topo e 2026-07-14 no histórico",
-        "A resposta final ao usuário termina com uma sugestão só (catalogar a Tecnox com a profills-garimpo)"
+        "Identifica a rota Gestão → Atualizar e age direto sobre a ficha da Tecnox, sem invocar a profills-garimpo nem pedir nova lista ao usuário",
+        "Refaz os três eixos por WebSearch/WebFetch desta sessão: Contexto, Similares e Tendências do setor no topo da ficha diferem do texto de evals/files/5/linkedin-data/refs/tecnox-do-brasil.md nas três seções",
+        "O texto de julho vai para '## Histórico' sob '### 2026-07-14' palavra por palavra: os blocos de Contexto, Similares e Tendências do setor no histórico batem caractere a caractere com as seções correspondentes da ficha da fixture — nada resumido, condensado em prosa ou reescrito",
+        "O campo '**Última pesquisa**' passa de 2026-07-14 para 2026-08-24 e a ficha final carrega exatamente duas datas de pesquisa: 2026-08-24 no topo e 2026-07-14 no histórico",
+        "NEGATIVA: '## Por que é referência' e '## Do Not Copy' continuam idênticos aos da fixture — a re-pesquisa não os toca",
+        "No INDEX.md o diff contra evals/files/5/linkedin-data/refs/INDEX.md é de uma linha só: a da Tecnox, com pesquisa 2026-08-24 e 'sem catálogo' intacto; as outras 5 linhas ficam idênticas",
+        "`node scripts/indice.js <DADOS>/refs --hoje 2026-08-24` volta `ok: true` depois da edição",
+        "NEGATIVA: não escreve linkedin-data/selection.md e a resposta final fecha com uma sugestão só"
+      ]
+    },
+    {
+      "id": 6,
+      "prompt": "Bora ver o que essas empresas andaram postando. (Contexto: quando você oferecer a lista, o usuário marca as três primeiras opções.)",
+      "expected_output": "O indice.js volta indice_existe false com fichas_orfas listando as 6 fichas: a memória existe e o mapa se perdeu. Roda `--reconstruir`, que reescreve o INDEX.md a partir das fichas (6 linhas, a da Cetro com id 66792350 lido da ficha) e recupera o campo catálogo do disco: Cetro, Maqinox e Skymsen voltam com 'catálogo 2026-07-14', porque catalog/raw/<slug>/2026-07-14/posts.json tem post; Sulpack, Tecnoenvase e Tecnox ficam em 'sem catálogo', porque a coleta delas veio vazia ou não existe. Lê o aviso alertas_perdidos — sem índice anterior, nenhum ⚠ é recuperável — e diz ao usuário que os alertas precisam ser refeitos, além de quantas e quais empresas recuperou e que o índice foi remontado a partir das fichas que já estavam no disco. Segue para a Seleção, não para a Primeira run, e fecha escrevendo DADOS/selection.md com as escolhidas.",
+      "files": [
+        "evals/files/6"
+      ],
+      "expectations": [
+        "ARTEFATO: sobre a fixture inicial (refs/ com as 6 fichas e sem INDEX.md) o `node scripts/indice.js <DADOS>/refs` devolve `indice_existe: false` com `fichas_orfas` listando as 6, e o linkedin-data/refs/INDEX.md em outputs/ é byte-a-byte igual ao que `--reconstruir` produz sobre essas mesmas fichas — foi o script que o escreveu, não a mão",
+        "NEGATIVA: não trata como Primeira run — não pergunta o que a empresa do usuário vende, não pesquisa candidatas novas na web e não cria ficha nenhuma; as 6 fichas <slug>.md ficam byte-a-byte iguais às do estado inicial",
+        "O linkedin-data/refs/INDEX.md recriado tem exatamente 6 linhas de empresa, uma por ficha de refs/, e uma nova validação devolve `ok: true`, `n_empresas: 6` e `fichas_orfas: []`",
+        "A linha da Cetro Máquinas traz `id 66792350`, que o script leu da ficha — prova de que o índice saiu do --reconstruir e não foi datilografado",
+        "As linhas da Cetro, da Maqinox e da Skymsen terminam em `catálogo 2026-07-14`, recuperado de catalog/raw/<slug>/2026-07-14/ pelo script; as da Sulpack, da Tecnoenvase e da Tecnox terminam em `sem catálogo` — coleta vazia ou inexistente não vira catálogo",
+        "NEGATIVA: nenhuma data de catálogo é datilografada por fora do que o script achou no disco — nenhuma linha inventa catálogo para Sulpack, Tecnoenvase ou Tecnox, e nenhum ⚠ do índice antigo reaparece como se tivesse sido preservado",
+        "Diz ao usuário, pelos nomes, quantas e quais empresas recuperou, que o índice foi reconstruído a partir das fichas já existentes, e que os alertas ⚠ que existissem no índice perdido precisam ser refeitos (aviso alertas_perdidos), em vez de seguir em silêncio",
+        "Segue para a Seleção com as empresas recuperadas (AskUserQuestion multiSelect com nome, setor e campo catálogo) e escreve linkedin-data/selection.md com no máximo 5 linhas, cada uma no formato completo com o campo id"
+      ]
+    },
+    {
+      "id": 7,
+      "prompt": "Roda a coleta nas minhas empresas de referência. (Contexto: quando você oferecer a lista, o usuário marca Cetro Máquinas, Skymsen e Tecnoenvase.)",
+      "expected_output": "A validação do indice.js volta ok: false com três problemas: catalogo_fora_do_formato na linha da Cetro ('catálogo parcial 2026-07-14 (smoke test)'), link_nao_bate_com_slug e ficha_ausente na linha da Tecnoenvase (linka tecnoenvase.md) — e, fora dos problemas, fichas_orfas com tecnoenvase-maquinas-e-equipamentos-ltda.md, que é consequência da linha torta, não erro à parte. Conserta as duas linhas no INDEX.md — Cetro passa a 'catálogo 2026-07-14', Tecnoenvase volta a linkar tecnoenvase-maquinas-e-equipamentos-ltda.md — roda o script de novo até ok: true e só então escreve DADOS/selection.md com as três empresas escolhidas. Explica em uma frase de linguagem comum o que estava torto, sem despejar JSON.",
+      "files": [
+        "evals/files/7"
+      ],
+      "expectations": [
+        "ARTEFATO: o indice.js sobre a fixture inicial devolve `ok: false` com `catalogo_fora_do_formato` (linha da Cetro), `link_nao_bate_com_slug` e `ficha_ausente` (linha da Tecnoenvase) em `problemas`, e tecnoenvase-maquinas-e-equipamentos-ltda.md em `fichas_orfas` — e sobre o linkedin-data/refs de outputs/ o script volta sem nenhum desses três problemas e com `fichas_orfas: []`",
+        "Corrige a linha da Cetro no INDEX.md para terminar em `catálogo 2026-07-14` (data que já estava na linha torta, não inventada)",
+        "Corrige a linha da Tecnoenvase para linkar `tecnoenvase-maquinas-e-equipamentos-ltda.md`, a ficha que existe em refs/",
+        "ARTEFATO: `node scripts/indice.js <DADOS>/refs` sobre o linkedin-data/refs de outputs/ devolve `ok: true` com `problemas: []`, e todo slug do linkedin-data/selection.md tem linha correspondente nesse INDEX.md corrigido — o selection.md só vale com o índice passando",
+        "NEGATIVA: não conserta apagando — o INDEX.md final continua com as 6 empresas da fixture, a Tecnoenvase inclusive, e nenhuma outra linha muda além das duas corrigidas",
+        "NEGATIVA: não cria refs/tecnoenvase.md nem renomeia/altera qualquer ficha <slug>.md para calar o script; as 6 fichas ficam byte-a-byte iguais às do estado inicial",
+        "Conta ao usuário, em uma frase de linguagem comum, o que estava torto no índice e que foi corrigido, sem despejar o JSON do script na resposta",
+        "linkedin-data/selection.md traz exatamente as 3 empresas escolhidas (Cetro Máquinas, Skymsen, Tecnoenvase), cada linha com o campo id, sob o cabeçalho '# Seleção ativa — 2026-08-24'"
       ]
     }
   ]
