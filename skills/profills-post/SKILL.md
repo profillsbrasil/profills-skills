@@ -1,14 +1,11 @@
 ---
 name: profills-post
 description: >-
-  Gera rascunhos de post de LinkedIn em português a partir do catálogo que a
-  profills-garimpo montou — você escolhe um tema, e a skill produz 3-5 variações
-  de ângulos diferentes inspiradas no que engajou nas empresas de referência,
-  passa por um crivo de qualidade, remove marcas de IA e mostra as opções lado a
-  lado para você escolher. Use quando o usuário disser "gera um post sobre X no
-  estilo da empresa Y", "escreve um post inspirado no que a Z postou", "preciso
-  de ideias de post sobre [tema]", ou "transforma esse catálogo em posts". Lê o
-  catálogo de profills-garimpo e encadeia a skill humanize-pt-br no final.
+  Gera 3-5 rascunhos de post de LinkedIn em pt-BR na voz do usuário,
+  inspirados no catálogo da profills-garimpo, com preview lado a lado.
+  Use para "gera um post sobre X", "escreve inspirado no que a Y postou",
+  "ideias de post sobre [tema]", "transforma o catálogo em posts". Não use
+  para catalogar (profills-garimpo) nem para criar a voz (profills-voz).
 metadata:
   version: 0.1.0
   author: othavio
@@ -17,71 +14,98 @@ metadata:
 
 # profills-post
 
-Você transforma o **catálogo** em **rascunhos** de post na **voz** do usuário. O catálogo diz o que funcionou nas empresas de referência; o seu trabalho é gerar variações inspiradas nesses padrões — nunca cópias — e deixar o usuário escolher. A saída é sempre em português, mesmo quando a referência é gringa.
-
-## Três insumos antes de escrever
-
-**Pasta de dados (`DADOS`)**: se o diretório atual está num repo git com `linkedin-data/` na raiz (`git rev-parse --show-toplevel`), `DADOS` é essa pasta; senão é `~/Profills LinkedIn/`. Se nenhuma das duas existe, invoque a skill `profills-setup` — ela cria a pasta e confere o resto da instalação.
-
-1. **O catálogo** — leia `DADOS/catalog/<slug>.md` (e o `posts.json` bruto) da empresa que inspira o post. É de onde vêm os hooks, formatos e ângulos que engajaram. Sem catálogo, sugira rodar a `profills-garimpo` primeiro, ou trabalhe só com o tema que o usuário deu.
-2. **A voz do usuário** — leia `DADOS/voz.md`: identidade, voz, provas, palavras banidas. É o que faz o rascunho soar como ele, não como a empresa de referência. Sem esse arquivo, **invoque a skill `profills-voz`** — ela monta o arquivo com o usuário em ~10 minutos a partir de material real dele. Se ele não puder agora, pergunte o essencial com `AskUserQuestion` (tom, público, o que ele vende) e ofereça a skill para depois.
-3. **O que não copiar** — leia a seção "Do Not Copy" do dossiê da empresa em `DADOS/refs/<slug>.md`. Tom ou tema que o usuário rejeitou não entra no rascunho.
-
-## Conduza pela mão
-
-Quem usa isto é o **comercial, não dev** — pode não saber o que escrever nem que decisões existem. Não largue opções e suma: **guie, um passo por vez**.
-
-- **Mostre como vai ficar de verdade**, não descreva. Cada opção é um preview realista de feed (ver `references/comparador.md`), não card abstrato — ele bate o olho e entende o que vai publicar.
-- **Pergunte com `AskUserQuestion`**, em linguagem simples, sempre com recomendação e o porquê. Nunca faça ele adivinhar ou digitar do zero — ofereça as escolhas (qual ângulo, mais curto?, outro gancho?).
-- **Pegue o dado real dele** antes de finalizar. Os `[campos]` do rascunho (nome, número, quem fez) são de propósito: você os preenche COM ele, perguntando com jeito.
-- **Aponte sempre o próximo passo** ("quer que eu ajuste o tom?", "monto a ideia da foto?"). A skill segura na mão até o post estar pronto pra colar.
+Você transforma o **catálogo** em **rascunhos** de post na **voz** do usuário. O catálogo diz o que funcionou nas empresas de referência; o seu trabalho é gerar variações inspiradas nesses padrões e deixar o usuário escolher. A saída é sempre em português, mesmo quando a referência é gringa.
 
 ## Inspirar, não copiar
 
-A linha que separa referência de plágio: você reusa o **padrão** (a estrutura do hook, o ângulo, o formato que engajou), nunca o texto. Um post da referência sobre "5 dicas de wellness" vira, na voz do usuário, um post com a mesma *arquitetura* sobre o tema *dele*. Se o rascunho serve para qualquer empresa do setor — se dá para trocar o nome e continuar igual — ele falhou; é genérico, não é dele.
+A linha que separa referência de plágio: você reusa o **padrão** (a estrutura do hook, o ângulo, o formato que engajou), e escreve o texto do zero. Um post da referência sobre "5 dicas de wellness" vira, na voz do usuário, um post com a mesma *arquitetura* sobre o tema *dele*. Se dá para trocar o nome da empresa e o rascunho continua igual, ele falhou: é genérico, não é dele.
+
+## Conduza pela mão
+
+Quem usa isto é o **comercial, não dev** — pode não saber o que escrever nem que decisões existem. Guie, um passo por vez.
+
+- **Mostre como vai ficar de verdade**, não descreva. Cada opção é um preview realista de feed (`references/comparador.md`), não card abstrato — ele bate o olho e entende o que vai publicar.
+- **Pergunte com `AskUserQuestion`**, em linguagem simples, sempre com a opção recomendada e o porquê: ofereça as escolhas prontas (qual ângulo, mais curto?, outro gancho?).
+- **Pegue o dado real dele** antes de finalizar. Os `[campos]` do rascunho (nome, número, quem fez) são de propósito: você os preenche COM ele, perguntando com jeito.
+- **Fale a língua dele**: `catalog/<slug>.md` é "o que a X anda postando", o dossiê é "a ficha da empresa", o crivo é "um crivo de qualidade". Nomes internos (slug, quality gate, Expert Panel, ICP) ficam fora da conversa.
+- **Feche cada resposta com o próximo passo** ("quer que eu ajuste o tom?", "monto a ideia da foto?") — uma sugestão por vez, até o post estar pronto pra colar.
 
 ## Fluxo
 
+### 0. Ache a pasta de dados
+
+**Pasta de dados (`DADOS`)**: se o diretório atual está num repo git com `linkedin-data/` na raiz (`git rev-parse --show-toplevel`), `DADOS` é essa pasta; senão é `~/Profills LinkedIn/`. Se nenhuma das duas existe, invoque a skill `profills-setup` — ela cria a pasta e confere o resto da instalação.
+
+Concluído quando você tem o caminho absoluto de `DADOS` e ele existe no disco.
+
 ### 1. Fixe o tema e a referência
 
-O usuário escolhe o tema (e opcionalmente a empresa que inspira). Puxe do catálogo os sinais para esse tema: quais hooks e ângulos engajaram, qual formato performou, o benchmark de tamanho.
+O usuário escolhe o tema e, opcionalmente, a empresa que inspira. Quando ele pedir posts a partir do catálogo sem nomear tema ("transforma isso em posts"), leia `DADOS/catalog/<slug>.md`, tire de lá 3-4 temas que engajaram na empresa e ofereça-os com `AskUserQuestion`, com a sua recomendação e o porquê.
 
-### 2. Colete a matéria-prima
+Concluído quando o tema cabe numa frase e a referência está definida — o nome de uma empresa do catálogo, ou "sem referência" dito em voz alta.
 
-Escrita habilidosa sobre matéria-prima rasa produz post genérico. Antes de gerar, reúna **quatro elementos** — do `voz.md` (provas, dores do ICP) e do próprio usuário, perguntando com `AskUserQuestion` em linguagem simples:
+### 2. Reúna os três insumos
+
+1. **O catálogo** — leia `DADOS/catalog/<slug>.md` e o `DADOS/catalog/raw/<slug>/<AAAA-MM-DD>/posts.json` da empresa que inspira. De lá vêm os hooks, formatos e ângulos que engajaram e o % de hooks que cabem no corte. Sem o `<slug>.md`: abra o `meta.json` da coleta — o campo `status` (`sem_posts`, `pagina_nao_gerenciada`, `erro_navegacao`) diz por quê. Conte a razão ao usuário em uma frase, ofereça rodar a `profills-garimpo` e siga só com o tema.
+2. **A voz do usuário** — leia `DADOS/voz.md`: identidade, voz, provas, palavras banidas. É o que faz o rascunho soar como ele, não como a empresa de referência. Sem esse arquivo, **invoque a skill `profills-voz`** — ela monta o arquivo com o usuário em ~10 minutos a partir de material real dele. Se ele não puder agora, pergunte o essencial com `AskUserQuestion` (tom, público, o que ele vende) e ofereça a skill para depois.
+3. **O que não copiar** — leia a seção `## Do Not Copy` do dossiê da empresa em `DADOS/refs/<slug>.md`. Seção vazia ou ainda com o comentário de placeholder significa "nunca perguntado": faça uma `AskUserQuestion` ("tem algo da <empresa> que você não quer imitar?") com opções concretas tiradas dos posts dela ("o tom institucional", "os posts de vaga", "o excesso de emoji", "nada a evitar") e grave a resposta no dossiê, no lugar do comentário, antes de gerar.
+
+Concluído quando os três estão em contexto — cada um lido do disco, ou com a ausência resolvida pelo caminho acima.
+
+### 3. Colete a matéria-prima
+
+Escrita habilidosa sobre matéria-prima rasa produz post genérico. Antes de gerar, reúna **quatro elementos** — do `voz.md` (provas, dores do ICP), do catálogo e do próprio usuário, perguntando com `AskUserQuestion` em linguagem simples:
 
 1. **Um número real** dele sobre o tema (quantos, quanto tempo, quanto custou).
 2. **Uma opinião ou insight contra-intuitivo** — o que ele sabe do tema que o senso comum do setor erra.
 3. **Um mecanismo** — o "como" em 2-3 passos concretos.
 4. **A dor do ICP** que o post toca — qual ansiedade do comprador esse tema resolve.
 
-Só avance com os quatro. Faltou um → pergunte; não invente número nem opinião pelo usuário. (Nem todo elemento entra em toda variação — são a despensa, não a receita.)
+Elemento que o usuário não tem na hora: puxe de **Provas** do `voz.md` ou de um número medido do catálogo. Se nem lá existir, escreva `[número a confirmar]` no rascunho (o preview realça o campo e vocês o preenchem no passo 8) e deixe o ângulo `dado` de fora das variações. Opinião e mecanismo vêm sempre dele — esses você pergunta até ter.
 
-### 3. Gere 3-5 variações — uma por ângulo
+Concluído quando os quatro estão escritos, cada um com a origem anotada (usuário, `voz.md`, catálogo) ou marcado como `[a confirmar]`. (Nem todo elemento entra em toda variação — são a despensa, não a receita.)
 
-Cada rascunho ataca o tema por um **ângulo diferente** (não são 5 versões da mesma frase). Cubra ângulos distintos da `references/moldes.md` — ex.: um `dado`, um `contrarian`, uma `historia-cliente`. Para cada um: escolha o molde de post e a categoria de hook, preencha com o conteúdo do usuário, aplique os blocos de credibilidade quando o ângulo pede prova, e feche com um CTA da taxonomia (ver moldes).
+### 4. Gere 3-5 variações — uma por ângulo
 
-**Diversifique o hook, não só o ângulo.** Três ângulos diferentes com o mesmo tipo de abertura não são escolha real. Entre as variações, garanta pelo menos: um hook **intelectual** (curiosity-gap, bold-claim, contrast), um **de cena** (relatability, confissão, countdown) e um **direto ao leitor** (question, proof-first).
+Cada rascunho ataca o tema por um **ângulo diferente** da tabela de ângulos de `references/moldes.md` — ex.: um `dado`, um `contrarian`, uma `historia-cliente`. Para cada um: escolha o molde de post e a categoria de hook, preencha com o conteúdo do usuário, aplique os blocos de credibilidade quando o ângulo pede prova, e feche com um dos CTAs de `references/moldes.md`.
 
-### 4. Passe pelo quality gate
+**Diversifique o hook, não só o ângulo.** Três ângulos diferentes com o mesmo tipo de abertura não são escolha real: garanta pelo menos uma variação de cada **família de hook** — intelectual, de cena, direto ao leitor (coluna Família da tabela de hooks em `moldes.md`); da quarta variação em diante, repita família mas não categoria.
 
-Antes de humanizar, rode o crivo de `references/quality-gate.md`: o teste "So what?" em cada afirmação, e o Expert Panel (personas do contexto LinkedIn pontuam 1-10, itera até média ≥8). Rascunho que não passa volta para revisão, não para o usuário.
+Concluído quando existem 3-5 rascunhos completos, cada um com ângulo próprio, as três famílias de hook representadas e nenhuma categoria de hook repetida, nenhum deles abrindo com um hook da lista de aposentados.
 
-### 5. Humanize
+### 5. Passe pelo crivo
+
+Antes de humanizar, rode o crivo de `references/quality-gate.md` em cada rascunho: o teste "e daí?", o rótulo analgésico/vitamina, o passe de voz contra o `voz.md` e o painel de personas. Rascunho que não bate o corte volta para revisão, não para o usuário.
+
+Concluído quando cada rascunho que segue adiante bateu o corte definido em `quality-gate.md`.
+
+### 6. Humanize
 
 Encadeie a skill **`humanize-pt-br`** em cada rascunho aprovado — ela remove as marcas de IA em português (vocabulário inflado, conectivos automáticos, conclusões genéricas). O hook fica intacto; o corpo ganha voz humana.
 
-### 6. Mostre lado a lado
+Concluído quando todo rascunho aprovado passou pela skill.
 
-Renderize as variações como **previews realistas de feed** seguindo `references/comparador.md`: copie `assets/preview-template.html`, preencha só o bloco `DADOS` (o motor cuida do corte "…mais", dos `[campos]` e do layout) e publique via Artifact. O mesmo template, com uma opção só, é o preview final depois da escolha. Publicar é ele; você entrega o rascunho.
+### 7. Mostre lado a lado
 
-### 7. Persista o escolhido
+Renderize as variações como **previews realistas de feed** seguindo `references/comparador.md`: copie `assets/preview-template.html`, preencha só o bloco `DADOS` e publique via Artifact. Depois do artefato, pergunte no chat com `AskUserQuestion` qual ângulo ele leva — uma opção por ângulo, com o porquê de cada. Publicar no LinkedIn é ele; você entrega o rascunho.
 
-Depois da escolha e dos `[campos]` preenchidos, salve o texto final em `DADOS/drafts/<AAAA-MM-DD>-<tema-slug>.md` — o texto exato do preview, pronto para colar, com uma linha de contexto no topo (tema, ângulo, empresa que inspirou). O preview morre com a sessão; o arquivo é o que ele encontra amanhã.
+Concluído quando o artefato está publicado com uma opção por variação e o usuário escolheu uma delas.
+
+### 8. Persista o escolhido
+
+Preencha os `[campos]` com o dado real dele, mostre o preview final (o mesmo template com uma opção só) e salve o texto em `DADOS/drafts/<AAAA-MM-DD>-<tema-slug>.md` — o texto exato do preview, pronto para colar, com uma linha de contexto no topo (tema, ângulo, empresa que inspirou). Crie a pasta `DADOS/drafts/` se ela ainda não existir. O preview morre com a sessão; o arquivo é o que ele encontra amanhã.
+
+Concluído quando o arquivo existe no disco, sem `[campos]` pendentes no texto.
+
+### 9. Ajuste o que ele pedir
+
+Pedidos de iteração ("encurta o 2", "troca o gancho", "deixa mais direto") mexem só no trecho afetado: edite o seu bloco `DADOS` e republique **no mesmo caminho de arquivo**, para o artefato manter a URL. Rascunho já salvo no passo 8 é reescrito junto, no mesmo arquivo.
+
+Concluído quando o preview republicado mostra o ajuste e o arquivo em `DADOS/drafts/` bate com ele.
 
 ## Restrições de formato (LinkedIn)
 
-Aplicáveis a todo rascunho, do `references/moldes.md`:
+Aplicáveis a todo rascunho:
 
 - Hook nos primeiros ~210 caracteres, antes do corte "ver mais".
 - Corpo entre ~1.200 e 1.600 caracteres performa bem; acima de ~2.000 o engajamento cai.

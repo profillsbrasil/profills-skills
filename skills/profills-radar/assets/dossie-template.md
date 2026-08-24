@@ -1,7 +1,7 @@
 # <Nome da Empresa>
 
-- **Slug LinkedIn**: `<slug>` (`linkedin.com/company/<slug>`)
-- **ID numérico**: `<id>` — estável mesmo em rebranding
+- **Endereço no LinkedIn**: `<slug>` (`linkedin.com/company/<slug>`) — `—` quando a empresa não tem página
+- **ID numérico**: `<id>` — estável mesmo em rebranding; `—` quando a página não mostrou
 - **Setor**: <setor>
 - **Porte**: <nº de seguidores / funcionários, se souber>
 - **País / idioma dos posts**: <BR / global · PT / EN>
@@ -13,7 +13,7 @@
 
 ## Do Not Copy
 
-<O que NÃO imitar desta empresa: tom, tema, prática. Deixe em branco se não houver — a skill profills-post lê isto para evitar copiar o que o usuário rejeita.>
+<!-- vazio = ainda não perguntado. A profills-garimpo pergunta ao fim de cada catálogo. Critério: mesmo TEMA pode; mesma estrutura, ordem de argumentos ou estilo de frase não. -->
 
 ## Contexto
 
@@ -21,7 +21,7 @@
 
 ## Similares
 
-<2-4 empresas parecidas ou concorrentes. Marque quais já viraram dossiê e quais são só candidatas.>
+<2-4 empresas parecidas ou concorrentes. Marque quais já viraram ficha e quais são só candidatas.>
 
 ## Tendências do setor
 
@@ -29,4 +29,4 @@
 
 ## Histórico
 
-<!-- Ao re-pesquisar, mova o conteúdo anterior para cá com a data, em vez de sobrescrever. -->
+<!-- Ao re-pesquisar, mova o conteúdo anterior para cá com a data em que ele valia; o topo do arquivo fica só com a pesquisa mais recente. -->

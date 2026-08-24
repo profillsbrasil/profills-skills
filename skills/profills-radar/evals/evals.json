@@ -3,20 +3,32 @@
   "evals": [
     {
       "id": 1,
-      "prompt": "Quero começar a acompanhar o que meus concorrentes andam postando no LinkedIn pra tirar ideias de conteúdo.",
-      "expected_output": "Detecta índice vazio (primeira run), avisa que é a primeira vez, e usa AskUserQuestion pedindo 3-5 empresas/links. Depois pesquisa contexto/similares/tendências, escreve dossiês e o índice, e oferece as similares descobertas.",
+      "prompt": "Quero começar a acompanhar o que meus concorrentes andam postando no LinkedIn pra tirar ideias de conteúdo. (Contexto: DADOS existe com refs/, catalog/ e drafts/, mas DADOS/refs/INDEX.md não existe e DADOS/voz.md também não; a empresa do usuário vende máquinas de embalagem para indústria de alimentos.)",
+      "expected_output": "Branch Primeira run: cria DADOS/refs/INDEX.md com o cabeçalho antes de qualquer linha. Como voz.md não existe, pergunta em prosa o que ele vende e para quem, pesquisa 4-6 empresas reais do setor via WebSearch/WebFetch e só então usa AskUserQuestion (multiSelect) com uma opção por empresa e a razão de uma frase, mais a opção 'tenho outras em mente' — não pede '3 a 5 empresas' antes de pesquisar. Para cada aprovada: pesquisa contexto/similares/tendências, resolve slug e id, escreve DADOS/refs/<slug>.md pelo template e a linha no INDEX.md terminando em 'pesquisa <hoje> · sem catálogo'. Oferece as similares descobertas e fecha escrevendo DADOS/selection.md (máx. 5, com o campo id em cada linha), dizendo pelo nome quais entraram e sugerindo a profills-garimpo como próximo passo.",
       "files": []
     },
     {
       "id": 2,
-      "prompt": "Bora catalogar de novo — escolhe umas empresas pra essa semana.",
-      "expected_output": "Índice já populado: NÃO pede links de novo. Mostra as empresas conhecidas via AskUserQuestion para selecionar, segura em no máximo 5, e sugere similares ainda não catalogadas ou re-pesquisa de dados velhos. Escreve DADOS/selection.md.",
+      "prompt": "(A profills-garimpo invocou a profills-radar porque DADOS/selection.md não existe. Contexto: DADOS/refs/INDEX.md tem 6 empresas do setor de máquinas de embalagem, todas com 'pesquisa 2026-06-01'; cinco linhas terminam em 'sem catálogo' e a da Cetro Máquinas em 'catálogo 2026-07-14'.)",
+      "expected_output": "Branch Seleção: não pede links nem nomes novos. Apresenta as 6 empresas do índice com AskUserQuestion (multiSelect), cada opção com nome, setor e o campo catálogo ('catalogada em 14/07' ou 'nunca catalogada'). Segura em 5 se ele marcar mais, explicando que passar disso vira sessão longa de navegação. Como todas têm pesquisa de mais de 60 dias (2026-06-01), oferece a re-pesquisa antes de seguir. Escreve DADOS/selection.md com o cabeçalho 'Seleção ativa — <AAAA-MM-DD>' e uma linha por empresa no formato '[Nome](refs/<slug>.md) — `<slug>` · id <id ou —> · <setor> · <país>'. Termina devolvendo o controle à profills-garimpo, sem sugerir próximo passo por conta própria.",
       "files": []
     },
     {
       "id": 3,
-      "prompt": "Adiciona a Maquimox nas minhas referências e me diz o que descobriu dela.",
-      "expected_output": "Branch de gestão: pesquisa a empresa (contexto/similares/tendências), resolve o slug, escreve o dossiê seguindo o template, atualiza o índice, e resume o que achou por nome.",
+      "prompt": "Adiciona a Maquimox nas minhas referências e me diz o que descobriu dela. (Contexto: DADOS/refs/INDEX.md já tem 6 empresas; a busca no LinkedIn retorna duas páginas plausíveis com esse nome, uma com 1.200 seguidores em Curitiba e outra com 40 seguidores em São José dos Pinhais.)",
+      "expected_output": "Branch Gestão → Adicionar, executando os três passos de 'Como entra uma empresa nova': pesquisa contexto/similares/tendências com busca desta sessão; como há duas páginas plausíveis, mostra as candidatas com nome, seguidores e cidade e pede ao usuário para confirmar qual é, em vez de escolher sozinho; depois de confirmada, resolve slug e id, escreve DADOS/refs/<slug>.md com todas as seções do template preenchidas (deixando '## Do Not Copy' com o comentário e '## Histórico' vazia) e acrescenta a linha no INDEX.md terminando em 'pesquisa <hoje> · sem catálogo'. Resume o que achou chamando a empresa pelo nome e termina com uma sugestão só.",
+      "files": []
+    },
+    {
+      "id": 4,
+      "prompt": "Quais empresas eu acompanho mesmo? (Contexto: DADOS/refs/INDEX.md tem 6 empresas, todas com 'pesquisa 2026-07-14'; só a Cetro Máquinas tem 'catálogo 2026-07-14' e a Sulpack tem a nota '⚠ presença digital fraca (~38 seguidores)'.)",
+      "expected_output": "Branch Gestão → Listar: lê o índice e mostra as 6 empresas pelo nome, com setor, data da última pesquisa e quando cada uma foi catalogada pela última vez (cinco 'nunca catalogada'), repassando o alerta de presença fraca da Sulpack. Não escreve DADOS/selection.md, não pesquisa nada de novo e não expõe slug cru como se fosse o nome da empresa. Termina com uma sugestão só.",
+      "files": []
+    },
+    {
+      "id": 5,
+      "prompt": "Atualiza os dados da Tecnox do Brasil, faz meses que pesquisei ela. (Contexto: DADOS/refs/tecnox-do-brasil.md existe com pesquisa de 2026-07-14 e seções Contexto, Similares e Tendências preenchidas; a linha dela no INDEX.md termina em 'pesquisa 2026-07-14 · sem catálogo'.)",
+      "expected_output": "Branch Gestão → Atualizar: refaz os três eixos de pesquisa (contexto, similares, tendências) por busca desta sessão, move o conteúdo anterior da ficha para '## Histórico' marcado com 2026-07-14 em vez de sobrescrever, escreve o resultado novo no topo, atualiza '**Última pesquisa**' e troca o campo pesquisa da linha do INDEX.md pela data de hoje — mantendo 'sem catálogo' intacto, que é campo da profills-garimpo. A ficha termina com duas datas: a de hoje no topo e 2026-07-14 no histórico. Termina com uma sugestão só.",
       "files": []
     }
   ]

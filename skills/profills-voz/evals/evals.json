@@ -3,20 +3,26 @@
   "evals": [
     {
       "id": 1,
-      "prompt": "Quero criar meu arquivo de voz pros posts saírem com a minha cara.",
-      "expected_output": "Branch Criar: explica em uma frase o que é o arquivo, pede material bruto pela ordem de força do sinal (sugere áudio de 1min como caminho fácil), extrai marcadores com trecho-recibo, completa com entrevista curta (identidade, provas com número, 4 eixos fugindo do meio), escreve DADOS/voz.md pelo template com traços 'X, mas nunca Y', e valida com frases de teste e perguntas específicas — nunca 'ficou bom?'.",
+      "prompt": "Quero criar meu arquivo de voz pros posts saírem com a minha cara. (Contexto: o diretório atual é um clone do repo profills-skills, com linkedin-data/ na raiz, então DADOS é linkedin-data/; linkedin-data/voz.md não existe; o usuário chamou a skill direto.)",
+      "expected_output": "Confere que voz.md não existe e segue a branch Criar. Explica em uma frase o que é o arquivo, pede o material mais bruto que ele tiver com AskUserQuestion (áudio de 1 minuto como caminho mais fácil), extrai marcadores com trecho-recibo, completa a entrevista curta (identidade, provas com número ou [a confirmar], um AskUserQuestion por eixo de tom com duas frases-exemplo concretas e recomendação, tom por contexto e linguagem do cliente). Grava linkedin-data/voz.md pelo template, com traços 'X, mas nunca Y' e sem placeholder sobrando, e só então valida mostrando 2-3 frases de teste com perguntas específicas ('você usaria a palavra robusta?'), gravando as rejeições em Palavras banidas e Isso não sou eu até ter ≥3 banidas confirmadas. Fecha dizendo onde salvou e com UMA sugestão só (/profills-post).",
       "files": []
     },
     {
       "id": 2,
-      "prompt": "Esse rascunho tá bom mas eu nunca falaria 'solução robusta', não sou eu.",
-      "expected_output": "Branch Calibrar: trata a rejeição como dado, pergunta qual palavra/frase específica doeu, adiciona 'solução robusta' em Palavras banidas (com data), atualiza 'Isso não sou eu' se for construção, e avisa que o arquivo melhora a cada rejeição. Não reescreve o arquivo inteiro.",
+      "prompt": "(A profills-post invocou a profills-voz no meio da geração de um rascunho sobre manutenção preventiva, porque não achou o arquivo de voz. Contexto: DADOS é ~/Profills LinkedIn/ e existe; ~/Profills LinkedIn/voz.md não existe; a profills-post já perguntou ao usuário o tom, o público e o que ele vende antes de invocar.)",
+      "expected_output": "Segue a branch Criar aproveitando tom, público e produto já respondidos à profills-post — pula essas partes da entrevista em vez de repetir as perguntas — e pede só o material bruto que falta. Grava ~/Profills LinkedIn/voz.md pelo template e valida mostrando frases de teste. No fim diz em uma frase onde salvou e DEVOLVE O CONTROLE para a profills-post continuar o rascunho de manutenção preventiva, sem sugestão própria de próximo passo.",
       "files": []
     },
     {
       "id": 3,
-      "prompt": "Adiciona no meu product marketing que a gente fechou o cliente número 50.",
-      "expected_output": "Branch Atualizar: edita só a seção Provas, confirma o número com o usuário se ambíguo, move a prova antiga ('40 clientes') para comentário datado em vez de apagar, e preserva o resto do arquivo.",
+      "prompt": "Adiciona no meu arquivo de voz que a gente fechou o cliente número 50. (Contexto: DADOS/voz.md já existe, com a linha '- 40 clientes ativos desde 2023' na seção Provas e cabeçalho 'Montado em 2026-08-04'.)",
+      "expected_output": "Branch Atualizar: edita só a seção Provas, preservando o resto do arquivo. A prova antiga fica na mesma linha com a data, no formato do template ('~~40 clientes ativos desde 2023~~ → 50 clientes ativos (atualizado <data de hoje>)'), em vez de sumir. Atualiza o cabeçalho com 'atualizado em <data de hoje>', grava o arquivo e mostra ao usuário o antes/depois da linha mexida.",
+      "files": []
+    },
+    {
+      "id": 4,
+      "prompt": "Esse rascunho tá bom mas eu nunca falaria 'solução robusta', não sou eu. (Contexto: DADOS/voz.md existe, com Palavras banidas e Isso não sou eu já preenchidas por uma validação anterior.)",
+      "expected_output": "Branch Calibrar: pergunta qual palavra ou frase exatamente doeu, acrescenta 'solução robusta' em Palavras banidas com a data de hoje, e leva a construção rejeitada para Isso não sou eu com o exemplo. Se algum traço 'X, mas nunca Y' se mostrou errado, reescreve esse traço. Atualiza o cabeçalho com a data, grava o arquivo e mostra ao usuário a linha nova — sem reescrever o arquivo inteiro.",
       "files": []
     }
   ]

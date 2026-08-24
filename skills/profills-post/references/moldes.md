@@ -2,6 +2,8 @@
 
 Adaptado (traduzido) do repositório MIT [coreyhaines31/marketingskills](https://github.com/coreyhaines31/marketingskills). Estes moldes são ponto de partida na voz do usuário, não fôrma rígida — o `humanize-pt-br` no final garante que não soem montados.
 
+Os valores de hook e ângulo são a taxonomia fechada da `profills-garimpo` (`../profills-garimpo/references/taxonomias.md`): a primeira coluna de cada tabela daqui é o **mesmo slug** que o `posts.json` grava, com a glosa em português ao lado. É isso que deixa você casar o molde com o hook que o catálogo mediu.
+
 ## Índice
 - [Templates de post](#templates-de-post)
 - [Categorias de hook (8)](#categorias-de-hook-8)
@@ -17,7 +19,7 @@ Escolha o template pelo ângulo e pelo que engajou no catálogo da referência.
 
 Seja qual for o template, o corpo sustenta a tensão com a lógica **E → MAS → ENTÃO**: contexto (e, e, e) → o problema que quebra o contexto (mas) → o que se faz com isso (então). Parágrafo que não é nem contexto, nem quebra, nem consequência está sobrando.
 
-**História (Story)** — hook → cenário → conflito/erro → virada → resultado → lição → pergunta de engajamento. O formato que mais engaja no B2B (1,5-2×). Puxa credibilidade de vulnerabilidade real, então precisa de detalhe vivido (número, data, sentimento). Duas técnicas de composição:
+**História (Story)** — hook → cenário → conflito/erro → virada → resultado → lição → pergunta de engajamento. O formato de maior multiplicador de engajamento no B2B (`benchmark-mercado.md` da `profills-garimpo`). Puxa credibilidade de vulnerabilidade real, então precisa de detalhe vivido (número, data, sentimento). Duas técnicas de composição:
 
 - **Comece pela emoção, não pelo fato.** "Eu tinha medo de subir o preço. Minha mão tremia no envio do e-mail." puxa mais que "Aprendi uma lição sobre preço". A ação vem depois do sentimento.
 - **Ritmo "curta. respira. aterrissa."** — frase curta, quebra de linha, frase mais longa que explica. Alternar dá o ritmo de fala que segura leitura no mobile.
@@ -32,18 +34,18 @@ Seja qual for o template, o corpo sustenta a tensão com a lógica **E → MAS �
 
 ## Categorias de hook (8)
 
-A primeira linha decide se leem o resto. Gere variações cruzando estas aberturas — cada uma com o cuidado que a faz não virar clichê:
+A primeira linha decide se leem o resto. Gere variações cruzando estas aberturas — cada uma com o cuidado que a faz não virar clichê. A coluna **Família** é o que o passo 4 do `SKILL.md` exige cobrir: pelo menos uma variação de cada família.
 
-| Categoria | Abertura | Cuidado |
-|---|---|---|
-| Curiosity gap | segura o substantivo ("ninguém te conta o que realmente causa isso") | tem que pagar a promessa no corpo, senão é clickbait |
-| Bold claim | afirmação específica e falseável ("isso substituiu minha rotina inteira") | precisa sustentar com prova |
-| Confissão em 1ª pessoa | "eu estava fazendo X completamente errado" | soa falso sem detalhe vivido |
-| Contraste | dois estados na primeira linha (antes/depois) | — |
-| Relatabilidade | espelha uma situação hiperespecífica ("são 15h e você está no quarto café") | — |
-| Pergunta | a pergunta exata que o público digitaria | não pergunta retórica vazia |
-| Contagem/data | "dia 1 de...", "há 3 anos eu..." | âncora concreta, não vaga |
-| Prova primeiro | lidera com o recibo (o número, o resultado) | o número tem que ser real |
+| Valor | Glosa | Família | Abertura | Cuidado |
+|---|---|---|---|---|
+| `curiosity-gap` | vão de curiosidade | intelectual | segura o substantivo ("ninguém te conta o que realmente causa isso") | tem que pagar a promessa no corpo, senão é clickbait |
+| `bold-claim` | afirmação ousada | intelectual | afirmação específica e falseável ("isso substituiu minha rotina inteira") | precisa sustentar com prova |
+| `contrast` | contraste | intelectual | dois estados na primeira linha (antes/depois) | os dois estados precisam ser concretos |
+| `first-person-confession` | confissão em 1ª pessoa | de cena | "eu estava fazendo X completamente errado" | soa falso sem detalhe vivido |
+| `relatability` | identificação | de cena | espelha uma situação hiperespecífica ("são 15h e você está no quarto café") | específico demais para um nicho de um só não pega |
+| `countdown` | contagem/data | de cena | "dia 1 de...", "há 3 anos eu..." | âncora concreta, não vaga |
+| `question` | pergunta | direto ao leitor | a pergunta exata que o público digitaria | pergunta com resposta óbvia é isca |
+| `proof-first` | prova primeiro | direto ao leitor | lidera com o recibo (o número, o resultado) | o número tem que ser real |
 
 **Regra do on-ramp**: a segunda linha estende a promessa do hook, não pula para o pitch. Se o hook promete uma história e a linha seguinte vende produto, quebrou.
 
@@ -67,7 +69,7 @@ Aberturas que já foram boas e hoje gritam "template". Se o hook gerado cair num
 
 Gere uma variação por ângulo — é o que dá variedade real entre os rascunhos:
 
-| Ângulo | Fórmula |
+| Valor | Fórmula |
 |---|---|
 | `dado` | lidera com um dado/estatística |
 | `contrarian` | contraria o senso comum do setor |
@@ -85,11 +87,11 @@ Quando o ângulo pede prova (`dado`, `contrarian`, autoridade), encaixe um bloco
 - **Especialista**: `Como [especialista/cargo] costuma dizer: "[citação]". Na prática, isso significa [aplicação].`
 - **Autoridade própria**: `Depois de [N] [casos/anos/clientes], o padrão que se repete é [afirmação]. [Exemplo concreto].`
 
-Todo número no rascunho puxa o **dado real** do catálogo ou do `voz.md` — nunca um número redondo inventado. "Vago → específico": "muitos clientes" → "2.847 clientes"; "rápido" → "em 14 dias".
+Todo número no rascunho puxa o **dado real** do catálogo ou do `voz.md`; sem dado real, o campo vai como `[número a confirmar]` para o usuário preencher. "Vago → específico": "muitos clientes" → "2.847 clientes"; "rápido" → "em 14 dias".
 
 ## CTAs (4)
 
-Todo rascunho fecha com um CTA de uma destas categorias — escolhida pelo que o post pede, não sempre a mesma:
+Todo rascunho fecha com um CTA de uma destas categorias — escolhida pelo que o post pede, não sempre a mesma. Diferente dos hooks e ângulos, esta lista é **da profills-post**: o `posts.json` grava o CTA observado como texto livre, sem categoria fechada.
 
 | Categoria | Padrão | Quando |
 |---|---|---|

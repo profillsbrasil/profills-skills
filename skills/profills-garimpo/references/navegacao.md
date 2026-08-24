@@ -1,28 +1,26 @@
-# Navegação — dirigindo o Brave logado
+# Navegação — dirigindo o navegador logado
 
-A coleta usa o `claude-in-chrome`: o Brave real do usuário, já logado no LinkedIn. Isso evita os sinais clássicos de automação headless (o `navigator.webdriver`, o user-agent "HeadlessChrome") porque é o navegador dele de verdade, com movimento humano. As tools têm o prefixo `mcp__claude-in-chrome__` e carregam via `ToolSearch`.
-
-## Por que o navegador logado, e não um scraper
-
-A aba `/company/<slug>/posts/` só existe logado — deslogado ela cai em authwall total (testado). Não há API oficial que leia posts de empresas de terceiros (a Community Management API exige ser admin da página). E os termos do LinkedIn, além de scrapers como Firecrawl/Browserbase, proíbem raspagem — o próprio repositório marketingskills marca isso como violação explícita de ToS. O navegador real logado, em ritmo humano e só lendo, é o caminho mais defensável para uso pessoal de baixo volume. Ver `compliance.md`.
+A coleta usa o `claude-in-chrome` no navegador que a `profills-navegador` selecionou, já logado no LinkedIn. A aba `/company/<slug>/posts/` **só existe logado** — deslogado ela cai em authwall total (testado). Por que o navegador real e não um scraper ou a API: `compliance.md`.
 
 ## Passos por empresa
 
-1. **Navegador pronto primeiro**: a skill `profills-navegador` já deve ter rodado (o SKILL.md invoca ela antes da primeira empresa) — é ela que seleciona o navegador certo entre as máquinas conectadas, carrega as tools e entrega uma tab própria. Não chame `tabs_create_mcp`/`navigate` sem esse handoff: com a conta conectada em mais de um PC, a tab abre no computador errado.
+1. **Navegador pronto primeiro**: a `profills-navegador` já rodou (o `SKILL.md` a invoca antes da primeira empresa) e entregou no handoff o navegador selecionado, o id de uma tab própria e as tools `tabs_context_mcp`, `tabs_create_mcp`, `navigate`, `read_page`, `get_page_text`, `find` e `computer` já carregadas. Trabalhe nessa tab: com a conta conectada em mais de um PC, uma tab criada fora do handoff abre no computador errado.
 
-2. **Navegue na tab do handoff** (`navigate`) para `https://www.linkedin.com/company/<slug>/posts/`. Se precisar de tools além das que a profills-navegador carregou, complete numa chamada de `ToolSearch`: `select:mcp__claude-in-chrome__read_page,mcp__claude-in-chrome__get_page_text,mcp__claude-in-chrome__computer,mcp__claude-in-chrome__javascript_tool`.
+2. **Carregue o `javascript_tool`**, que não vem no handoff e é o que faz a extração do passo 5: `ToolSearch` com `select:mcp__claude-in-chrome__javascript_tool`.
 
-3. **Confirme que carregou logado.** Se a página mostrar authwall/login em vez do feed, a sessão do usuário caiu — pare e peça para ele logar no LinkedIn no Brave antes de continuar. Não tente burlar. Logado, **anote os seguidores** do topo da página ("N seguidores") — é o denominador da taxa de engajamento e vai no `meta.json` da coleta (`schema-post.md`).
+3. **Navegue** (`navigate`) para `https://www.linkedin.com/company/<slug>/posts/`.
 
-4. **Ordene por Recentes.** O padrão da aba é "Populares", que reordena por engajamento e quebra o cálculo de cadência. Clique no "Classificar por: Populares" e escolha **"Recentes"** para ordem cronológica. O feed re-renderiza — espere ~2s e re-extraia (os posts remontam no DOM).
+4. **Confirme que carregou logado.** Feed visível → **anote os seguidores** do topo da página ("N seguidores"): é o denominador da taxa de engajamento e vai no `meta.json` (`schema-post.md`). Authwall/tela de login → a sessão do usuário caiu: pare, peça para ele logar no LinkedIn no navegador que a `profills-navegador` selecionou e diga que o catálogo continua de onde parou quando ele avisar.
 
-5. **Extraia via `data-urn`** com `javascript_tool` — ver [Extração validada](#extração-validada-js). A árvore de acessibilidade não expõe o `activity id`; o DOM sim.
+5. **Ordene por Recentes.** O padrão da aba é "Populares", que reordena por engajamento e quebra o cálculo de cadência. Clique no "Classificar por: Populares" e escolha **"Recentes"** para ordem cronológica. O feed re-renderiza — espere ~2s antes de extrair (os posts remontam no DOM).
 
-6. **Role para carregar mais.** A paginação é scroll infinito client-side, sem parâmetro de URL. Use `computer` para rolar (tecla End ou scroll) ou clique em "Exibir mais resultados", e espere o carregamento entre cada rolagem. Ritmo humano — pausas de segundos, não rajada.
+6. **Extraia via `data-urn`** com `javascript_tool` — ver [Extração validada](#extração-validada-js). A árvore de acessibilidade não expõe o `activity id`; o DOM sim.
 
-7. **Pare** cedo: o alvo padrão é **até 5 posts da última semana** (os mais recentes primeiro). Pare ao juntar 5 posts, ao passar de 7 dias na data, ou quando o feed acabar — o que vier primeiro. Como é pouco, raramente precisa rolar muito.
+7. **Role para carregar mais.** A paginação é scroll infinito client-side, sem parâmetro de URL. Use `computer` para rolar (tecla End ou scroll) ou clique em "Exibir mais resultados", esperando o carregamento entre cada rolagem. Ritmo humano — pausas de segundos, não rajada.
 
-8. **Screenshot dos posts com mídia** com `computer` (screenshot, `save_to_disk: true`), salvando em `screenshots/post-<id>.png`. Só posts com imagem/carrossel/vídeo — texto puro não precisa.
+8. **Pare** cedo: ao atingir o teto de posts da rodada, ao passar da janela em dias, ou quando o feed acabar — o que vier primeiro. Na janela padrão (até 5 posts / 7 dias) raramente precisa rolar muito.
+
+9. **Screenshot dos posts com mídia** com `computer` (screenshot, `save_to_disk: true`), salvando em `screenshots/post-<id>.png`. Só posts com imagem/carrossel/vídeo — texto puro não precisa.
 
 ## Extração validada (JS)
 
@@ -48,9 +46,24 @@ Testado ao vivo (jul/2026). O feed **intercala anúncios** entre os posts orgân
 })()
 ```
 
-- `dataRel` vem relativo ("1 h", "1 d", "4 d") — converta para data absoluta com a data de hoje. **Cuidado com "m": no LinkedIn PT, "11 m" é 11 MESES, não minutos** (minutos é "min"). Confundir os dois faz post velho passar por recente. Fonte da verdade é o `activity id` (Snowflake): id maior = mais novo — se o número for muito menor que os posts claramente recentes, é antigo, ignore o "m". Parser: `min`→minutos, `h`→horas, `d`→dias, `sem`→semanas×168h, `m`/`mês`/`meses`→meses×720h, `a`/`ano`→anos.
+- `formato` sai daqui com um de cinco valores (`texto`, `imagem`, `carrossel`, `video`, `artigo`). Os outros cinco da taxonomia dependem de você olhar o post — ver a coluna "Como reconhecer" em `taxonomias.md`.
 - `social` vem como texto ("1 1 compartilhamento") — parseie reações/comentários/compartilhamentos dele; vazio = 0 engajamento.
 - Ajuste os seletores se a UI do LinkedIn mudar (ela muda com frequência); o `data-urn` é o ponto estável.
+
+## Parser de data relativa
+
+Fonte única do pipeline: `dataRel` vem relativo ("1 h", "1 d", "4 d") e vira data absoluta contando a partir de hoje.
+
+| Sufixo PT | Significa |
+|---|---|
+| `min` | minutos |
+| `h` | horas |
+| `d` | dias |
+| `sem` | semanas (×168 h) |
+| `m`, `mês`, `meses` | **meses** (×720 h) |
+| `a`, `ano`, `anos` | anos |
+
+**Cuidado com "m": no LinkedIn PT, "11 m" é 11 MESES, não minutos** (minutos é "min"). Confundir os dois faz post velho passar por recente. Fonte da verdade é o `activity id` (Snowflake): id maior = mais novo — se o número for muito menor que os posts claramente recentes, é antigo, ignore a leitura de "m" como minutos.
 
 ## Tabela de erros
 
@@ -58,12 +71,14 @@ Testado ao vivo (jul/2026). O feed **intercala anúncios** entre os posts orgân
 |---|---|
 | Tools `mcp__claude-in-chrome__*` ausentes ou nenhum navegador conectado | não é erro de página — invoque a `profills-navegador` (instalação/conexão guiada) |
 | Usuário diz que a aba abriu em outro computador | navegador errado selecionado — refaça a seleção pela `profills-navegador` (ela atualiza o cache) |
-| Página pede login/authwall | sessão caiu — pare e peça ao usuário para logar no Brave |
+| Página pede login/authwall | sessão caiu — pare, peça o login e retome quando ele avisar |
+| Página existe mas não tem aba "Publicações" | página não gerenciada — `meta.json` com `"status": "pagina_nao_gerenciada"`, siga para a próxima empresa |
 | Feed não carrega mais posts ao rolar | chegou ao fim disponível — pare e catalogue o que tem |
-| Empresa com pouquíssimos posts (<5 na janela) | reduza a exigência; sinalize "amostra insuficiente" no perfil |
+| Zero posts na janela | `meta.json` com `"status": "sem_posts"` e a nota; silêncio é sinal, entra no `_summary.md` |
+| Empresa com pouquíssimos posts (<5 na janela) | catalogue o que tem e sinalize "amostra insuficiente" no perfil |
 | Screenshot falha/timeout na mesma aba | não repita a mesma captura — siga com `read_page`/texto e marque `screenshot: null` |
-| Percepção de rate-limit (captcha, "atividade incomum") | **pare a sessão imediatamente**, não insista; avise o usuário |
+| Percepção de rate-limit (captcha, "atividade incomum") | **pare a sessão imediatamente**, não insista; avise o usuário e feche com o que já está em disco |
 
 ## Slug e ID
 
-O slug vem da URL `linkedin.com/company/<slug>`. Ele pode mudar num rebranding; o ID numérico (5-9 dígitos) não. Se a `profills-radar` guardou o ID no dossiê e o slug falhar, tente pela URL com ID.
+O slug vem da URL `linkedin.com/company/<slug>` e pode mudar num rebranding; o ID numérico (5-9 dígitos) não. A `profills-radar` põe os dois na linha de `selection.md` — se o slug der 404, tente `https://www.linkedin.com/company/<id>/posts/`. Sem id na linha (`—`) e com o slug falhando, registre `"status": "erro_navegacao"` e peça o link da página ao usuário no fim da rodada.
