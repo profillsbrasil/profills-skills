@@ -5,31 +5,79 @@
       "id": 1,
       "prompt": "Analisa os posts da Cetro Máquinas no LinkedIn. (Contexto: DADOS resolve para linkedin-data/ no repo; DADOS/selection.md existe e tem uma linha só — `- [Cetro Máquinas](refs/cetromaquinas.md) — \\`cetromaquinas\\` · id 10456789 · máquinas de embalagem · BR`; DADOS/voz.md existe; nenhuma coleta anterior em DADOS/catalog/raw/cetromaquinas/.)",
       "expected_output": "Lê selection.md e pega nome + slug `cetromaquinas` + id. Fixa a janela padrão (7 dias, até 5 posts). Antes de navegar, avisa em linguagem simples que vai abrir o LinkedIn no navegador do usuário só para ler, sem curtir nem publicar, e confirma com AskUserQuestion. Invoca a profills-navegador e navega só na tab do handoff — nada de tabs_create_mcp por conta própria. Em /company/cetromaquinas/posts/ anota os seguidores, troca a ordenação para Recentes, extrai via data-urn (anúncios ficam de fora por não terem urn de activity), converte a data relativa pelo parser de navegacao.md, salva raw/cetromaquinas/<hoje>/posts.json + meta.json com status ok. Sintetiza catalog/cetromaquinas.md pelo template marcando medido vs inferido, com destaque_semana e cada afirmação com o post que a sustenta; grava catálogo <hoje> na linha da empresa em refs/INDEX.md; publica o dashboard com as 7 seções e entrega o link; fecha perguntando com AskUserQuestion o que da Cetro o usuário não quer imitar e gravando em refs/cetromaquinas.md na seção Do Not Copy.",
-      "files": []
+      "files": [],
+      "expectations": [
+        "Lê DADOS/selection.md, extrai nome/slug `cetromaquinas`/id sem invocar a profills-radar, e fixa explicitamente a janela padrão (7 dias, até 5 posts)",
+        "Antes de abrir o navegador, avisa em linguagem simples que só vai ler (sem curtir nem publicar) e confirma com AskUserQuestion",
+        "Invoca a profills-navegador antes da primeira navegação e trabalha só na tab do handoff (a garimpo não cria tab própria com tabs_create_mcp)",
+        "Grava raw/cetromaquinas/2026-08-24/posts.json (≤5 posts, datas relativas já convertidas para datas absolutas dentro da janela de 7 dias) e meta.json com seguidores e status ok",
+        "catalog/cetromaquinas.md segue o perfil-template com marcação [medido] vs [inferido], destaque da semana e cada afirmação inferida com o post/link que a sustenta",
+        "refs/INDEX.md tem, na linha da Cetro Máquinas, o catálogo com a data desta rodada (catálogo 2026-08-24)",
+        "Publica o dashboard via Artifact com as 7 seções de dashboard.md e entrega o link ao usuário",
+        "Fecha perguntando com AskUserQuestion o que da Cetro o usuário não quer imitar e grava a resposta na seção `## Do Not Copy` de refs/cetromaquinas.md"
+      ]
     },
     {
       "id": 2,
       "prompt": "Quero monitorar o que essas 8 empresas de embalagem andam postando: [lista de 8 nomes]. (Contexto: DADOS existe; DADOS/selection.md não existe; DADOS/refs/INDEX.md tem 6 empresas cadastradas.)",
       "expected_output": "Não pede nem monta a lista sozinha: invoca a profills-radar, que é quem escolhe as empresas, segura a seleção em 5 e escreve DADOS/selection.md. Ao voltar, lê a seleção (nome, slug, id de cada uma), mantém a janela padrão (≤5 posts / 7 dias por empresa), avisa e confirma antes de abrir o navegador, invoca a profills-navegador e coleta uma empresa por vez salvando posts.json + meta.json antes de passar à próxima. No fim gera _summary.md comparando pela taxa normalizada de benchmark-mercado.md (nunca likes brutos) mais o eixo de mercado, atualiza o campo catálogo de cada empresa no refs/INDEX.md e publica o dashboard.",
-      "files": []
+      "files": [],
+      "expectations": [
+        "Não monta nem pede a lista sozinha: invoca a profills-radar, que é quem escolhe as empresas e segura a seleção em 5",
+        "DADOS/selection.md é escrito com exatamente 5 empresas, cada linha com nome, slug e id",
+        "Mantém a janela padrão: meta.json de cada empresa com janela_dias 7 e no máximo 5 posts por empresa, todos dentro da janela",
+        "Avisa e confirma com o usuário antes de abrir o navegador, e só então invoca a profills-navegador",
+        "Coleta uma empresa por vez, salvando posts.json + meta.json de cada uma antes de passar à próxima",
+        "_summary.md compara as empresas pela taxa de engajamento normalizada de benchmark-mercado.md (nunca likes brutos) e traz o eixo de mercado",
+        "refs/INDEX.md tem o campo catálogo atualizado com a data da rodada nas empresas catalogadas",
+        "Publica o dashboard visual da rodada (Artifact/HTML com as seções de dashboard.md) e o entrega ao usuário"
+      ]
     },
     {
       "id": 3,
       "prompt": "Atualiza o catálogo da Cetro Máquinas — já rodei semana passada. (Contexto: DADOS/selection.md tem a Cetro; existe DADOS/catalog/raw/cetromaquinas/2026-08-17/ com posts.json e meta.json, e existe DADOS/catalog/cetromaquinas.md do dia 17.)",
       "expected_output": "Cria a pasta raw/cetromaquinas/<hoje>/ nova, preservando a de 2026-08-17. Sintetiza sobre o perfil existente em vez de reescrever do zero: compara com o perfil anterior e anexa uma entrada em ## Change Log no fim de catalog/cetromaquinas.md dizendo o que mudou (cadência, formato dominante, taxa de engajamento). Atualiza catálogo <hoje> na linha da empresa em refs/INDEX.md.",
-      "files": []
+      "files": [],
+      "expectations": [
+        "Existe DADOS/catalog/raw/cetromaquinas/2026-08-24/ (data de hoje) com posts.json e meta.json não vazios, com posts datados dentro da janela de 7 dias",
+        "A pasta raw/cetromaquinas/2026-08-17/ continua existindo e não foi sobrescrita pelo dado de hoje (conteúdo distinto e coerente com 17/08)",
+        "catalog/cetromaquinas.md foi sintetizado sobre o perfil existente (mesmo arquivo, seções do perfil-template preservadas, cabeçalho apontando para a coleta de hoje) em vez de um arquivo novo do zero",
+        "catalog/cetromaquinas.md tem uma seção ## Change Log no fim do arquivo com uma entrada datada de hoje (2026-08-24)",
+        "A entrada do Change Log compara com o perfil anterior nas três dimensões pedidas: cadência, formato dominante e taxa de engajamento",
+        "Os números citados no Change Log são rastreáveis aos posts.json/meta.json das duas coletas (não inventados)",
+        "refs/INDEX.md traz 'catálogo 2026-08-24' na linha da Cetro Máquinas, sem alterar as linhas das outras empresas"
+      ]
     },
     {
       "id": 4,
       "prompt": "Quero uma leitura de tendência da Skymsen: como o conteúdo dela evoluiu nos últimos meses. (Contexto: DADOS/selection.md tem a Skymsen com slug `skymsen` e id; sem coleta anterior.)",
       "expected_output": "Reconhece o pedido de leitura de tendência e troca para a janela ampliada, combinando os dias com o usuário (~90) e avisando que a navegação fica mais longa; grava janela_dias no meta.json. Coleta mais que 5 posts e, na síntese, usa o bloco de janela ampliada do perfil-template: média, desvio-padrão e o campo outlier (média + 1,5×desvio) no lugar do destaque_semana, com a evolução do período. Se juntar 5 posts ou menos, sinaliza amostra insuficiente e volta ao destaque simples em vez de calcular desvio.",
-      "files": []
+      "files": [],
+      "expectations": [
+        "Reconhece o pedido como leitura de tendência e troca a janela padrão (7 dias) pela ampliada, combinando o número de dias com o usuário numa pergunta com opções (~90) em vez de decidir em silêncio",
+        "Avisa ao usuário, antes de abrir o navegador, que a janela ampliada deixa a navegação mais longa",
+        "O meta.json da coleta grava janela_dias correspondente à janela ampliada combinada (90)",
+        "O posts.json da rodada contém mais de 5 posts, todos dentro da janela declarada",
+        "O posts.json usa o campo outlier (e não destaque_semana) e marca como outlier apenas o post acima de média + 1,5×desvio",
+        "Média, desvio-padrão e limiar de outlier declarados conferem quando recalculados de likes+comentários do próprio posts.json",
+        "catalog/<slug>.md declara janela ampliada com o número de dias e usa o bloco ampliado do perfil-template (média ± desvio e tabela de outlier no lugar do destaque simples), incluindo a leitura de evolução do período",
+        "Trata explicitamente a regra de amostra insuficiente (≤5 posts → volta ao destaque simples, sem desvio), constatando que a amostra desta rodada a supera"
+      ]
     },
     {
       "id": 5,
       "prompt": "Cataloga a Sulpack. (Contexto: DADOS/selection.md tem a Sulpack; a página existe e está logada, mas não tem nenhuma publicação nos últimos 7 dias.)",
       "expected_output": "Trata o silêncio como dado, não como erro: grava raw/sulpack-industria-de-maquinas-para-embalagens/<hoje>/meta.json com \"status\": \"sem_posts\" e uma \"nota\" de uma frase, e não gera catalog/<slug>.md para ela. Segue para a próxima empresa (ou fecha a rodada), inclui a Sulpack no _summary.md numa linha \"sem dados: <nota>\", e o dashboard mostra a empresa como sem dados em vez de gráfico vazio. Não amplia a janela por conta própria — só se o usuário pedir. No INDEX.md, a linha da Sulpack mantém o campo catálogo como estava (sem carimbo de data), porque não houve perfil.",
-      "files": []
+      "files": [],
+      "expectations": [
+        "Existe em disco DADOS/catalog/raw/sulpack-industria-de-maquinas-para-embalagens/2026-08-24/meta.json com \"status\": \"sem_posts\" e um campo \"nota\" de uma frase",
+        "O silêncio vira dado estruturado: posts.json da rodada existe na mesma pasta como array vazio, sem abortar a coleta com erro",
+        "Nenhum perfil por empresa DADOS/catalog/sulpack-industria-de-maquinas-para-embalagens.md é gerado",
+        "DADOS/catalog/_summary.md inclui a Sulpack numa linha 'sem dados: <nota>', preservando o comparativo já existente das outras empresas",
+        "Em DADOS/refs/INDEX.md a linha da Sulpack mantém o campo catálogo como estava ('sem catálogo'), sem carimbo de data desta rodada",
+        "A janela permanece a padrão de 7 dias — nenhuma ampliação por conta própria (janela_dias: 7 no meta.json e nenhuma coleta fora da janela)",
+        "O dashboard entregue existe como artefato verificável e mostra a Sulpack como 'sem dados' em vez de gráfico vazio"
+      ]
     }
   ]
 }

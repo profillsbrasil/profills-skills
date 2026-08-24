@@ -5,31 +5,80 @@
       "id": 1,
       "prompt": "Abre o site da Sulpack pra mim. (Contexto: sessão interativa; ~/.config/profills-navegador/browser existe com deviceId=b6c5... e name=PC escritório; list_connected_browsers devolve 3 navegadores — b6c5.../Windows/isLocal:false, um Linux com isLocal:true e um terceiro Windows.)",
       "expected_output": "Carrega as tools mcp__claude-in-chrome__ numa chamada só, chama list_connected_browsers, vê exatamente um navegador isLocal:true e seleciona ELE com select_browser, anunciando em uma frase que está abrindo no navegador deste computador — e, como o cache aponta para outro navegador ainda conectado (PC escritório), oferece na mesma frase a troca para ele. Sem AskUserQuestion. Só grava o cache com o deviceId novo se o usuário não pedir a troca. Depois cria uma tab própria e navega.",
-      "files": []
+      "files": [],
+      "expectations": [
+        "Carrega as tools mcp__claude-in-chrome__ numa única chamada de ToolSearch (query select: com a lista completa), antes de qualquer tool de navegador",
+        "Chama list_connected_browsers antes de criar qualquer tab",
+        "Identifica exatamente um navegador isLocal:true e chama select_browser NELE (o Linux), não no deviceId do cache (b6c5.../PC escritório)",
+        "Anuncia ao usuário, em uma frase curta, que está abrindo no navegador deste computador",
+        "No mesmo anúncio (não em pergunta separada) oferece a troca para o navegador do cache, nomeando-o PC escritório, porque ele continua na lista de conectados",
+        "Nenhum AskUserQuestion é disparado em nenhum momento do fluxo",
+        "NÃO grava o cache com o deviceId novo nesta rodada — o arquivo browser continua com deviceId=b6c5... e name=PC escritório, porque a oferta de troca ainda não foi respondida",
+        "Cria uma tab própria com tabs_create_mcp e navega até o site da Sulpack, confirmando o carregamento por dado estruturado (não por screenshot)"
+      ]
     },
     {
       "id": 2,
       "prompt": "Pesquisa pra mim preços de datadora inkjet no Google. (Contexto: sessão interativa; ~/.config/profills-navegador/browser não existe; a conta tem 3 navegadores conectados — Browser 1/Linux/isLocal:true, Browser 2/Windows/isLocal:false, Browser 3/Windows/isLocal:false.)",
       "expected_output": "Antes de criar qualquer tab, chama list_connected_browsers, não encontra cache, vê exatamente UM navegador isLocal:true e seleciona ele automaticamente via select_browser — SEM AskUserQuestion —, grava deviceId e name em ~/.config/profills-navegador/browser (criando o diretório) e anuncia em linguagem de comercial que está abrindo no navegador deste computador ('se não aparecer aí, me avisa'). Só então cria a tab própria e pesquisa.",
-      "files": []
+      "files": [],
+      "expectations": [
+        "Chama list_connected_browsers antes de criar qualquer tab",
+        "Consulta o cache de navegador (~/.config/profills-navegador/browser) e constata que ele nao existe antes de decidir",
+        "Identifica exatamente um navegador isLocal:true e o seleciona automaticamente via select_browser, SEM AskUserQuestion",
+        "Grava o arquivo de cache criando o diretorio, com as linhas deviceId= e name=",
+        "Anuncia ao usuario em linguagem de comercial que esta abrindo no navegador deste computador, incluindo o convite do tipo 'se nao aparecer ai, me avisa'",
+        "Somente depois da selecao e do cache cria a tab propria e executa a pesquisa no Google",
+        "Nao apresenta ao usuario nenhum resultado de pesquisa (preco, faixa de valores) que nao esteja sustentado por dado real coletado"
+      ]
     },
     {
       "id": 3,
       "prompt": "Ué, abriu no outro PC. Abre aqui, no que eu tô usando agora. (Contexto: sessão interativa; o cache aponta para deviceId=b6c5... name=Browser 2; list_connected_browsers devolve Browser 1/Linux/isLocal:true, Browser 2/Windows e Browser 3/Windows.)",
       "expected_output": "Trata a correção do usuário como vencedora sobre o cache e sobre o isLocal: vai direto para a pergunta em vez de reusar o cache. Antes de perguntar, explica em uma frase por que a dúvida existe (a página abre pela extensão do Claude, que está em mais de um computador da conta). Usa AskUserQuestion com uma opção por navegador (nome + sistema, marcando qual é a máquina desta sessão) e uma opção de socorro do tipo 'não sei / me ajuda a descobrir' que dispara switch_browser, explicando o clique em Connect no computador que ele está usando e a chance de nomear o navegador. Grava a escolha nova no cache e refaz o handoff. Se o switch_browser expirar (2 min sem clique), confirma que ele está olhando o navegador e repete ou volta à lista.",
-      "files": []
+      "files": [],
+      "expectations": [
+        "Trata a correção do usuário como vencedora sobre o cache (Browser 2) e sobre a auto-seleção por isLocal: pula a resolução automática e vai direto ao passo da pergunta, sem reusar o cache",
+        "Antes da pergunta, dá uma frase explicando por que a dúvida existe: a página abre pela extensão do Claude, que está conectada em mais de um computador da conta",
+        "Usa AskUserQuestion com uma opção por navegador conectado, cada uma com nome + sistema operacional (Browser 1/Linux, Browser 2/Windows, Browser 3/Windows)",
+        "A opção correspondente ao isLocal:true é marcada como a máquina desta sessão",
+        "Inclui uma opção de socorro do tipo 'não sei / me ajuda a descobrir' que dispara switch_browser, explicando o clique em Connect no computador em uso e a chance de nomear o navegador",
+        "Grava a escolha nova no cache do navegador, substituindo o Browser 2: o arquivo de cache existe e contém deviceId + name do navegador escolhido",
+        "Refaz o handoff depois da troca: select_browser aplicado, tab própria criada e confirmada por dado estruturado, e handoff declarado ao usuário (navegador + tab)",
+        "Cobre a expiração do switch_browser (2 min sem clique): confirmar que o usuário está olhando o navegador e repetir ou voltar à lista de opções"
+      ]
     },
     {
       "id": 4,
       "prompt": "Vê o que a Sulpack postou no LinkedIn essa semana. (Contexto: ToolSearch não encontra nenhuma tool mcp__claude-in-chrome__ — máquina sem a extensão.)",
       "expected_output": "Reconhece o estado nomeado 'extensão ausente' sem tentar navigate às cegas, avisa em linguagem de comercial que vai guiar a instalação (~3 min), e conduz o roteiro de references/instalacao.md um passo por vez: conferir plano pago em claude.ai → Settings → Plan (dizendo o que ainda funciona sem navegador se for conta gratuita), Chrome Web Store 'Claude' da Anthropic no navegador que o usuário já usa, login, fixar o ícone, /chrome com 'Enabled by default' como caminho padrão (claude --chrome apenas como alternativa, avisando que fecha a conversa), permissões por site, e verificação final com list_connected_browsers sugerindo nomear o navegador. Não inventa passos nem promete 'te guio' sem executar o roteiro.",
-      "files": []
+      "files": [],
+      "expectations": [
+        "Diagnostica o estado nomeado 'extensão ausente nesta máquina' a partir da ausência das tools mcp__claude-in-chrome__ e vai direto para o roteiro de instalação, sem tentar navigate (ou qualquer tool de navegador) às cegas.",
+        "Avisa o usuário, em linguagem de comercial e antes de qualquer passo técnico, que vai guiar a instalação e que leva cerca de 3 minutos.",
+        "Confere o pré-requisito de plano pago indicando o caminho concreto claude.ai → Settings → Plan e diz o que continua funcionando sem navegador caso a conta seja gratuita.",
+        "Passo de instalação aponta a extensão 'Claude' da Anthropic na Chrome Web Store e manda instalar no navegador que o usuário já usa no dia a dia (Chrome ou derivado).",
+        "Cobre os passos de entrar na extensão com a mesma conta do claude.ai e de fixar o ícone pelo menu de extensões.",
+        "Apresenta /chrome com 'Enabled by default' como caminho padrão e claude --chrome apenas como alternativa, avisando que esse comando reinicia o Claude Code e fecha a conversa atual.",
+        "Explica as permissões por site na primeira ação, distinguindo 'Allow this action' de 'Always allow actions on this site' (recomendada para o LinkedIn) e que dá para revogar depois.",
+        "Fecha com a verificação final via list_connected_browsers sugerindo nomear o navegador, sem afirmar como concluído nenhum estado que não pôde observar (navegador conectado, tab aberta, página da Sulpack carregada)."
+      ]
     },
     {
       "id": 5,
       "prompt": "[a skill profills-garimpo invocou a profills-navegador antes de coletar a primeira empresa] (Contexto: sessão interativa; cache ausente; list_connected_browsers devolve um único navegador, Linux, isLocal:true.)",
       "expected_output": "Seleciona o navegador local, grava o cache, cria uma tab própria e confirma o carregamento por dado estruturado. Fecha declarando o handoff campo a campo: name e deviceId do navegador, tabId da tab pronta, e a lista de tools já carregadas que a garimpo pode usar sem recarregar (tabs_context_mcp, tabs_create_mcp, navigate, read_page, get_page_text, find, computer). Devolve o controle à profills-garimpo sem propor próximo passo próprio — nenhuma sugestão de 'quer que eu colete agora?'.",
-      "files": []
+      "files": [],
+      "expectations": [
+        "Seleciona automaticamente o unico navegador isLocal:true (chamada select_browser com o deviceId dele), sem abrir AskUserQuestion",
+        "Grava o arquivo de cache do navegador com os campos deviceId e name preenchidos (arquivo presente em outputs, nao apenas afirmado no transcript)",
+        "Cria uma tab propria via tabs_create_mcp em vez de reaproveitar tab alheia",
+        "Confirma o carregamento da tab por dado estruturado (tabs_context_mcp/read_page com status), nunca por screenshot",
+        "A resposta final declara o navegador campo a campo: name e deviceId",
+        "A resposta final declara o tabId da tab pronta",
+        "A resposta final lista as 7 tools ja carregadas: tabs_context_mcp, tabs_create_mcp, navigate, read_page, get_page_text, find, computer",
+        "Encerra devolvendo o controle a profills-garimpo sem propor proximo passo proprio (nenhum 'quer que eu colete agora?')"
+      ]
     }
   ]
 }

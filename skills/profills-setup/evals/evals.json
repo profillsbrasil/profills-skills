@@ -5,31 +5,77 @@
       "id": 1,
       "prompt": "Quero começar a usar as skills da Profills nesse notebook novo. (Contexto: shell Bash; `claude plugin list` não mostra profills-skills; nem ~/.claude/skills nem ~/.agents/skills têm humanize-pt-br; `command -v npx` responde um caminho válido; o diretório atual não está em nenhum repo git; ~/Profills LinkedIn não existe.)",
       "expected_output": "Diagnostica as seis peças em silêncio, sem perguntar nada antes, e mostra UMA tabela de sete linhas (plugin, humanize-pt-br, Node/npx, pasta de dados, arquivo de voz, extensão do Chrome como 'conferida na hora de coletar', unslop como '—'). Explica em uma frase e roda `claude plugin marketplace add https://github.com/profillsbrasil/profills-skills` seguido de `claude plugin install profills-skills@profills-skills`, avisando depois que pode ser preciso reabrir o Claude Code. Explica e roda `npx skills add othavi0/skills --skill humanize-pt-br -g -y -a claude-code`. Cria `~/Profills LinkedIn/` com `refs/`, `catalog/raw/` e `drafts/` (não `linkedin-data/`, porque não há repo com skills/profills-setup/SKILL.md no toplevel) e diz o caminho completo ao usuário. Não instala unslop. Termina com uma sugestão só: `/profills-voz`, porque voz.md não existe.",
-      "files": []
+      "files": [],
+      "expectations": [
+        "Faz o diagnóstico das peças em silêncio: nenhuma pergunta ao usuário antes de apresentar a tabela",
+        "A resposta final traz UMA única tabela, com sete linhas, cobrindo plugin, humanize-pt-br, Node/npx, pasta de dados, arquivo de voz, extensão do Chrome e unslop",
+        "Na tabela, a extensão do Chrome aparece como 'conferida na hora de coletar' e a unslop como '—' (não como ❌)",
+        "Executa/apresenta os dois comandos do plugin na ordem — `claude plugin marketplace add https://github.com/profillsbrasil/profills-skills` e depois `claude plugin install profills-skills@profills-skills` — e avisa que pode ser preciso reabrir o Claude Code",
+        "Usa o comando exato `npx skills add othavi0/skills --skill humanize-pt-br -g -y -a claude-code` para instalar a humanize-pt-br, com uma frase de explicação",
+        "Cria de fato a pasta de dados 'Profills LinkedIn' (fora do repo, não `linkedin-data/`) com as subpastas refs/, catalog/raw/ e drafts/, e informa o caminho ao usuário",
+        "Não instala a unslop nem executa comando de instalação dela",
+        "Fecha com exatamente uma sugestão de próximo passo: `/profills-voz`, justificada pela ausência de voz.md"
+      ]
     },
     {
       "id": 2,
       "prompt": "Instala as skills da Profills aqui. (Contexto: Windows sem Git for Windows; a ferramenta de shell é PowerShell — `command -v npx` devolve erro de sintaxe; `claude --version` responde; `claude plugin marketplace add https://github.com/profillsbrasil/profills-skills` falha dizendo que `git` não foi encontrado; C:\\Users\\NOME\\Profills LinkedIn não existe.)",
       "expected_output": "Reconhece pelo erro de sintaxe que o shell é PowerShell e passa a usar a coluna PowerShell de references/shell.md (`Get-Command npx`, `Test-Path`), sem repetir comandos Bash. Diagnostica a falha do marketplace add como Git ausente e conduz a instalação do Git for Windows (https://git-scm.com/downloads/win), pedindo terminal novo e repetição do comando. Cria a pasta com `New-Item -ItemType Directory -Force` nas três subpastas e mostra o caminho como `C:\\Users\\NOME\\Profills LinkedIn`, nunca com `~`. Termina com uma sugestão só.",
-      "files": []
+      "files": [],
+      "expectations": [
+        "Identifica o shell como PowerShell a partir do erro de sintaxe de `command -v npx`, citando a regra de references/shell.md",
+        "Usa as formas PowerShell do diagnóstico (`Get-Command npx` e `Test-Path`) e não repete os equivalentes Bash depois de identificar o shell",
+        "Diagnostica a falha de `claude plugin marketplace add` como Git ausente e conduz à instalação do Git for Windows pelo link https://git-scm.com/downloads/win",
+        "A orientação do Git pede terminal novo e a repetição do comando de instalação do plugin",
+        "Cria DADOS com `New-Item -ItemType Directory -Force` cobrindo as três subpastas refs, catalog\\raw e drafts",
+        "Há evidência nos outputs de que as três subpastas foram de fato criadas, não apenas afirmadas no transcript",
+        "O caminho mostrado ao usuário na resposta final é `C:\\Users\\NOME\\Profills LinkedIn`, sem `~`",
+        "A resposta final termina com uma sugestão só de próximo passo"
+      ]
     },
     {
       "id": 3,
       "prompt": "Dá uma olhada no que está faltando pra eu usar as skills da Profills. (Contexto: `claude plugin list` mostra profills-skills; ~/.claude/skills/humanize-pt-br/SKILL.md existe; `command -v npx` responde; ~/Profills LinkedIn existe com refs/, catalog/raw/ e drafts/; ~/Profills LinkedIn/voz.md existe; unslop não está instalada.)",
       "expected_output": "Mostra a tabela com plugin, humanize-pt-br, Node/npx, pasta de dados e arquivo de voz em ✅, a extensão do Chrome como 'conferida na hora de coletar' e unslop como '—'. Não roda nenhum comando de instalação ou de atualização, e não cobra a instalação da unslop. Diz em uma frase que está tudo pronto e termina com uma sugestão só: `/profills-radar`, porque voz.md já existe.",
-      "files": []
+      "files": [],
+      "expectations": [
+        "A tabela da resposta final tem uma linha para cada uma das cinco peças diagnosticadas — plugin profills-skills, humanize-pt-br, Node/npx, pasta de dados e arquivo de voz — todas com status ✅",
+        "A extensão do Chrome aparece como linha da tabela com o status 'conferida na hora de coletar' (não como ✅ nem como ❌)",
+        "A unslop aparece na tabela marcada como '—' e identificada como opcional",
+        "Nenhum comando de instalação ou de atualização (claude plugin install/update, npx de instalação da humanize-pt-br) foi executado",
+        "A resposta não cobra nem sugere instalar a unslop",
+        "A resposta afirma em uma frase que está tudo pronto",
+        "A resposta termina com exatamente uma sugestão de próximo passo, `/profills-radar`, e nenhuma outra opção ou menu (justificada por voz.md já existir)"
+      ]
     },
     {
       "id": 4,
       "prompt": "Atualiza minhas skills da Profills. (Contexto: plugin instalado, humanize-pt-br instalada, ~/Profills LinkedIn existe com refs/, catalog/raw/ e drafts/, e voz.md existe.)",
       "expected_output": "Reconhece que é pedido de atualização e não de instalação do zero: não recria a pasta de dados nem reinstala o plugin com `marketplace add`. Explica e roda `claude plugin marketplace update profills-skills` seguido de `claude plugin update profills-skills@profills-skills`, e menciona que rodar de novo o `npx skills add othavi0/skills --skill humanize-pt-br -g -y -a claude-code` também atualiza a humanize-pt-br. Depois refaz a tabela do passo 2 mostrando o estado resultante. Termina com uma sugestão só: `/profills-radar`.",
-      "files": []
+      "files": [],
+      "expectations": [
+        "Trata o pedido como atualização e não instalação do zero: não executa nem propõe `claude plugin marketplace add` / `claude plugin install`, e não recria nem sobrescreve a pasta de dados existente (refs/ e catalog/raw/ intactos).",
+        "Explica em uma frase o que o comando faz e roda `claude plugin marketplace update profills-skills`.",
+        "Roda `claude plugin update profills-skills@profills-skills` logo em seguida, também com explicação em uma frase.",
+        "Menciona o comando literal `npx skills add othavi0/skills --skill humanize-pt-br -g -y -a claude-code` como o que também atualiza a humanize-pt-br.",
+        "A resposta final ao usuário refaz a tabela de status do passo 2 (mesmas linhas do passo 2 da skill) mostrando o estado depois da atualização.",
+        "Termina com exatamente uma sugestão de próximo passo, `/profills-radar`, sem menu de opções nem segunda sugestão."
+      ]
     },
     {
       "id": 5,
       "prompt": "(A profills-radar invocou a profills-setup porque não achou a pasta de dados. Contexto: o diretório atual é um clone do repo profills-skills, `git rev-parse --show-toplevel` aponta pra ele e `skills/profills-setup/SKILL.md` existe nesse toplevel, mas `linkedin-data/` ainda não existe na raiz; plugin via .claude/skills, humanize-pt-br e npx já presentes; voz.md não existe.)",
       "expected_output": "Vai direto ao item DADOS: não roda o diagnóstico completo, não mostra a tabela e não tenta `claude plugin marketplace add` (reconhece o sinal repo-fonte, em que o plugin vem dos symlinks de .claude/skills). Cria `linkedin-data/` na raiz do repo — não `~/Profills LinkedIn/` — com `refs/`, `catalog/raw/` e `drafts/` dentro, e cria `linkedin-data/.gitignore` ignorando `selection.md` e as imagens de `catalog/raw/`. Anuncia o caminho da pasta e devolve o controle à profills-radar para o pedido original continuar, sem sugerir `/profills-voz` nem nenhuma outra skill.",
-      "files": []
+      "files": [],
+      "expectations": [
+        "Vai direto ao item DADOS: não executa o diagnóstico completo do passo 1 nem exibe a tabela de status das skills na resposta final",
+        "Não tenta instalar o plugin (nenhum `claude plugin marketplace add` / `claude plugin install`), reconhecendo o sinal repo-fonte (`skills/profills-setup/SKILL.md` no toplevel)",
+        "Cria a pasta de dados como `linkedin-data/` na raiz do repo clonado, e não como `~/Profills LinkedIn/`",
+        "A pasta criada contém as subpastas `refs/`, `catalog/raw/` e `drafts/`",
+        "Cria `linkedin-data/.gitignore` ignorando `selection.md` e as imagens brutas de `catalog/raw/`",
+        "Anuncia ao usuário o caminho da pasta criada na resposta final",
+        "Devolve o controle à profills-radar para o pedido original continuar, sem sugerir `/profills-voz` nem qualquer outra skill"
+      ]
     }
   ]
 }

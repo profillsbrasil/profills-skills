@@ -5,25 +5,62 @@
       "id": 1,
       "prompt": "Gera uns posts sobre embalagens sustentáveis no estilo que a Cetro Máquinas usa. (Estado: DADOS/catalog/cetromaquinas.md e DADOS/catalog/raw/cetromaquinas/2026-08-20/posts.json existem; DADOS/voz.md existe; a seção '## Do Not Copy' de DADOS/refs/cetromaquinas.md ainda está com o comentário de placeholder.)",
       "expected_output": "- Lê DADOS/catalog/cetromaquinas.md, o posts.json da coleta e DADOS/voz.md antes de gerar.\n- Trata o '## Do Not Copy' em placeholder como pergunta: faz uma AskUserQuestion com opções concretas tiradas dos posts da Cetro e grava a resposta em DADOS/refs/cetromaquinas.md antes de gerar.\n- Coleta os quatro elementos de matéria-prima (número real, insight contra-intuitivo, mecanismo, dor do ICP), perguntando o que faltar em vez de inventar.\n- Entrega 3-5 variações, cada uma com um ângulo distinto da tabela de ângulos e as três famílias de hook cobertas (intelectual / de cena / direto ao leitor).\n- Passa cada rascunho pelo crivo de quality-gate.md (corte: todas as notas ≥7 e média ≥8) e depois pela skill humanize-pt-br.\n- Publica o comparador a partir de assets/preview-template.html, pergunta a escolha com AskUserQuestion e salva o escolhido em DADOS/drafts/<AAAA-MM-DD>-<tema-slug>.md.",
-      "files": []
+      "files": [],
+      "expectations": [
+        "Lê os três insumos do disco antes de gerar: DADOS/catalog/cetromaquinas.md, DADOS/catalog/raw/cetromaquinas/2026-08-20/posts.json e DADOS/voz.md",
+        "Trata o '## Do Not Copy' em placeholder como pergunta: faz a pergunta com opções concretas tiradas dos posts da Cetro e grava a resposta em DADOS/refs/cetromaquinas.md, no lugar do placeholder, antes de gerar",
+        "Coleta os quatro elementos de matéria-prima (número real, insight contra-intuitivo, mecanismo, dor do ICP) com a origem anotada, sem número sem lastro no voz.md ou no catálogo",
+        "Entrega 3-5 variações, cada uma com um ângulo distinto da tabela de ângulos e as três famílias de hook (intelectual / de cena / direto ao leitor) cobertas",
+        "Passa cada rascunho pelo crivo de quality-gate.md com o corte explícito (todas as notas >=7 e média >=8) registrado por rascunho, e o texto entregue respeita as palavras banidas e o 'Isso não sou eu' do voz.md",
+        "Passa os rascunhos aprovados pela skill humanize-pt-br, e os textos entregues não carregam as marcas de IA que ela remove (nenhum travessão no corpo dos posts)",
+        "Publica o comparador via Artifact a partir de assets/preview-template.html, preenchendo só o bloco DADOS, com uma opção por variação, e pergunta a escolha do ângulo com opções e recomendação",
+        "Salva o escolhido em DADOS/drafts/<AAAA-MM-DD>-<tema-slug>.md, com linha de contexto no topo e o texto pronto para colar, sem [campos] pendentes"
+      ]
     },
     {
       "id": 2,
       "prompt": "Escreve um post inspirado no que a Cetro postou sobre o mercado de gummies. (Estado: o posts.json da Cetro contém esse post com angulo 'trend' e hook_categoria 'question'; DADOS/refs/cetromaquinas.md já traz em '## Do Not Copy': evitar o tom institucional; DADOS/voz.md existe.)",
       "expected_output": "- Localiza o post-referência no posts.json e nomeia o padrão que vai reusar (ângulo trend + hook question), escrevendo texto novo sobre o tema do usuário.\n- Respeita o Do Not Copy já preenchido: nenhuma variação usa o tom institucional, e não faz nova pergunta sobre isso.\n- Nenhum hook cai na lista de aposentados de moldes.md.\n- Fecha com um dos 4 CTAs de moldes.md, obedecendo a regra do verbo nomeado e pedindo uma ação só.\n- Passa pelo crivo, encadeia humanize-pt-br, publica o preview e salva o escolhido em DADOS/drafts/.",
-      "files": []
+      "files": [],
+      "expectations": [
+        "Localiza o post-referência da Cetro no posts.json citando o post concreto (post_id ou hook exato) e nomeia o padrão que vai reusar como ângulo `trend` + hook `question`.",
+        "O texto salvo é novo (não reproduz o texto do post da Cetro) e respeita o `## Do Not Copy` já preenchido: nada em tom institucional/comunicado, e nenhuma nova pergunta ao usuário sobre o que evitar.",
+        "Nenhum hook das variações geradas — nem o hook do post salvo — cai na lista de 'Hooks aposentados' de moldes.md.",
+        "O post salvo fecha com um CTA de uma das 4 categorias de moldes.md, obedecendo a regra do verbo nomeado e pedindo uma ação só.",
+        "Aplica o crivo de quality-gate.md de forma rastreável e encadeia a skill humanize-pt-br, com efeito verificável no texto final (sem palavra banida do voz.md, sem travessão no corpo do post).",
+        "Publica o preview lado a lado via tool Artifact (URL acessível) e salva o escolhido em DADOS/drafts/<AAAA-MM-DD>-<tema-slug>.md com exatamente o texto do preview final."
+      ]
     },
     {
       "id": 3,
       "prompt": "Preciso de ideias de post sobre automação industrial pro meu LinkedIn. (Estado: DADOS existe, mas DADOS/catalog/ está vazio e DADOS/voz.md não existe.)",
       "expected_output": "- Invoca a skill profills-voz por causa do voz.md ausente; se o usuário não puder agora, pergunta o essencial (tom, público, o que vende) com AskUserQuestion e oferece a skill para depois.\n- Sem catálogo: diz isso em uma frase, oferece rodar a profills-garimpo e segue só com o tema em vez de travar.\n- Coleta a matéria-prima; se o usuário não tem número real, usa a rota de escape ([número a confirmar] no rascunho e ângulo 'dado' fora das variações) em vez de inventar número.\n- Entrega 3-5 variações por ângulo distinto, passa pelo crivo, encadeia humanize-pt-br, publica o comparador e salva o escolhido em DADOS/drafts/.",
-      "files": []
+      "files": [],
+      "expectations": [
+        "Trata a ausência de DADOS/voz.md invocando a skill profills-voz e, como o usuário não pode fazê-la agora, coleta o essencial (tom, público, o que vende) com AskUserQuestion e oferece a skill para depois na resposta final",
+        "Diz ao usuário, em uma frase, que não há catálogo (nenhum catalog/<slug>.md), oferece rodar a profills-garimpo e segue com o tema em vez de travar o pedido",
+        "Não inventa número: sem dado real, usa a rota de escape ([número a confirmar]) e deixa o ângulo `dado` explicitamente fora das variações",
+        "Entrega 3-5 variações, cada uma com um ângulo distinto da taxonomia de moldes.md e com as três famílias de hook cobertas",
+        "Passa cada rascunho pelo crivo de quality-gate.md nomeando os testes aplicados (teste 'E daí?', analgésico/vitamina, hooks aposentados, painel de personas) antes de humanizar",
+        "Encadeia a skill humanize-pt-br nos rascunhos aprovados, com efeito verificável no texto salvo (corpo do post sem travessão e sem marcas de IA do catálogo)",
+        "Publica o comparador lado a lado via tool Artifact, com uma opção por variação, e pergunta ao usuário qual ângulo levar",
+        "Salva o rascunho escolhido em DADOS/drafts/<AAAA-MM-DD>-<tema-slug>.md com a linha de contexto no topo e o texto final pronto para colar, sem [campos] pendentes"
+      ]
     },
     {
       "id": 4,
       "prompt": "Transforma o catálogo da Skymsen em posts. (Estado: DADOS/catalog/skymsen.md existe com a coleta da semana; DADOS/voz.md existe; DADOS/drafts/ ainda não existe.)",
       "expected_output": "- Sem tema dado, lê DADOS/catalog/skymsen.md e oferece 3-4 temas que engajaram com AskUserQuestion, com a recomendação e o porquê, em vez de escolher sozinho.\n- Fixado o tema, segue o fluxo: três insumos, matéria-prima, 3-5 variações com ângulo e famílias de hook cobertas (as três) sem categoria repetida, crivo, humanize-pt-br, comparador.\n- Cria a pasta DADOS/drafts/ antes de salvar e grava DADOS/drafts/<AAAA-MM-DD>-<tema-slug>.md com o texto exato do preview, sem [campos] pendentes.",
-      "files": []
+      "files": [],
+      "expectations": [
+        "Sem tema no pedido, lê DADOS/catalog/skymsen.md e oferece 3-4 temas que engajaram na Skymsen via AskUserQuestion (opções enumeradas, com a recomendada e o porquê), em vez de escolher o tema sozinho",
+        "Reúne os três insumos antes de escrever — catálogo, DADOS/voz.md e a seção `## Do Not Copy` do dossiê — e, achando a seção com o placeholder vazio, pergunta ao usuário e grava a resposta em DADOS/refs/skymsen.md antes de gerar",
+        "Coleta a matéria-prima com os quatro elementos (número real, opinião contra-intuitiva, mecanismo em passos, dor do ICP), cada um com origem declarada (voz.md/catálogo/usuário)",
+        "Gera 3-5 variações, uma por ângulo, com categorias de hook distintas cobrindo as três famílias (intelectual, de cena, direto ao leitor), sem categoria repetida",
+        "Passa o conjunto pelo crivo (teste 'E daí?', analgésico/vitamina, palavras banidas e 'Isso não sou eu' do voz.md, expert panel) e pela humanização humanize-pt-br antes de mostrar ao usuário",
+        "Publica o comparador lado a lado via tool Artifact, preenchendo só o bloco DADOS do preview-template.html, e só depois pede a escolha do ângulo",
+        "Cria DADOS/drafts/ e grava DADOS/drafts/<AAAA-MM-DD>-<tema-slug>.md com o texto exato do preview, sem [campos] pendentes"
+      ]
     }
   ]
 }
