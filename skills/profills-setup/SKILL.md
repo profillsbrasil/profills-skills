@@ -72,7 +72,7 @@ Nesta ordem, um item por vez:
   claude plugin install profills-skills@profills-skills
   ```
   Instalado quando `claude plugin list` volta a mostrar `profills-skills`. Se um dos comandos falhar, a causa está na tabela de sintomas no fim deste arquivo. Depois de instalar, avise: "pode ser preciso reabrir o Claude Code para as skills novas aparecerem" (não dá para confirmar isso ao vivo nesta sessão).
-- **Node/npx ❌**: o Node.js é o motor dos scripts que a radar, a garimpo e a post rodam (índice, métricas, checagem de formato) e do `npx` que instala a `humanize-pt-br` — sem ele o pipeline não anda. Pergunte com `AskUserQuestion`, duas opções — **"Instalar o Node agora"** (recomendada: passo a passo por sistema em `references/instalacao.md`, ~3 min) ou **"Deixar para depois"**. Instalou: peça para abrir um terminal novo, refaça a checagem de `npx` e siga para o item seguinte. Deixou para depois: pule a `humanize-pt-br`, marque Node como pendente e diga em uma frase que radar, garimpo e post só vão funcionar depois de instalar. Pendência aberta no fim da rodada muda o fecho do passo 5: a única ação sugerida é a que destrava o pendente (instalar o Node, instalar o Git), nunca `/profills-voz` ou `/profills-radar`.
+- **Node/npx ❌**: o Node.js é o motor dos scripts que a radar, a garimpo e a post rodam (índice, métricas, checagem de formato) e do `npx` que instala a `humanize-pt-br` — sem ele o pipeline não anda. Pergunte com `AskUserQuestion`, duas opções — **"Instalar o Node agora"** (recomendada: passo a passo por sistema em `references/instalacao.md`, ~3 min) ou **"Deixar para depois"**. Instalou: peça para abrir um terminal novo, refaça a checagem de `npx` e siga para o item seguinte. Deixou para depois: pule a `humanize-pt-br`, marque Node como pendente e diga em uma frase que radar, garimpo e post só vão funcionar depois de instalar. Pendência aberta no fim da rodada muda o fecho do passo 5: a única ação sugerida é a que destrava o pendente (instalar o Node, instalar o Git), nunca `/profills-voz`, `/profills-radar` ou `/profills-post`.
 - **humanize-pt-br ❌** (com npx disponível): explique que isso traz a skill que tira as marcas de IA dos rascunhos.
   ```
   npx skills add othavi0/skills --skill humanize-pt-br -g -y -a claude-code
@@ -97,7 +97,9 @@ Se a `humanize-pt-br` estiver instalada, rodar o mesmo comando do passo 3 de nov
 ### 5. Fecho
 
 - **Outra skill invocou você**: assim que a pasta existe, devolva o controle a ela — o pedido original do usuário continua de onde parou.
-- **O usuário chamou você**: termine com exatamente **uma** sugestão — `DADOS/voz.md` não existe → `/profills-voz`; existe → `/profills-radar`.
+- **O usuário chamou você**: termine com exatamente **uma** sugestão.
+  - `DADOS/voz.md` não existe → `/profills-voz`. Uma frase: é a conversa da voz dele neste PC.
+  - `DADOS/voz.md` existe → `/profills-post`. Uma frase: o setup deste PC está pronto, agora a gente faz um post pra ele ver como funciona. Sem catálogo a post segue só com o tema.
 
 Concluído quando o usuário recebeu uma sugestão só (ou o controle voltou à skill que chamou) e nenhuma pergunta ficou aberta.
 
