@@ -97,7 +97,9 @@ Se a `humanize-pt-br` estiver instalada, rodar o mesmo comando do passo 3 de nov
 ### 5. Fecho
 
 - **Outra skill invocou você**: assim que a pasta existe, devolva o controle a ela — o pedido original do usuário continua de onde parou.
-- **O usuário chamou você**: termine com exatamente **uma** sugestão — `DADOS/voz.md` não existe → `/profills-voz`; existe → `/profills-radar`.
+- **O usuário chamou você**: termine com exatamente **uma** sugestão.
+  - `DADOS/voz.md` não existe → `/profills-voz`. Uma frase: é a conversa da voz dele neste PC.
+  - `DADOS/voz.md` existe → `/profills-post`. Uma frase: o setup deste PC está pronto, agora a gente faz um post pra ele ver como funciona. Sem catálogo a post segue só com o tema.
 
 Concluído quando o usuário recebeu uma sugestão só (ou o controle voltou à skill que chamou) e nenhuma pergunta ficou aberta.
 

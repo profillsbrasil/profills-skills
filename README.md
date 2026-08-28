@@ -16,7 +16,7 @@ claude plugin marketplace add https://github.com/profillsbrasil/profills-skills
 claude plugin install profills-skills@profills-skills
 ```
 
-Depois, dentro do Claude Code, digite `/profills-setup` — ela confere o resto e instala o que faltar.
+Depois, dentro do Claude Code, digite `/profills-setup` — ela confere o resto, cria a pasta neste PC e aponta o próximo passo: a voz, se ainda não existir; senão o primeiro post, para ver o fluxo.
 
 ## Atualizar
 
