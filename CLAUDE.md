@@ -26,6 +26,7 @@ Os princípios operacionais de cada skill (medido vs inferido, inspirar-não-cop
 - `DADOS/catalog/<slug>.md` (template `perfil-template.md`) — o perfil por empresa; é isto (+ o `posts.json` bruto) que a **profills-post** consome. `_summary.md` é o comparativo para o humano/dashboard — a profills-post não o lê.
 - `DADOS/voz.md` — a voz do usuário, criada e mantida pela skill **profills-voz** (template em `profills-voz/assets/voz-template.md`). **Ainda não existe** até a primeira run; a profills-post invoca a skill quando não o encontra. As seções `Palavras banidas` e `Isso não sou eu` são checadas pelo quality gate da profills-post; `Dores do ICP` alimenta o teste analgésico/vitamina.
 - `DADOS/drafts/<AAAA-MM-DD>-<tema-slug>.md` — saída persistida da profills-post: linhas de contexto (tema, ângulo, hook, origem dos números), uma linha `---`, e o texto final pronto para colar — é este formato que `post/scripts/checar-formato.js` lê. `DADOS/drafts/<AAAA-MM-DD>-<tema-slug>/variacoes.md` guarda as 3-5 variações geradas (o usuário pode voltar à "outra").
+- `DADOS/.picker/` — runtime do picker local da profills-post (gitignored). A escolha das variações é esse picker no formato do feed, com Copiar em cada card; Artifact fica no dashboard da garimpo, não no comparador da post.
 
 **Quem invoca quem** (fonte única — a description de uma skill só cita invocação que existe aqui):
 
@@ -49,7 +50,7 @@ Ninguém mais invoca ninguém: a garimpo segue neutra sem `voz.md`; radar e post
 ## Dependências externas ao repo
 
 - `humanize-pt-br` — skill global do usuário, publicada em [othavi0/skills](https://github.com/othavi0/skills) (`skills/writing/humanize-pt-br`); instalada e mantida pela **profills-setup**, encadeada pela profills-post no passo de humanização.
-- `artifact-design` — skill do harness, exigida antes de publicar dashboard (garimpo) e comparador (post) via tool Artifact. `dataviz` — só o dashboard da garimpo (tem gráficos); o comparador da profills-post não usa.
+- `artifact-design` — skill do harness, exigida antes de publicar o dashboard da garimpo via tool Artifact. O comparador da profills-post é o picker local (`scripts/picker/`), não Artifact. `dataviz` — só o dashboard da garimpo.
 - Moldes, taxonomias, benchmark e quality gate são adaptados (traduzidos) de [coreyhaines31/marketingskills](https://github.com/coreyhaines31/marketingskills) (MIT) — manter a atribuição ao importar mais material de lá.
 
 ## Convenções

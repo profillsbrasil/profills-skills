@@ -24,7 +24,7 @@ A linha que separa referência de plágio: você reusa o **padrão** (a estrutur
 
 Quem usa isto é o **comercial, não dev** — pode não saber o que escrever nem que decisões existem. Guie, um passo por vez.
 
-- **Mostre como vai ficar de verdade**, não descreva. Cada opção é um preview realista de feed (`references/comparador.md`), não card abstrato — ele bate o olho e entende o que vai publicar.
+- **Mostre como vai ficar de verdade**, não descreva. Cada opção é um preview realista de feed no picker local (`references/comparador.md`), não card abstrato — ele bate o olho, copia no card e entende o que vai publicar.
 - **Pergunte com `AskUserQuestion`**, em linguagem simples, sempre com a opção recomendada e o porquê: ofereça as escolhas prontas (qual ângulo, mais curto?, outro gancho?).
 - **Pegue o dado real dele** antes de finalizar. Os `[campos]` do rascunho (nome, número, quem fez) são de propósito: você os preenche COM ele, perguntando com jeito.
 - **Fale a língua dele**: `catalog/<slug>.md` é "o que a X anda postando", o dossiê é "a ficha da empresa", o crivo é "um crivo de qualidade". Nomes internos (slug, quality gate, Expert Panel, ICP) ficam fora da conversa.
@@ -99,15 +99,31 @@ Concluído quando todo rascunho aprovado passou pela skill.
 
 ### 7. Mostre lado a lado
 
-Renderize as variações como **previews realistas de feed** seguindo `references/comparador.md`: copie `assets/preview-template.html`, preencha só o bloco `DADOS` e publique via Artifact. Depois do artefato, pergunte no chat com `AskUserQuestion` qual ângulo ele leva — uma opção por ângulo, com o porquê de cada. Publicar no LinkedIn é ele; você entrega o rascunho.
+As opções abrem no **picker local** desta skill, no formato do feed. Não use Artifact neste passo.
 
-Salve **todas** as variações em `DADOS/drafts/<AAAA-MM-DD>-<tema-slug>/variacoes.md` (crie a pasta): uma seção por variação, com ângulo, categoria de hook e família de hook no cabeçalho dela e o texto integral abaixo. O artefato morre com a sessão; as descartadas ficam para a próxima rodada.
+```
+bash "<pasta desta skill>/scripts/picker/start-server.sh" --dados-dir "<DADOS>" --open
+```
 
-Concluído quando o artefato está publicado com uma opção por variação, o `variacoes.md` existe no disco com todas elas (ângulo, categoria e família por variação) e o usuário escolheu uma.
+O comando devolve um JSON `{status, url, port}`. Diga a ele que as opções estão em `url`. Não acrescente query.
+
+Grave a tela em `DADOS/.picker/current/content/<tema-slug>.json`, nome novo a cada revisão. O JSON é o bloco `DADOS` de `references/comparador.md`: `kicker`, `titulo`, `subtitulo`, `empresa`, `opcoes[]` (ângulo, porquê, texto, foto). Cada card tem Copiar (A, B, C…).
+
+Depois que ele copia no navegador, leia `DADOS/.picker/current/state/events` por `choice` A/B/C. O chat vale se ele digitar a letra.
+
+Salve **todas** as variações em `DADOS/drafts/<AAAA-MM-DD>-<tema-slug>/variacoes.md` (crie a pasta): uma seção por variação, com ângulo, categoria de hook e família de hook no cabeçalho dela e o texto integral abaixo. O picker some quando a sessão acaba; as descartadas ficam no arquivo.
+
+Pare com:
+
+```
+bash "<pasta desta skill>/scripts/picker/stop-server.sh" --dados-dir "<DADOS>"
+```
+
+Concluído quando o picker está no ar com uma opção por variação, o `variacoes.md` existe no disco com todas elas (ângulo, categoria e família por variação) e o usuário escolheu uma — pelo Copiar ou pelo chat.
 
 ### 8. Persista o escolhido
 
-Preencha os `[campos]` com o dado real dele, mostre o preview final (o mesmo template com uma opção só) e salve o texto em `DADOS/drafts/<AAAA-MM-DD>-<tema-slug>.md` — o texto exato do preview, pronto para colar. Crie a pasta `DADOS/drafts/` se ela ainda não existir. O preview morre com a sessão; o arquivo é o que ele encontra amanhã.
+Preencha os `[campos]` com o dado real dele, mostre o preview final no picker (JSON de tela com uma opção só) e salve o texto em `DADOS/drafts/<AAAA-MM-DD>-<tema-slug>.md` — o texto exato do preview, pronto para colar. Crie a pasta `DADOS/drafts/` se ela ainda não existir. O preview morre com a sessão; o arquivo é o que ele encontra amanhã.
 
 O arquivo tem **formato fixo**, porque é dele que o script tira o texto do post: primeiro as **linhas de contexto** (`Tema:`, `Ângulo:`, `Hook:`, `Origem dos números:`), depois uma linha sozinha com `---`, e do `---` até o fim do arquivo **só o texto do post**, exatamente como ele vai colar. Nenhum comentário seu depois da cerca.
 
@@ -121,9 +137,9 @@ Concluído quando o arquivo existe no disco no formato acima, o script devolve `
 
 ### 9. Ajuste o que ele pedir
 
-Pedidos de iteração ("encurta o 2", "troca o gancho", "deixa mais direto") mexem só no trecho afetado: edite o seu bloco `DADOS` e republique **no mesmo caminho de arquivo**, para o artefato manter a URL. Rascunho já salvo no passo 8 é reescrito junto, no mesmo arquivo.
+Pedidos de iteração ("encurta o 2", "troca o gancho", "deixa mais direto") mexem só no trecho afetado: grave um JSON de tela **com nome novo** em `DADOS/.picker/current/content/` e reescreva o rascunho já salvo no passo 8, no mesmo arquivo.
 
-Concluído quando o preview republicado mostra o ajuste, o arquivo em `DADOS/drafts/` bate com ele e o `checar-formato.js` volta `ok: true` no arquivo reescrito.
+Concluído quando o picker mostra o ajuste, o arquivo em `DADOS/drafts/` bate com ele e o `checar-formato.js` volta `ok: true` no arquivo reescrito.
 
 ## Restrições de formato (LinkedIn)
 

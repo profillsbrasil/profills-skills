@@ -4,7 +4,7 @@
     {
       "id": 1,
       "prompt": "Gera uns posts sobre embalagens sustentáveis no estilo que a Cetro Máquinas usa. (Contexto: o usuário não tem número novo na mão — \"usa o que já está no meu arquivo de voz\" — e, perguntado sobre o que não copiar da Cetro, responde \"o tom institucional, aquele 'você, empreendedor'\".)",
-      "expected_output": "- Lê do disco o perfil da Cetro, o posts.json da coleta e o voz.md antes de gerar.\n- Trata o '## Do Not Copy' em placeholder como pergunta com opções tiradas dos posts da Cetro e grava a resposta no dossiê, no lugar do comentário, antes de gerar.\n- Nenhum número do texto sem origem: só o que está em Provas do voz.md ou medido no catálogo.\n- 3-5 variações salvas em drafts/<data>-<tema-slug>/variacoes.md, uma por ângulo, as três famílias de hook cobertas, sem categoria repetida.\n- checar-formato.js volta ok:true no arquivo salvo em drafts/<data>-<tema-slug>.md.\n- Comparador publicado a partir do preview-template.html e escolha pedida ao usuário.",
+      "expected_output": "- Lê do disco o perfil da Cetro, o posts.json da coleta e o voz.md antes de gerar.\n- Trata o '## Do Not Copy' em placeholder como pergunta com opções tiradas dos posts da Cetro e grava a resposta no dossiê, no lugar do comentário, antes de gerar.\n- Nenhum número do texto sem origem: só o que está em Provas do voz.md ou medido no catálogo.\n- 3-5 variações salvas em drafts/<data>-<tema-slug>/variacoes.md, uma por ângulo, as três famílias de hook cobertas, sem categoria repetida.\n- checar-formato.js volta ok:true no arquivo salvo em drafts/<data>-<tema-slug>.md.\n- Picker local com JSON de tela e escolha pedida ao usuário.",
       "files": [
         "evals/files/1"
       ],
@@ -15,7 +15,7 @@
         "A linha de contexto no topo do arquivo salvo traz tema, ângulo, categoria de hook, empresa que inspirou, data e a origem de cada número do texto (voz.md / catálogo cetromaquinas / resposta do usuário).",
         "NEGATIVA: todo número que aparece no texto salvo consta em `linkedin-data/voz.md` (seção Provas) ou no catálogo da Cetro — como o usuário disse não ter número novo, nenhum número inédito (percentual, prazo, quantidade) foi criado na hora.",
         "NEGATIVA: o texto salvo não contém nenhuma das palavras banidas do voz.md (\"solução robusta\", \"alavancar\", \"parceiro estratégico\", \"de forma assertiva\", \"estado da arte\") nem as construções de 'Isso não sou eu' (abertura motivacional, três adjetivos em sequência, empresa em terceira pessoa), e nenhum arquivo de linkedin-data/catalog/raw/ aparece alterado em outputs/.",
-        "Existe em outputs/ o HTML do comparador gerado a partir de assets/preview-template.html, com uma opção por variação, com o bloco DADOS preenchido e o restante do template preservado.",
+        "Existe em outputs/linkedin-data/.picker/current/content/ um JSON de tela com titulo, empresa e opcoes[], uma opção por variação, cada uma com texto integral.",
         "A resposta final fecha com o próximo passo e não usa vocabulário interno (slug, quality gate, expert panel, ICP, Push/Shine)."
       ]
     },
@@ -40,7 +40,7 @@
     {
       "id": 3,
       "prompt": "Preciso de ideias de post sobre automação industrial pro meu LinkedIn. (Contexto: perguntado sobre montar o arquivo de voz agora, o usuário responde \"hoje não dá, tenho reunião\"; ele também não tem nenhum número medido para dar.)",
-      "expected_output": "- Sem voz.md, invoca a profills-voz; com o \"hoje não dá\", pergunta o essencial (tom, público, o que vende) e oferece a skill para depois.\n- Sem catálogo, diz isso em uma frase, oferece rodar a profills-garimpo e segue com o tema.\n- Sem número real, usa `[número a confirmar]` nas variações e deixa o ângulo `dado` de fora; o arquivo final não fica com campo pendente nem ganha número inventado.\n- 3-5 variações, comparador publicado e escolhido salvo em drafts/.",
+      "expected_output": "- Sem voz.md, invoca a profills-voz; com o \"hoje não dá\", pergunta o essencial (tom, público, o que vende) e oferece a skill para depois.\n- Sem catálogo, diz isso em uma frase, oferece rodar a profills-garimpo e segue com o tema.\n- Sem número real, usa `[número a confirmar]` nas variações e deixa o ângulo `dado` de fora; o arquivo final não fica com campo pendente nem ganha número inventado.\n- 3-5 variações, picker local e escolhido salvo em drafts/.",
       "files": [
         "evals/files/3"
       ],
@@ -51,14 +51,14 @@
         "Nenhuma das variações do variacoes.md usa o ângulo `dado`, e a saída diz explicitamente que ele ficou de fora por falta de número real.",
         "Rodar `scripts/checar-formato.js` sobre o arquivo salvo em outputs/linkedin-data/drafts/<AAAA-MM-DD>-<tema-slug>.md devolve `ok: true` (exit 0) — inclusive `campos_pendentes` vazio e nenhuma falha de tamanho de corpo; se vier o aviso `corpo_curto`, ele foi levado ao usuário como pergunta, não escondido.",
         "O variacoes.md traz 3-5 variações com texto integral, ângulo distinto por variação, as três famílias de hook cobertas e nenhuma categoria repetida.",
-        "Existe em outputs/ o HTML do comparador a partir de assets/preview-template.html, com uma opção por variação, e a escolha do ângulo foi pedida ao usuário com opções e recomendação.",
+        "Existe em outputs/linkedin-data/.picker/current/content/ um JSON de tela com uma opção por variação, e a escolha foi pedida no picker (Copiar A/B/C) ou no chat.",
         "NEGATIVA: a skill não fabrica catálogo — outputs/ não contém nenhum linkedin-data/catalog/<slug>.md novo nem dossiê de empresa criado para justificar o post."
       ]
     },
     {
       "id": 4,
       "prompt": "Transforma o catálogo da Skymsen em posts. (Contexto: o usuário aceita o tema que você recomendar; perguntado sobre o que não copiar da Skymsen, responde \"os posts de data comemorativa, tipo Dia da Pizza, não são minha praia\"; não tem número novo para dar além do que está no arquivo de voz.)",
-      "expected_output": "- Sem tema no pedido, tira 3-4 temas que engajaram do catalog/skymsen.md e oferece com recomendação e porquê.\n- Trata o '## Do Not Copy' em placeholder: pergunta e grava a resposta no dossiê antes de gerar.\n- 3-5 variações com ângulo próprio, três famílias de hook, sem categoria repetida; crivo, humanização, comparador.\n- Cria drafts/ e salva o escolhido; checar-formato.js volta ok:true.",
+      "expected_output": "- Sem tema no pedido, tira 3-4 temas que engajaram do catalog/skymsen.md e oferece com recomendação e porquê.\n- Trata o '## Do Not Copy' em placeholder: pergunta e grava a resposta no dossiê antes de gerar.\n- 3-5 variações com ângulo próprio, três famílias de hook, sem categoria repetida; crivo, humanização, picker.\n- Cria drafts/ e salva o escolhido; checar-formato.js volta ok:true.",
       "files": [
         "evals/files/4"
       ],
@@ -69,7 +69,7 @@
         "Existe outputs/linkedin-data/drafts/<AAAA-MM-DD>-<tema-slug>/variacoes.md com 3-5 variações completas, ângulo distinto por variação, as três famílias de hook cobertas e nenhuma categoria repetida.",
         "NEGATIVA: todo número do texto salvo vem de `linkedin-data/voz.md` (Provas: 62 linhas entregues, 4 horas de resposta, 3 dias de instalação, 6% para 0,8% em Diadema) ou do perfil da Skymsen — nenhuma cifra nova apareceu na hora de escrever, e a linha de contexto aponta a origem de cada uma.",
         "NEGATIVA: nem linkedin-data/catalog/skymsen.md nem linkedin-data/catalog/raw/skymsen/2026-07-14/posts.json aparecem alterados em outputs/ — a skill lê o catálogo, não o reescreve.",
-        "Existe em outputs/ o HTML do comparador a partir de assets/preview-template.html (só o bloco DADOS preenchido) e a escolha do ângulo foi pedida depois de mostrá-lo, não antes.",
+        "Existe em outputs/linkedin-data/.picker/current/content/ um JSON de tela (titulo, empresa, opcoes[]) e a escolha do ângulo foi pedida depois de mostrar o picker, não antes.",
         "Nenhuma variação imita o padrão que o usuário disse não querer (post de data comemorativa) nem repete o tom institucional 'nós da empresa' do catálogo da Skymsen; o texto salvo está na primeira pessoa da voz do usuário."
       ]
     },
@@ -94,19 +94,19 @@
     {
       "id": 6,
       "prompt": "Faz um post inspirado no que a Tecnox do Brasil vem postando sobre embalagem flexível. (Contexto: o usuário não tem número novo para dar; ele topa seguir só com o tema se a empresa não tiver material.)",
-      "expected_output": "- Não achando catalog/tecnox-do-brasil.md, abre o meta.json da coleta e usa o campo status (`sem_posts`) para explicar em uma frase por que não há o que espelhar.\n- Oferece rodar a profills-garimpo e segue só com o tema, sem inventar posts da Tecnox.\n- Gera 3-5 variações a partir da voz do usuário, publica o comparador e salva o escolhido.\n- checar-formato.js volta ok:true no arquivo salvo.",
+      "expected_output": "- Não achando catalog/tecnox-do-brasil.md, abre o meta.json da coleta e usa o campo status (`sem_posts`) para explicar em uma frase por que não há o que espelhar.\n- Oferece rodar a profills-garimpo e segue só com o tema, sem inventar posts da Tecnox.\n- Gera 3-5 variações a partir da voz do usuário, abre o picker e salva o escolhido.\n- checar-formato.js volta ok:true no arquivo salvo.",
       "files": [
         "evals/files/6"
       ],
       "expectations": [
         "Sem `catalog/tecnox-do-brasil.md`, lê `linkedin-data/catalog/raw/tecnox-do-brasil/2026-07-14/meta.json` e conta ao usuário, em uma frase e na resposta final, a razão que está lá (`status: sem_posts` — LinkedIn parado há cerca de 11 meses, 0 posts coletados), sem jargão de campo de JSON.",
         "Oferece rodar a profills-garimpo para atualizar a Tecnox e segue com o tema de embalagem flexível em vez de travar o pedido.",
-        "NEGATIVA: nada da Tecnox é inventado — nenhum post, hook, formato, URL ou número de engajamento atribuído a ela aparece no comparador, nas variações ou no texto salvo.",
+        "NEGATIVA: nada da Tecnox é inventado — nenhum post, hook, formato, URL ou número de engajamento atribuído a ela aparece no JSON do picker, nas variações ou no texto salvo.",
         "NEGATIVA: outputs/ não traz `linkedin-data/catalog/tecnox-do-brasil.md` criado nem o `meta.json` da coleta alterado.",
         "Existe outputs/linkedin-data/drafts/<AAAA-MM-DD>-<tema-slug>/variacoes.md com 3-5 variações completas, ângulo distinto por variação, as três famílias de hook cobertas e nenhuma categoria repetida.",
         "Rodar `scripts/checar-formato.js` com `--voz linkedin-data/voz.md` sobre o arquivo salvo em outputs/linkedin-data/drafts/<AAAA-MM-DD>-<tema-slug>.md devolve `ok: true` (exit 0).",
         "A linha de contexto do arquivo salvo registra que o post saiu sem referência de catálogo (a Tecnox não tinha coleta aproveitável) e aponta a origem de cada número do texto, todos vindos de `linkedin-data/voz.md`.",
-        "Existe em outputs/ o HTML do comparador a partir de assets/preview-template.html, com uma opção por variação, e a escolha foi pedida ao usuário com opções e recomendação."
+        "Existe em outputs/linkedin-data/.picker/current/content/ um JSON de tela com uma opção por variação, e a escolha foi pedida no picker (Copiar A/B/C) ou no chat."
       ]
     }
   ]

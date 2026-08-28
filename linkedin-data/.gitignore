@@ -6,6 +6,9 @@ catalog/raw/**/*.jpg
 # Seleção ativa é efêmera por sessão
 selection.md
 
+# Picker local (pid, log, telas da sessão)
+.picker/
+
 # Versionar: refs/ (dossiês + índice), catalog/*.md (relatórios sintetizados),
 # catalog/raw/**/*.json (dado estruturado leve), drafts/ (rascunhos aprovados),
 # voz.md (arquivo de voz do usuário — dado vivo, mesma categoria de refs/ e catalog/*.md)
