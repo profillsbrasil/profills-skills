@@ -4,3 +4,4 @@
 
 # Skills vão unzipadas no plugin. Zip local fica atrasado da pasta.
 skills/*.zip
+skills/profills-post/scripts/picker/.test-dados-*

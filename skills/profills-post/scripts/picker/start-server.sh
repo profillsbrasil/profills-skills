@@ -1,19 +1,25 @@
 #!/usr/bin/env bash
+# Derived from obra/superpowers (skills/brainstorming/scripts), MIT License,
+# Copyright (c) 2025 Jesse Vincent. See LICENSE-obra-superpowers in this folder.
 # Start the Profills LinkedIn picker and print chat-safe JSON.
 # Usage: start-server.sh [--dados-dir <path>] [--open]
 #
 # Session lives at <DADOS>/.picker/current/.
-# --dados-dir is the pasta de dados. Default: git toplevel/linkedin-data
-# or ~/Profills LinkedIn.
+# --dados-dir is the pasta de dados. Default: <git toplevel>/linkedin-data when
+# that folder exists, else ~/Profills LinkedIn.
 #
 # Options:
 #   --dados-dir <path>    Pasta DADOS. Session: <path>/.picker/current.
 #   --host <bind-host>    Host/interface to bind (default: 127.0.0.1).
 #   --url-host <host>     Hostname shown in returned URL JSON.
 #   --idle-timeout-minutes <n>  Shut down after n minutes idle (default 240).
-#   --open                Open a local tab after readiness.
-#   --foreground          Run in the current terminal.
+#   --open                Open a local tab (also when already running). Adds
+#                         "opened": true|false to the JSON.
+#   --foreground          Run in the current terminal (JSON is printed first).
 #   --background          Force background mode.
+#
+# Output: one JSON line {status, url, port[, opened]}. The URL never carries
+# the session key; the key only travels inside the tab --open launches.
 
 SCRIPT_DIR="$(cd "$(dirname "$0")" && pwd)"
 
@@ -24,26 +30,37 @@ FORCE_BACKGROUND="false"
 BIND_HOST="127.0.0.1"
 URL_HOST=""
 IDLE_TIMEOUT_MINUTES=""
+OPEN="false"
+need_value() {
+  if [[ $# -lt 2 || -z "$2" || "$2" == --* ]]; then
+    echo "{\"error\": \"$1 precisa de um valor\"}"
+    exit 1
+  fi
+}
 while [[ $# -gt 0 ]]; do
   case "$1" in
     --dados-dir|--project-dir)
+      need_value "$@"
       DADOS_DIR="$2"
       shift 2
       ;;
     --host)
+      need_value "$@"
       BIND_HOST="$2"
       shift 2
       ;;
     --url-host)
+      need_value "$@"
       URL_HOST="$2"
       shift 2
       ;;
     --idle-timeout-minutes)
+      need_value "$@"
       IDLE_TIMEOUT_MINUTES="$2"
       shift 2
       ;;
     --open)
-      export BRAINSTORM_OPEN=1
+      OPEN="true"
       shift
       ;;
     --foreground|--no-daemon)
@@ -55,7 +72,7 @@ while [[ $# -gt 0 ]]; do
       shift
       ;;
     *)
-      echo "{\"error\": \"Unknown argument: $1\"}"
+      echo "{\"error\": \"Argumento desconhecido: $1\"}"
       exit 1
       ;;
   esac
@@ -71,7 +88,7 @@ fi
 
 if [[ -n "$IDLE_TIMEOUT_MINUTES" ]]; then
   if ! [[ "$IDLE_TIMEOUT_MINUTES" =~ ^[0-9]+$ ]] || [[ "$IDLE_TIMEOUT_MINUTES" -lt 1 ]]; then
-    echo "{\"error\": \"--idle-timeout-minutes must be a positive integer\"}"
+    echo '{"error": "--idle-timeout-minutes precisa ser um inteiro positivo"}'
     exit 1
   fi
   export BRAINSTORM_IDLE_TIMEOUT_MS=$(( IDLE_TIMEOUT_MINUTES * 60 * 1000 ))
@@ -108,11 +125,12 @@ fi
 # keep everything this script and the server create owner-only.
 umask 077
 
+# Default pasta DADOS follows the CLAUDE.md invariant: a git repo that already
+# has linkedin-data/ uses it; anything else (plugin install included) uses the
+# user's folder. Resolved from the caller's cwd, not from where the plugin lives.
 if [[ -z "$DADOS_DIR" ]]; then
-  TOPLEVEL="$(cd "$SCRIPT_DIR" && git rev-parse --show-toplevel 2>/dev/null || true)"
+  TOPLEVEL="$(git rev-parse --show-toplevel 2>/dev/null || true)"
   if [[ -n "$TOPLEVEL" && -d "$TOPLEVEL/linkedin-data" ]]; then
-    DADOS_DIR="$TOPLEVEL/linkedin-data"
-  elif [[ -n "$TOPLEVEL" ]]; then
     DADOS_DIR="$TOPLEVEL/linkedin-data"
   else
     DADOS_DIR="${HOME}/Profills LinkedIn"
@@ -125,31 +143,109 @@ export BRAINSTORM_PORT_FILE="${DADOS_DIR}/.picker/.last-port"
 export BRAINSTORM_TOKEN_FILE="${DADOS_DIR}/.picker/.last-token"
 
 STATE_DIR="${SESSION_DIR}/state"
+CONTENT_DIR="${SESSION_DIR}/content"
 PID_FILE="${STATE_DIR}/server.pid"
 LOG_FILE="${STATE_DIR}/server.log"
 SERVER_ID_FILE="${STATE_DIR}/server-instance-id"
 LIFECYCLE_LIB="${SCRIPT_DIR}/lifecycle-lib.cjs"
 
-print_ready() {
-  node "$LIFECYCLE_LIB" print "$1" "$STATE_DIR" "$URL_HOST"
+is_loopback() {
+  case "$1" in
+    localhost|127.*|::1|\[::1\]) return 0 ;;
+    *) return 1 ;;
+  esac
 }
 
+# Prints the chat JSON, opening the browser first when asked. The key stays in
+# the token file and in the tab; stdout only says whether a launcher ran.
+finish() {
+  local status="$1"
+  local opened="skip"
+  if [[ "$OPEN" == "true" ]] && ! is_loopback "$BIND_HOST"; then
+    opened="false"
+  elif [[ "$OPEN" == "true" ]]; then
+    if node "$LIFECYCLE_LIB" open "$STATE_DIR" "$BRAINSTORM_TOKEN_FILE" "$URL_HOST"; then
+      opened="true"
+    else
+      opened="false"
+    fi
+  fi
+  node "$LIFECYCLE_LIB" print "$status" "$STATE_DIR" "$URL_HOST" "$opened"
+}
+
+# Every start is a new round: the previous round's choice and screens must not
+# be read or shown as today's. events is append-only, so it goes; screens move
+# to content/.anterior/ (hidden: the server ignores dotfiles) where a human can
+# still find them. The tab shows the waiting page until this round's screen is
+# written — the agent always writes it right after start.
+archive_round() {
+  mkdir -p "${CONTENT_DIR}/.anterior" || { echo '{"error": "não consegui criar content/.anterior"}'; exit 1; }
+  local f dest n
+  for f in "$CONTENT_DIR"/*.json "$CONTENT_DIR"/*.html; do
+    [[ -f "$f" ]] || continue
+    dest="${CONTENT_DIR}/.anterior/$(date +%Y%m%d-%H%M%S)-$(basename "$f")"
+    n=1
+    while [[ -e "$dest" ]]; do
+      dest="${CONTENT_DIR}/.anterior/$(date +%Y%m%d-%H%M%S)-${n}-$(basename "$f")"
+      n=$((n + 1))
+    done
+    if ! mv -f "$f" "$dest" 2>/dev/null; then
+      # Loud, not silent: a screen left behind would reopen as today's options.
+      echo "{\"error\": \"não consegui arquivar a tela anterior: $(basename "$f")\"}"
+      exit 1
+    fi
+  done
+  # Only after every screen is out of the way: the append-only choice file.
+  rm -f "${STATE_DIR}/events"
+  # Keep the newest 30 archived screens; drafts/ is the real archive.
+  ls -1t "${CONTENT_DIR}/.anterior" 2>/dev/null | tail -n +31 | while IFS= read -r old; do
+    rm -f "${CONTENT_DIR}/.anterior/$old"
+  done
+}
+
+# One start at a time per pasta DADOS. mkdir is atomic; a stale lock (owner
+# dead) is taken over. A concurrent caller waits for the first to finish and
+# then follows the normal path, which finds the live picker (already_running).
+LOCK_DIR="${DADOS_DIR}/.picker/.start-lock"
+mkdir -p "${DADOS_DIR}/.picker"
+lock_start() {
+  local waited=0 owner
+  while ! mkdir "$LOCK_DIR" 2>/dev/null; do
+    owner="$(cat "$LOCK_DIR/pid" 2>/dev/null || true)"
+    if [[ -n "$owner" ]] && ! kill -0 "$owner" 2>/dev/null; then
+      rm -rf "$LOCK_DIR"
+      continue
+    fi
+    if (( waited >= 100 )); then
+      echo '{"error": "outro start do picker está rodando há mais de 10 segundos"}'
+      exit 1
+    fi
+    sleep 0.1
+    waited=$((waited + 1))
+  done
+  echo "$$" > "$LOCK_DIR/pid"
+  trap 'rm -rf "$LOCK_DIR"' EXIT
+}
+lock_start
+
 if node "$LIFECYCLE_LIB" ready "$STATE_DIR"; then
-  print_ready already_running
+  archive_round
+  finish already_running
   exit 0
 fi
 
 OCCUPANCY="started"
 if [[ -d "$STATE_DIR" ]]; then
   if ! "$SCRIPT_DIR/stop-server.sh" "$SESSION_DIR" >/dev/null; then
-    echo '{"error":"failed to replace the live picker"}'
+    echo '{"error":"não consegui substituir o picker que estava no ar"}'
     exit 1
   fi
   OCCUPANCY="replaced"
 fi
 
-mkdir -p "${SESSION_DIR}/content" "$STATE_DIR"
+mkdir -p "$CONTENT_DIR" "$STATE_DIR"
 rm -f "${STATE_DIR}/server-stopped" "$LOG_FILE"
+archive_round
 
 SERVER_ID=""
 if [[ -r /dev/urandom ]]; then
@@ -163,9 +259,8 @@ chmod 600 "$SERVER_ID_FILE" 2>/dev/null || true
 
 cd "$SCRIPT_DIR" || exit 1
 
-# Resolve the harness PID (grandparent of this script).
-# $PPID is the ephemeral shell the harness spawned to run us — it dies
-# when this script exits. The harness itself is $PPID's parent.
+# Owner PID: the process that outlives this script (its grandparent). When it
+# dies the server shuts itself down (see server.cjs lifecycle check).
 OWNER_PID="$(ps -o ppid= -p "$PPID" 2>/dev/null | tr -d ' ')"
 if [[ -z "$OWNER_PID" || "$OWNER_PID" == "1" ]]; then
   OWNER_PID="$PPID"
@@ -179,37 +274,53 @@ if is_windows_like_shell; then
   OWNER_PID=""
 fi
 
-# Foreground mode for environments that reap detached/background processes.
-if [[ "$FOREGROUND" == "true" ]]; then
-  env BRAINSTORM_DIR="$SESSION_DIR" BRAINSTORM_HOST="$BIND_HOST" BRAINSTORM_URL_HOST="$URL_HOST" BRAINSTORM_OWNER_PID="$OWNER_PID" node server.cjs "--brainstorm-server-id=$SERVER_ID" &
-  SERVER_PID=$!
-  echo "$SERVER_PID" > "$PID_FILE"
-  wait "$SERVER_PID"
-  exit $?
-fi
+json_escape() {
+  local v="$1"
+  v="${v//\\/\\\\}"
+  v="${v//\"/\\\"}"
+  printf '%s' "$v"
+}
+# printf %q makes each argument safe to paste into bash; json_escape makes the
+# whole line safe inside the JSON string.
+RECOVERY="$(json_escape "bash $(printf '%q' "$SCRIPT_DIR/start-server.sh") --dados-dir $(printf '%q' "$DADOS_DIR") --host $(printf '%q' "$BIND_HOST") --url-host $(printf '%q' "$URL_HOST") --foreground")"
 
-# Start server, capturing output to log file
-# Use nohup to survive shell exit; disown to remove from job table
-nohup env BRAINSTORM_DIR="$SESSION_DIR" BRAINSTORM_HOST="$BIND_HOST" BRAINSTORM_URL_HOST="$URL_HOST" BRAINSTORM_OWNER_PID="$OWNER_PID" node server.cjs "--brainstorm-server-id=$SERVER_ID" > "$LOG_FILE" 2>&1 &
-SERVER_PID=$!
-disown "$SERVER_PID" 2>/dev/null
+if [[ "$FOREGROUND" == "true" ]]; then
+  env BRAINSTORM_DIR="$SESSION_DIR" BRAINSTORM_HOST="$BIND_HOST" BRAINSTORM_URL_HOST="$URL_HOST" BRAINSTORM_OWNER_PID="$OWNER_PID" node server.cjs "--brainstorm-server-id=$SERVER_ID" > "$LOG_FILE" 2>&1 &
+  SERVER_PID=$!
+else
+  # nohup to survive shell exit; disown to remove from job table
+  nohup env BRAINSTORM_DIR="$SESSION_DIR" BRAINSTORM_HOST="$BIND_HOST" BRAINSTORM_URL_HOST="$URL_HOST" BRAINSTORM_OWNER_PID="$OWNER_PID" node server.cjs "--brainstorm-server-id=$SERVER_ID" > "$LOG_FILE" 2>&1 &
+  SERVER_PID=$!
+  disown "$SERVER_PID" 2>/dev/null
+fi
 echo "$SERVER_PID" > "$PID_FILE"
 
 # Ready means identity-matched live process and HTTP accept, not a log line.
+READY="false"
 for _ in {1..50}; do
   if node "$LIFECYCLE_LIB" ready "$STATE_DIR"; then
-    print_ready "$OCCUPANCY"
-    exit 0
+    READY="true"
+    break
   fi
   if ! kill -0 "$SERVER_PID" 2>/dev/null; then
     "$SCRIPT_DIR/stop-server.sh" "$SESSION_DIR" >/dev/null || true
-    echo "{\"error\": \"Server started but was killed. Retry in a persistent terminal with: $SCRIPT_DIR/start-server.sh${DADOS_DIR:+ --dados-dir $DADOS_DIR} --host $BIND_HOST --url-host $URL_HOST --foreground\"}"
+    echo "{\"error\": \"O picker subiu e foi encerrado. Tente num terminal que fique aberto: $RECOVERY\"}"
     exit 1
   fi
   sleep 0.1
 done
 
-# Timeout - server didn't start. Do not leave a live process behind.
-"$SCRIPT_DIR/stop-server.sh" "$SESSION_DIR" >/dev/null || true
-echo '{"error": "Server failed to start within 5 seconds"}'
-exit 1
+if [[ "$READY" != "true" ]]; then
+  "$SCRIPT_DIR/stop-server.sh" "$SESSION_DIR" >/dev/null || true
+  echo '{"error": "O picker não respondeu em 5 segundos"}'
+  exit 1
+fi
+
+# Same JSON in both modes. Foreground then holds the terminal until the server
+# exits, so callers in that mode read the first line and keep the call running.
+finish "$OCCUPANCY"
+if [[ "$FOREGROUND" == "true" ]]; then
+  wait "$SERVER_PID"
+  exit $?
+fi
+exit 0

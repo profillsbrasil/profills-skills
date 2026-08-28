@@ -1,4 +1,6 @@
 #!/usr/bin/env bash
+# Derived from obra/superpowers (skills/brainstorming/scripts), MIT License,
+# Copyright (c) 2025 Jesse Vincent. See LICENSE-obra-superpowers in this folder.
 # Stop the Profills LinkedIn picker.
 # Usage: stop-server.sh [--dados-dir <path>]
 #        stop-server.sh <session_dir>
@@ -9,6 +11,10 @@ SESSION_DIR=""
 while [[ $# -gt 0 ]]; do
   case "$1" in
     --dados-dir|--project-dir)
+      if [[ $# -lt 2 || -z "$2" || "$2" == --* ]]; then
+        echo '{"error": "--dados-dir precisa de um valor"}'
+        exit 1
+      fi
       DADOS_DIR="$2"
       shift 2
       ;;
@@ -20,10 +26,8 @@ while [[ $# -gt 0 ]]; do
 done
 
 if [[ -z "$DADOS_DIR" && -z "$SESSION_DIR" ]]; then
-  TOPLEVEL="$(cd "$SCRIPT_DIR" && git rev-parse --show-toplevel 2>/dev/null || true)"
+  TOPLEVEL="$(git rev-parse --show-toplevel 2>/dev/null || true)"
   if [[ -n "$TOPLEVEL" && -d "$TOPLEVEL/linkedin-data" ]]; then
-    DADOS_DIR="$TOPLEVEL/linkedin-data"
-  elif [[ -n "$TOPLEVEL" ]]; then
     DADOS_DIR="$TOPLEVEL/linkedin-data"
   else
     DADOS_DIR="${HOME}/Profills LinkedIn"
@@ -127,12 +131,16 @@ if [[ -f "$PID_FILE" ]]; then
   fi
 
   if kill -0 "$pid" 2>/dev/null; then
-    echo '{"status": "failed", "error": "process still running"}'
+    echo '{"status": "failed", "error": "o processo continua rodando"}'
     exit 1
   fi
 
   rm -f "$PID_FILE" "$SERVER_ID_FILE" "${STATE_DIR}/server.log"
   mark_stopped "stop-server.sh"
+
+  # The choice belongs to the session that just ended. The screen stays in
+  # content/ (eval outputs read it; the next start archives it); drafts live in DADOS/drafts/.
+  rm -f "${STATE_DIR}/events"
 
   # Only delete ephemeral /tmp directories
   if [[ "$SESSION_DIR" == /tmp/* ]]; then

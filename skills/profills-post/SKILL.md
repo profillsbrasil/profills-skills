@@ -105,19 +105,17 @@ As opções abrem no **picker local** desta skill, no formato do feed. Não use 
 bash "<pasta desta skill>/scripts/picker/start-server.sh" --dados-dir "<DADOS>" --open
 ```
 
-O comando devolve um JSON `{status, url, port}`. Diga a ele que as opções estão em `url`. Não acrescente query.
+O comando devolve um JSON `{status, url, port, opened}`. A `url` sozinha não abre: a aba só entra pela chave que o `--open` carrega, e essa chave nunca vai para o chat. Então não cole a `url` nem acrescente query. Com `opened: true`, diga que a aba abriu no navegador. Com `opened: false` (sem tela gráfica, SSH, navegador que não respondeu), diga em uma frase que a aba não abriu neste ambiente e ofereça escolher pelo chat. Se ele fechou a aba ou diz que não vê nada, rode o mesmo comando de novo (`already_running` reabre a aba; `started`/`replaced` quer dizer que o picker não estava no ar). Todo start é uma rodada nova: o script move as telas anteriores para `content/.anterior/` e a aba abre na página de espera até você gravar a tela — por isso, depois de qualquer start, grave a tela desta rodada com nome novo.
+
+No Windows (Git Bash) o comando fica preso no terminal: rode em background e leia a primeira linha do stdout, que é o mesmo JSON.
 
 Grave a tela em `DADOS/.picker/current/content/<tema-slug>.json`, nome novo a cada revisão. O JSON é o bloco `DADOS` de `references/comparador.md`: `kicker`, `titulo`, `subtitulo`, `empresa`, `opcoes[]` (ângulo, porquê, texto, foto). Cada card tem Copiar (A, B, C…).
 
-Depois que ele copia no navegador, leia `DADOS/.picker/current/state/events` por `choice` A/B/C. O chat vale se ele digitar a letra.
+Depois que ele copia no navegador, leia `DADOS/.picker/current/state/events`: uma linha JSON por clique, campo `choice` com a letra; vale a **última** linha, porque ele pode mudar de ideia. O arquivo é zerado a cada tela gravada e a cada start, então leia só depois de gravar a tela desta rodada. O chat vale se ele digitar a letra.
 
 Salve **todas** as variações em `DADOS/drafts/<AAAA-MM-DD>-<tema-slug>/variacoes.md` (crie a pasta): uma seção por variação, com ângulo, categoria de hook e família de hook no cabeçalho dela e o texto integral abaixo. O picker some quando a sessão acaba; as descartadas ficam no arquivo.
 
-Pare com:
-
-```
-bash "<pasta desta skill>/scripts/picker/stop-server.sh" --dados-dir "<DADOS>"
-```
+Não pare o picker aqui: os passos 8 e 9 mostram o preview nele. Quem para é o passo 8 (sem ajuste) ou o passo 9 (com ajuste).
 
 Concluído quando o picker está no ar com uma opção por variação, o `variacoes.md` existe no disco com todas elas (ângulo, categoria e família por variação) e o usuário escolheu uma — pelo Copiar ou pelo chat.
 
@@ -133,13 +131,19 @@ Se a variação escolhida usa padrão diferente do que você anunciou no passo 1
 
 Antes de dar por pronto, rode `node "<pasta desta skill>/scripts/checar-formato.js" "<DADOS>/drafts/<AAAA-MM-DD>-<tema-slug>.md" --voz "<DADOS>/voz.md"` no arquivo salvo (`--voz` sempre que o `voz.md` existir; sem ele, o script avisa que o gate de banidas não foi medido). Aviso não impede salvar: `corpo_curto` no arquivo final é a pergunta "ficou curto — quer engordar ou vai assim?", e a resposta dele decide.
 
-Concluído quando o arquivo existe no disco no formato acima, o script devolve `ok: true` nele, os avisos foram conversados, e as linhas de contexto trazem ângulo, categoria de hook e a origem de cada número.
+Concluído quando o arquivo existe no disco no formato acima, o script devolve `ok: true` nele, os avisos foram conversados, e as linhas de contexto trazem ângulo, categoria de hook e a origem de cada número. Se ele deu o post por fechado sem pedir ajuste, pare o picker aqui com o comando do passo 9.
 
 ### 9. Ajuste o que ele pedir
 
 Pedidos de iteração ("encurta o 2", "troca o gancho", "deixa mais direto") mexem só no trecho afetado: grave um JSON de tela **com nome novo** em `DADOS/.picker/current/content/` e reescreva o rascunho já salvo no passo 8, no mesmo arquivo.
 
-Concluído quando o picker mostra o ajuste, o arquivo em `DADOS/drafts/` bate com ele e o `checar-formato.js` volta `ok: true` no arquivo reescrito.
+Quando ele der o post por fechado, pare o picker:
+
+```
+bash "<pasta desta skill>/scripts/picker/stop-server.sh" --dados-dir "<DADOS>"
+```
+
+Concluído quando o picker mostrou o ajuste, o arquivo em `DADOS/drafts/` bate com ele, o `checar-formato.js` volta `ok: true` no arquivo reescrito e o picker foi parado.
 
 ## Restrições de formato (LinkedIn)
 
