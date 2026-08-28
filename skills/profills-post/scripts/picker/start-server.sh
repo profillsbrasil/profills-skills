@@ -1,4 +1,6 @@
 #!/usr/bin/env bash
+# Derived from obra/superpowers (skills/brainstorming/scripts), MIT License,
+# Copyright (c) 2025 Jesse Vincent. See LICENSE-obra-superpowers in this folder.
 # Start the Profills LinkedIn picker and print chat-safe JSON.
 # Usage: start-server.sh [--dados-dir <path>] [--open]
 #
@@ -147,12 +149,19 @@ LOG_FILE="${STATE_DIR}/server.log"
 SERVER_ID_FILE="${STATE_DIR}/server-instance-id"
 LIFECYCLE_LIB="${SCRIPT_DIR}/lifecycle-lib.cjs"
 
+is_loopback() {
+  case "$1" in
+    localhost|127.*|::1|\[::1\]) return 0 ;;
+    *) return 1 ;;
+  esac
+}
+
 # Prints the chat JSON, opening the browser first when asked. The key stays in
 # the token file and in the tab; stdout only says whether a launcher ran.
 finish() {
   local status="$1"
   local opened="skip"
-  if [[ "$OPEN" == "true" && "$BIND_HOST" != "127.0.0.1" && "$BIND_HOST" != "localhost" ]]; then
+  if [[ "$OPEN" == "true" ]] && ! is_loopback "$BIND_HOST"; then
     opened="false"
   elif [[ "$OPEN" == "true" ]]; then
     if node "$LIFECYCLE_LIB" open "$STATE_DIR" "$BRAINSTORM_TOKEN_FILE" "$URL_HOST"; then
@@ -218,7 +227,13 @@ if is_windows_like_shell; then
 fi
 
 # Shown inside a JSON string: the inner quotes around DADOS_DIR are escaped.
-RECOVERY="$SCRIPT_DIR/start-server.sh --dados-dir \\\"$DADOS_DIR\\\" --host $BIND_HOST --url-host $URL_HOST --foreground"
+json_escape() {
+  local v="$1"
+  v="${v//\\/\\\\}"
+  v="${v//\"/\\\"}"
+  printf '%s' "$v"
+}
+RECOVERY="bash \\\"$(json_escape "$SCRIPT_DIR")/start-server.sh\\\" --dados-dir \\\"$(json_escape "$DADOS_DIR")\\\" --host \\\"$(json_escape "$BIND_HOST")\\\" --url-host \\\"$(json_escape "$URL_HOST")\\\" --foreground"
 
 if [[ "$FOREGROUND" == "true" ]]; then
   env BRAINSTORM_DIR="$SESSION_DIR" BRAINSTORM_HOST="$BIND_HOST" BRAINSTORM_URL_HOST="$URL_HOST" BRAINSTORM_OWNER_PID="$OWNER_PID" node server.cjs "--brainstorm-server-id=$SERVER_ID" > "$LOG_FILE" 2>&1 &

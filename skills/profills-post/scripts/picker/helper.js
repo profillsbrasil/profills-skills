@@ -1,3 +1,5 @@
+// Derived from obra/superpowers (skills/brainstorming/scripts), MIT License,
+// Copyright (c) 2025 Jesse Vincent. See LICENSE-obra-superpowers in this folder.
 (function() {
   const MIN_RECONNECT_MS = 500;
   const MAX_RECONNECT_MS = 30000;

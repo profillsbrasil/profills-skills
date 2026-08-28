@@ -119,7 +119,7 @@ const SAMPLE = {
   titulo: 'Escolha o ângulo',
   empresa: { nome: 'Profills', iniciais: 'P', descricao: 'Máquinas' },
   opcoes: [
-    { angulo: 'Dado', porque: 'prova', texto: 'Primeira opção de teste com texto longo o bastante.' },
+    { angulo: 'Dado', porque: 'prova', texto: "Primeira opção de teste com texto longo o bastante. Custa R$& e $' e $$ 10." },
     { angulo: 'Contrário', porque: 'debate', texto: 'Segunda opção de teste.' },
     { angulo: 'História', porque: 'cena', texto: 'Terceira opção de teste.' }
   ]
@@ -273,6 +273,7 @@ test('LinkedIn screen has Copy on each card', async (t) => {
   assert.equal(page.body.includes('"Copiar " + letra'), true);
   assert.equal(page.body.includes("data-choice=\"' + letra + '\""), true);
   assert.equal(page.body.includes('<!-- CONTENT -->'), false);
+  assert.equal(page.body.includes("Custa R$& e $' e $$ 10."), true, 'wrapInFrame must not expand $ patterns');
 });
 
 // Production sessions live under DADOS (home or repo), never under /tmp: the

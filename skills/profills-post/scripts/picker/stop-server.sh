@@ -1,4 +1,6 @@
 #!/usr/bin/env bash
+# Derived from obra/superpowers (skills/brainstorming/scripts), MIT License,
+# Copyright (c) 2025 Jesse Vincent. See LICENSE-obra-superpowers in this folder.
 # Stop the Profills LinkedIn picker.
 # Usage: stop-server.sh [--dados-dir <path>]
 #        stop-server.sh <session_dir>

@@ -1,3 +1,5 @@
+// Derived from obra/superpowers (skills/brainstorming/scripts), MIT License,
+// Copyright (c) 2025 Jesse Vincent. See LICENSE-obra-superpowers in this folder.
 const crypto = require('crypto');
 const http = require('http');
 const fs = require('fs');
@@ -102,14 +104,6 @@ const URL_HOST = process.env.BRAINSTORM_URL_HOST || (HOST === '127.0.0.1' ? 'loc
 const SESSION_DIR = process.env.BRAINSTORM_DIR || '/tmp/brainstorm';
 const CONTENT_DIR = path.join(SESSION_DIR, 'content');
 const STATE_DIR = path.join(SESSION_DIR, 'state');
-const SUPERPOWERS_VERSION = readSuperpowersVersion();
-const SUPERPOWERS_BRAND_IMAGE_URL = 'https://primeradiant.com/brand/superpowers-visual-brainstorming-logo.png';
-const TELEMETRY_DISABLE_ENV_VARS = [
-  'SUPERPOWERS_DISABLE_TELEMETRY',
-  'DISABLE_TELEMETRY',
-  'CLAUDE_CODE_DISABLE_NONESSENTIAL_TRAFFIC'
-];
-const SUPERPOWERS_TELEMETRY_DISABLED = TELEMETRY_DISABLE_ENV_VARS.some(name => isTruthyEnv(process.env[name]));
 let ownerPid = process.env.BRAINSTORM_OWNER_PID ? Number(process.env.BRAINSTORM_OWNER_PID) : null;
 
 // Per-session secret key. The companion is reachable by any local browser tab
@@ -203,32 +197,6 @@ const helperInjection = '<script>\n' + helperScript + '\n</script>';
 
 // ========== Helper Functions ==========
 
-function readSuperpowersVersion() {
-  const root = path.join(__dirname, '../../..');
-  const manifests = [
-    path.join(root, 'package.json'),
-    path.join(root, '.codex-plugin/plugin.json')
-  ];
-
-  for (const manifest of manifests) {
-    try {
-      const data = JSON.parse(fs.readFileSync(manifest, 'utf-8'));
-      if (data.version) return String(data.version);
-    } catch (e) {
-      // Packaged Codex plugins omit package.json; try the next manifest.
-    }
-  }
-
-  return 'unknown';
-}
-
-function isTruthyEnv(value) {
-  if (!value) return false;
-  const normalized = String(value).trim().toLowerCase();
-  if (!normalized) return false;
-  return !['0', 'false', 'no', 'off'].includes(normalized);
-}
-
 function escapeHtmlText(value) {
   return String(value)
     .replace(/&/g, '&amp;')
@@ -305,24 +273,6 @@ function urlHostForHttp(host) {
   const h = String(host);
   if (h.startsWith('[') && h.endsWith(']')) return h;
   return h.includes(':') ? '[' + h + ']' : h;
-}
-
-function companionUrl() {
-  return 'http://' + urlHostForHttp(URL_HOST) + ':' + PORT + '/?key=' + TOKEN;
-}
-
-function browserLauncherForPlatform(url, {
-  platform = process.platform,
-  osRelease = require('os').release(),
-  env = process.env
-} = {}) {
-  const isWSL = platform === 'linux' && /microsoft/i.test(osRelease);
-  if (platform === 'darwin') return { bin: 'open', args: [url] };
-  if (platform === 'win32' || isWSL) {
-    return { bin: 'rundll32.exe', args: ['url.dll,FileProtocolHandler', url] };
-  }
-  if (env.DISPLAY || env.WAYLAND_DISPLAY) return { bin: 'xdg-open', args: [url] };
-  return null;
 }
 
 function isRegularFileInsideContentDir(filePath) {
@@ -432,7 +382,7 @@ function handleRequest(req, res) {
     let html = screenFile ? screenToHtml(screenFile) : waitingPage();
 
     if (html.includes('</body>')) {
-      html = html.replace('</body>', helperInjection + '\n</body>');
+      html = html.split('</body>').join(helperInjection + '\n</body>');
     } else {
       html += helperInjection;
     }
@@ -532,9 +482,12 @@ function handleMessage(text) {
   }
   touchActivity();
   console.log(JSON.stringify({ source: 'user-event', ...event }));
-  if (event && event.choice) {
+  // One line per choice, same shape whichever way the client sent it:
+  // helper.js's data-choice click ({choice}) or brainstorm.choice() ({type:'choice', value}).
+  const letra = (event && (event.choice || (event.type === 'choice' ? event.value : null))) || null;
+  if (letra) {
     const eventsFile = path.join(STATE_DIR, 'events');
-    fs.appendFileSync(eventsFile, JSON.stringify(event) + '\n');
+    fs.appendFileSync(eventsFile, JSON.stringify({ type: 'choice', choice: String(letra), timestamp: event.timestamp || Date.now() }) + '\n');
   }
 }
 
@@ -543,30 +496,6 @@ function broadcast(msg) {
   for (const socket of clients) {
     try { socket.write(frame); } catch (e) { clients.delete(socket); }
   }
-}
-
-// Best-effort: open the user's browser the first time a screen is actually ready
-// to show. Skips when disabled, on a non-loopback (remote) bind, or when a
-// browser is already connected. Override the launcher with BRAINSTORM_OPEN_CMD.
-let browserOpened = false;
-function maybeOpenBrowser() {
-  if (browserOpened) return;
-  browserOpened = true;
-  if (!process.env.BRAINSTORM_OPEN) return; // opt-in: only after the user approves the companion
-  if (HOST !== '127.0.0.1' && HOST !== 'localhost') return;
-  if (clients.size > 0) return; // the user already opened it
-  const url = companionUrl(); // must carry the key or the gate 403s it
-  const cp = require('child_process');
-  // Operator-provided launcher: run as given (this env var is trusted operator input).
-  if (process.env.BRAINSTORM_OPEN_CMD) {
-    try { cp.exec(process.env.BRAINSTORM_OPEN_CMD + ' ' + JSON.stringify(url), () => {}); } catch (e) { /* best effort */ }
-    return;
-  }
-  // Platform launchers: pass the URL as an argv element via execFile (no shell),
-  // so a url-host containing shell metacharacters can't inject a command.
-  const launcher = browserLauncherForPlatform(url);
-  if (!launcher) return; // headless: nothing to open
-  try { cp.execFile(launcher.bin, launcher.args, () => {}); } catch (e) { /* best effort */ }
 }
 
 // ========== Activity Tracking ==========
@@ -627,7 +556,6 @@ function startServer() {
       if (!knownFiles.has(filename)) {
         knownFiles.add(filename);
         console.log(JSON.stringify({ type: 'screen-added', file: filePath }));
-        maybeOpenBrowser();
       } else {
         console.log(JSON.stringify({ type: 'screen-updated', file: filePath }));
       }
@@ -709,12 +637,12 @@ function startServer() {
     // key from TOKEN_FILE, and a stale key there means a 403 with no way out.
     if (PORT_FILE) {
       try { fs.writeFileSync(PORT_FILE, String(PORT)); } catch (e) { /* best effort */ }
-      if (TOKEN_FILE) {
-        try {
-          fs.writeFileSync(TOKEN_FILE, TOKEN, { mode: 0o600 });
-          chmodOwnerOnly(TOKEN_FILE);
-        } catch (e) { /* best effort */ }
-      }
+    }
+    if (TOKEN_FILE) {
+      try {
+        fs.writeFileSync(TOKEN_FILE, TOKEN, { mode: 0o600 });
+        chmodOwnerOnly(TOKEN_FILE);
+      } catch (e) { /* best effort */ }
     }
     const info = JSON.stringify({
       type: 'server-started', port: Number(PORT), host: HOST,
@@ -725,7 +653,6 @@ function startServer() {
     console.log(info);
     // server-info is owner-only. The session key stays in the token file, not here.
     fs.writeFileSync(path.join(STATE_DIR, 'server-info'), info + '\n', { mode: 0o600 });
-    maybeOpenBrowser();
   }
 
   server.on('error', (err) => {
@@ -757,7 +684,6 @@ module.exports = {
   computeAcceptKey,
   encodeFrame,
   decodeFrame,
-  browserLauncherForPlatform,
   OPCODES,
   MAX_FRAME_PAYLOAD_BYTES
 };
