@@ -554,6 +554,24 @@ test('an empty lock dir (takeover cut short) is claimed at once', () => {
   }
 });
 
+test('a lock in the old format (pid file) left by a killed start is taken over', () => {
+  const dadosDir = makeDados();
+  try {
+    const lock = path.join(dadosDir, '.picker', '.start-lock');
+    fs.mkdirSync(lock, { recursive: true });
+    const dead = spawnSync('bash', ['-c', 'echo $$'], { encoding: 'utf8' }).stdout.trim();
+    fs.writeFileSync(path.join(lock, 'pid'), dead + '\n');
+    const t0 = Date.now();
+    const r = runStart(dadosDir);
+    assert.equal(r.status, 0, r.stdout);
+    assert.equal(parseOneJson(r.stdout).status, 'started');
+    assert.ok(Date.now() - t0 < 9000, 'took the full 10 s timeout');
+  } finally {
+    runStop(dadosDir);
+    fs.rmSync(dadosDir, { recursive: true, force: true });
+  }
+});
+
 test('stop-server --dados-dir clears a dead lock and keeps a live one', () => {
   const dadosDir = makeDados();
   try {

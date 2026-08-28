@@ -247,6 +247,10 @@ lock_start() {
     owner="$(lock_owner || true)"
     if [[ -n "$owner" ]] && ! kill -0 "$owner" 2>/dev/null; then
       rm -f "$LOCK_DIR/owner.$owner"
+    elif [[ -z "$owner" ]]; then
+      # Lock from the previous format (a pid file, no owner marker) left by a
+      # killed start: no live lock ever holds that file, so removing it is safe.
+      rm -f "$LOCK_DIR/pid"
     fi
     if (( waited >= 100 )); then
       rm -rf "$mine"

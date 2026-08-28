@@ -49,7 +49,9 @@ STATE_DIR="${SESSION_DIR}/state"
 # Runs first so every exit path below benefits.
 if [[ -n "$DADOS_DIR" ]]; then
   LOCK_DIR="${DADOS_DIR}/.picker/.start-lock"
-  if [[ -d "$LOCK_DIR" ]]; then
+  if [[ -e "$LOCK_DIR" && ! -d "$LOCK_DIR" ]]; then
+    rm -f "$LOCK_DIR"
+  elif [[ -d "$LOCK_DIR" ]]; then
     lock_alive="false"
     for marker in "$LOCK_DIR"/owner.*; do
       [[ -e "$marker" ]] || continue
