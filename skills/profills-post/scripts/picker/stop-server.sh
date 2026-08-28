@@ -151,3 +151,9 @@ if [[ -f "$PID_FILE" ]]; then
 else
   echo '{"status": "not_running"}'
 fi
+
+# A stop by hand also clears a start lock nobody will release (start killed
+# before writing its pid, or pid reused by another process).
+if [[ -n "$DADOS_DIR" ]]; then
+  rm -rf "${DADOS_DIR}/.picker/.start-lock"
+fi

@@ -204,20 +204,39 @@ archive_round() {
 }
 
 # One start at a time per pasta DADOS. mkdir is atomic; a stale lock (owner
-# dead) is taken over. A concurrent caller waits for the first to finish and
-# then follows the normal path, which finds the live picker (already_running).
+# dead, or never got to write its pid) is taken over by renaming it first, so
+# only one waiter wins the takeover. A concurrent caller waits for the first to
+# finish and then follows the normal path, which finds the live picker
+# (already_running). The lock covers the decision only: foreground releases it
+# before holding the terminal, so a second start still gets already_running.
 LOCK_DIR="${DADOS_DIR}/.picker/.start-lock"
-mkdir -p "${DADOS_DIR}/.picker"
+if ! mkdir -p "${DADOS_DIR}/.picker"; then
+  echo "{\"error\": \"não consegui criar ${DADOS_DIR}/.picker (permissão ou disco cheio)\"}"
+  exit 1
+fi
+take_over_lock() {
+  local grave="${LOCK_DIR}.stale.$$.${RANDOM}"
+  mv "$LOCK_DIR" "$grave" 2>/dev/null && rm -rf "$grave"
+}
+unlock_start() {
+  rm -rf "$LOCK_DIR"
+  trap - EXIT
+}
 lock_start() {
   local waited=0 owner
   while ! mkdir "$LOCK_DIR" 2>/dev/null; do
     owner="$(cat "$LOCK_DIR/pid" 2>/dev/null || true)"
     if [[ -n "$owner" ]] && ! kill -0 "$owner" 2>/dev/null; then
-      rm -rf "$LOCK_DIR"
+      take_over_lock
+      continue
+    fi
+    # No pid after 2 s: the owner died between mkdir and writing it.
+    if [[ -z "$owner" ]] && (( waited >= 20 )) && [[ -d "$LOCK_DIR" ]]; then
+      take_over_lock
       continue
     fi
     if (( waited >= 100 )); then
-      echo '{"error": "outro start do picker está rodando há mais de 10 segundos"}'
+      echo "{\"error\": \"outro start do picker está rodando há mais de 10 segundos. Se não há nenhum, apague a pasta ${LOCK_DIR} ou rode stop-server.sh --dados-dir na mesma pasta\"}"
       exit 1
     fi
     sleep 0.1
@@ -320,6 +339,7 @@ fi
 # exits, so callers in that mode read the first line and keep the call running.
 finish "$OCCUPANCY"
 if [[ "$FOREGROUND" == "true" ]]; then
+  unlock_start
   wait "$SERVER_PID"
   exit $?
 fi
