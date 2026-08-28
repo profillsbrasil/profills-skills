@@ -337,6 +337,38 @@ test('a choice from the previous session never survives a restart or a rewritten
   assert.equal(page.body.includes('Esperando os rascunhos'), true);
 });
 
+test('archive_round never overwrites within the same second', () => {
+  const base = fs.mkdtempSync(path.join(os.tmpdir(), 'profills-archive-'));
+  try {
+    const content = path.join(base, 'content');
+    const state = path.join(base, 'state');
+    fs.mkdirSync(content);
+    fs.mkdirSync(state);
+    const fn = spawnSync('sed', ['-n', '/^archive_round() {/,/^}/p', START], { encoding: 'utf8' }).stdout;
+    assert.ok(fn.includes('archive_round'), 'could not extract archive_round from start-server.sh');
+    const script = `
+      CONTENT_DIR=${JSON.stringify(content)}; STATE_DIR=${JSON.stringify(state)}
+      ${fn}
+      for i in 1 2 3 4; do
+        printf '{"rodada":%s}' "$i" > "$CONTENT_DIR/tema.json"
+        echo x > "$STATE_DIR/events"
+        archive_round
+      done
+      ls "$CONTENT_DIR/.anterior"
+    `;
+    const r = spawnSync('bash', ['-c', script], { encoding: 'utf8', timeout: 10000 });
+    assert.equal(r.status, 0, r.stderr);
+    const files = r.stdout.trim().split('\n').filter(Boolean);
+    assert.equal(files.length, 4, 'four rounds must leave four archives: ' + files.join(','));
+    const bodies = files.map((f) => fs.readFileSync(path.join(content, '.anterior', f), 'utf8')).sort();
+    assert.deepEqual(bodies, ['{"rodada":1}', '{"rodada":2}', '{"rodada":3}', '{"rodada":4}']);
+    assert.equal(fs.existsSync(path.join(state, 'events')), false);
+    assert.equal(fs.existsSync(path.join(content, 'tema.json')), false);
+  } finally {
+    fs.rmSync(base, { recursive: true, force: true });
+  }
+});
+
 test('cmdlineOf falls back to ps when procfs is missing', () => {
   const lib = path.join(SCRIPT_DIR, 'lifecycle-lib.cjs');
   const probe = spawnSync('node', ['-e', `

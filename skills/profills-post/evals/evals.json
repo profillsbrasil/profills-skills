@@ -18,7 +18,7 @@
         "Existe em outputs/linkedin-data/.picker/current/content/ um JSON de tela com titulo, empresa e opcoes[], uma opção por variação, cada uma com texto integral.",
         "A resposta final fecha com o próximo passo e não usa vocabulário interno (slug, quality gate, expert panel, ICP, Push/Shine).",
         "Depois de rodar start-server.sh, não cola a `url` nem query com chave no chat. Lê `opened` do JSON: com `false`, diz em uma frase que a aba não abriu e oferece escolher pelo chat (A/B/C); com `true`, diz que a aba abriu.",
-        "stop-server.sh não é chamado antes da escolha nem antes do preview final: o picker fica no ar até o fim do passo 9."
+        "stop-server.sh não é chamado antes da escolha nem antes do preview final; é chamado uma vez no fim (passo 8 sem ajuste, ou passo 9 com ajuste)."
       ]
     },
     {

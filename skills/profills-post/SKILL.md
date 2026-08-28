@@ -111,11 +111,11 @@ No Windows (Git Bash) o comando fica preso no terminal: rode em background e lei
 
 Grave a tela em `DADOS/.picker/current/content/<tema-slug>.json`, nome novo a cada revisão. O JSON é o bloco `DADOS` de `references/comparador.md`: `kicker`, `titulo`, `subtitulo`, `empresa`, `opcoes[]` (ângulo, porquê, texto, foto). Cada card tem Copiar (A, B, C…).
 
-Depois que ele copia no navegador, leia `DADOS/.picker/current/state/events`: uma linha JSON por clique, campo `choice` com a letra; vale a **última** linha, porque ele pode mudar de ideia. O arquivo é zerado a cada tela gravada e sempre que o servidor sobe, então leia só depois de gravar a tela desta rodada. O chat vale se ele digitar a letra.
+Depois que ele copia no navegador, leia `DADOS/.picker/current/state/events`: uma linha JSON por clique, campo `choice` com a letra; vale a **última** linha, porque ele pode mudar de ideia. O arquivo é zerado a cada tela gravada e a cada start, então leia só depois de gravar a tela desta rodada. O chat vale se ele digitar a letra.
 
 Salve **todas** as variações em `DADOS/drafts/<AAAA-MM-DD>-<tema-slug>/variacoes.md` (crie a pasta): uma seção por variação, com ângulo, categoria de hook e família de hook no cabeçalho dela e o texto integral abaixo. O picker some quando a sessão acaba; as descartadas ficam no arquivo.
 
-O picker fica no ar até o fim do passo 9: os passos 8 e 9 mostram o preview nele.
+Não pare o picker aqui: os passos 8 e 9 mostram o preview nele. Quem para é o passo 8 (sem ajuste) ou o passo 9 (com ajuste).
 
 Concluído quando o picker está no ar com uma opção por variação, o `variacoes.md` existe no disco com todas elas (ângulo, categoria e família por variação) e o usuário escolheu uma — pelo Copiar ou pelo chat.
 

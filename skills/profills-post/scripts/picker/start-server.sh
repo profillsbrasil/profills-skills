@@ -179,8 +179,7 @@ finish() {
 # still find them. The tab shows the waiting page until this round's screen is
 # written — the agent always writes it right after start.
 archive_round() {
-  rm -f "${STATE_DIR}/events"
-  mkdir -p "${CONTENT_DIR}/.anterior"
+  mkdir -p "${CONTENT_DIR}/.anterior" || { echo '{"error": "não consegui criar content/.anterior"}'; exit 1; }
   local f dest n
   for f in "$CONTENT_DIR"/*.json "$CONTENT_DIR"/*.html; do
     [[ -f "$f" ]] || continue
@@ -190,8 +189,14 @@ archive_round() {
       dest="${CONTENT_DIR}/.anterior/$(date +%Y%m%d-%H%M%S)-${n}-$(basename "$f")"
       n=$((n + 1))
     done
-    mv -f "$f" "$dest" 2>/dev/null || true
+    if ! mv -f "$f" "$dest" 2>/dev/null; then
+      # Loud, not silent: a screen left behind would reopen as today's options.
+      echo "{\"error\": \"não consegui arquivar a tela anterior: $(basename "$f")\"}"
+      exit 1
+    fi
   done
+  # Only after every screen is out of the way: the append-only choice file.
+  rm -f "${STATE_DIR}/events"
 }
 
 if node "$LIFECYCLE_LIB" ready "$STATE_DIR"; then
