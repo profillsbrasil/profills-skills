@@ -451,9 +451,10 @@ test('opened is false when the launcher does not exist or fails', async (t) => {
   assert.equal(failing.opened, false);
 });
 
-test('recovery error line is valid JSON even with spaces in DADOS', () => {
+test('recovery error line is valid JSON even with spaces, $ and quotes in DADOS', () => {
   const base = fs.mkdtempSync(path.join(os.tmpdir(), 'profills picker '));
-  const dadosDir = path.join(base, 'Profills LinkedIn');
+  // $ and " break the old \"$dir\" quoting; only %q survives them.
+  const dadosDir = path.join(base, 'Pro$fills "LinkedIn"');
   fs.mkdirSync(dadosDir);
   try {
     // A node that dies at once makes start-server.sh take the "was killed" branch.
@@ -490,6 +491,110 @@ test('ready works without /proc (macOS path)', async (t) => {
   });
   assert.equal(probe.status, 0, 'ready must fall back to ps when /proc is missing');
   assert.equal(await httpAccepts(started.url, dadosDir), true);
+});
+
+test('a second start during foreground gets already_running, not a lock error', async (t) => {
+  const dadosDir = makeDados();
+  const outFile = path.join(dadosDir, 'fg.json');
+  t.after(() => {
+    runStop(dadosDir);
+    fs.rmSync(dadosDir, { recursive: true, force: true });
+  });
+  const fg = spawn('bash', [START, '--dados-dir', dadosDir, '--foreground'], {
+    env: { ...process.env, BRAINSTORM_LIFECYCLE_CHECK_MS: '200' },
+    stdio: ['ignore', fs.openSync(outFile, 'w'), 'ignore']
+  });
+  t.after(() => {
+    try { process.kill(fg.pid, 'SIGKILL'); } catch (e) { /* gone */ }
+  });
+  await waitUntil(() => fs.existsSync(outFile) && fs.readFileSync(outFile, 'utf8').trim().length > 0, 8000, 'foreground never printed');
+  const first = parseOneJson(fs.readFileSync(outFile, 'utf8'));
+  assert.equal(fs.existsSync(path.join(dadosDir, '.picker', '.start-lock')), false, 'foreground must release the lock before holding');
+  const t0 = Date.now();
+  const second = parseOneJson(runStart(dadosDir).stdout);
+  assert.equal(second.status, 'already_running');
+  assert.equal(second.port, first.port);
+  assert.ok(Date.now() - t0 < 5000, 'second start waited on the lock');
+});
+
+test('stale lock with a dead pid is taken over by exactly one of many waiters', async (t) => {
+  const dadosDir = makeDados();
+  t.after(() => {
+    runStop(dadosDir);
+    fs.rmSync(dadosDir, { recursive: true, force: true });
+  });
+  const lock = path.join(dadosDir, '.picker', '.start-lock');
+  fs.mkdirSync(lock, { recursive: true });
+  const dead = spawnSync('bash', ['-c', 'echo $$'], { encoding: 'utf8' }).stdout.trim();
+  fs.writeFileSync(path.join(lock, 'owner.' + dead), '');
+  const run = () => new Promise((resolve) => {
+    const child = spawn('bash', [START, '--dados-dir', dadosDir], { env: { ...process.env, BRAINSTORM_LIFECYCLE_CHECK_MS: '200' } });
+    let out = '';
+    child.stdout.on('data', (d) => { out += d; });
+    child.on('exit', (code) => resolve({ code, out }));
+  });
+  const results = await Promise.all([run(), run(), run(), run()]);
+  const statuses = results.map((r) => { assert.equal(r.code, 0, r.out); return parseOneJson(r.out).status; }).sort();
+  assert.deepEqual(statuses, ['already_running', 'already_running', 'already_running', 'started'], 'a takeover race replaced a live picker');
+  assert.equal(fs.existsSync(lock), false);
+});
+
+test('an empty lock dir (takeover cut short) is claimed at once', () => {
+  const dadosDir = makeDados();
+  try {
+    fs.mkdirSync(path.join(dadosDir, '.picker', '.start-lock'), { recursive: true });
+    const t0 = Date.now();
+    const r = runStart(dadosDir);
+    assert.equal(r.status, 0, r.stdout);
+    assert.equal(parseOneJson(r.stdout).status, 'started');
+    assert.ok(Date.now() - t0 < 9000, 'took the full 10 s timeout');
+  } finally {
+    runStop(dadosDir);
+    fs.rmSync(dadosDir, { recursive: true, force: true });
+  }
+});
+
+test('a lock in the old format (pid file) left by a killed start is taken over', () => {
+  const dadosDir = makeDados();
+  try {
+    const lock = path.join(dadosDir, '.picker', '.start-lock');
+    fs.mkdirSync(lock, { recursive: true });
+    const dead = spawnSync('bash', ['-c', 'echo $$'], { encoding: 'utf8' }).stdout.trim();
+    fs.writeFileSync(path.join(lock, 'pid'), dead + '\n');
+    const t0 = Date.now();
+    const r = runStart(dadosDir);
+    assert.equal(r.status, 0, r.stdout);
+    assert.equal(parseOneJson(r.stdout).status, 'started');
+    assert.ok(Date.now() - t0 < 9000, 'took the full 10 s timeout');
+  } finally {
+    runStop(dadosDir);
+    fs.rmSync(dadosDir, { recursive: true, force: true });
+  }
+});
+
+test('stop-server --dados-dir clears a dead lock and keeps a live one', () => {
+  const dadosDir = makeDados();
+  try {
+    const lock = path.join(dadosDir, '.picker', '.start-lock');
+    fs.mkdirSync(lock, { recursive: true });
+    fs.writeFileSync(path.join(lock, 'owner.' + process.pid), ''); // a start still deciding
+    assert.equal(parseOneJson(runStop(dadosDir).stdout).status, 'not_running');
+    assert.equal(fs.existsSync(lock), true, 'a live owner must keep its lock');
+
+    const dead = spawnSync('bash', ['-c', 'echo $$'], { encoding: 'utf8' }).stdout.trim();
+    fs.unlinkSync(path.join(lock, 'owner.' + process.pid));
+    fs.writeFileSync(path.join(lock, 'owner.' + dead), '');
+    fs.mkdirSync(lock + '.new.' + dead);
+    // stale_pid branch: a server.pid nobody owns must not skip the cleanup.
+    const stateDir = path.join(sessionDir(dadosDir), 'state');
+    fs.mkdirSync(stateDir, { recursive: true });
+    fs.writeFileSync(path.join(stateDir, 'server.pid'), dead + '\n');
+    assert.equal(parseOneJson(runStop(dadosDir).stdout).status, 'stale_pid');
+    assert.equal(fs.existsSync(lock), false);
+    assert.equal(fs.existsSync(lock + '.new.' + dead), false);
+  } finally {
+    fs.rmSync(dadosDir, { recursive: true, force: true });
+  }
 });
 
 test('foreground prints the same JSON first, then holds', async (t) => {

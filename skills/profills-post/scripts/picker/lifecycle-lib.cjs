@@ -185,6 +185,19 @@ async function main(argv) {
     process.stdout.write(chatJson(status, snap.port, urlHost, opened));
     return;
   }
+  if (cmd === 'claim') {
+    // claim <newDir> <lockDir> -> exit 0 if this caller now holds lockDir.
+    // rename(2) is atomic and fails while a non-empty lockDir exists, so one
+    // caller wins. An empty lockDir (owner marker already removed by a
+    // takeover) is cleared first; rmdir fails harmlessly when it is not empty.
+    try { fs.rmdirSync(argv[2]); } catch (e) { /* not empty or gone */ }
+    try {
+      fs.renameSync(argv[1], argv[2]);
+      process.exit(0);
+    } catch (e) {
+      process.exit(1);
+    }
+  }
   if (cmd === 'open') {
     // open <stateDir> <tokenFile> <urlHost>  -> exit 0 if a launcher ran
     const ok = await openBrowser(argv[1], argv[2], argv[3] || 'localhost');
