@@ -2,15 +2,30 @@
 
 const fs = require('fs');
 const http = require('http');
+const os = require('os');
 const path = require('path');
+const { spawnSync, execFile, exec } = require('child_process');
+
+// Tests point this at a missing directory to exercise the no-procfs (macOS) path.
+const PROC_DIR = process.env.BRAINSTORM_PROC_DIR || '/proc';
 
 function readTrim(file) {
   return fs.readFileSync(file, 'utf8').trim();
 }
 
+// Argument list of a live process. Linux: /proc/<pid>/cmdline (exact argv).
+// macOS/BSD (no procfs): `ps -o args=`, split on whitespace — good enough to
+// find the `--brainstorm-server-id=<id>` token, which never contains spaces.
 function cmdlineOf(pid) {
   try {
-    return fs.readFileSync('/proc/' + pid + '/cmdline', 'utf8').split('\0');
+    return fs.readFileSync(path.join(PROC_DIR, String(pid), 'cmdline'), 'utf8').split('\0');
+  } catch (e) {
+    // fall through to ps
+  }
+  try {
+    const out = spawnSync('ps', ['-ww', '-o', 'args=', '-p', String(pid)], { encoding: 'utf8' });
+    if (out.status !== 0 || !out.stdout.trim()) return null;
+    return out.stdout.trim().split(/\s+/);
   } catch (e) {
     return null;
   }
@@ -31,6 +46,8 @@ function processAlive(pid) {
   }
 }
 
+// Liveness only: any HTTP answer (the key gate's 403 included) means the
+// server is accepting. Whether the page opens is the browser's job (see open).
 function httpAccepts(host, port, timeoutMs) {
   const probeHost = (host === '0.0.0.0' || host === '::') ? '127.0.0.1' : host;
   return new Promise((resolve) => {
@@ -77,12 +94,57 @@ async function isReady(stateDir) {
   return snap;
 }
 
-function chatJson(status, port, urlHost) {
-  return JSON.stringify({
+function browserLauncherForPlatform(url, {
+  platform = process.platform,
+  osRelease = os.release(),
+  env = process.env
+} = {}) {
+  const isWSL = platform === 'linux' && /microsoft/i.test(osRelease);
+  if (platform === 'darwin') return { bin: 'open', args: [url] };
+  if (platform === 'win32' || isWSL) {
+    return { bin: 'rundll32.exe', args: ['url.dll,FileProtocolHandler', url] };
+  }
+  if (env.DISPLAY || env.WAYLAND_DISPLAY) return { bin: 'xdg-open', args: [url] };
+  return null;
+}
+
+// Opens the picker in the user's browser with the session key in the URL, so
+// the tab gets the cookie and later key-less visits pass the gate. The key
+// never reaches stdout: only {opened: true|false} does.
+function openBrowser(stateDir, tokenFile, urlHost) {
+  const snap = inspect(stateDir);
+  if (!snap) return false;
+  let token;
+  try {
+    token = readTrim(tokenFile);
+  } catch (e) {
+    return false;
+  }
+  if (!token) return false;
+  const url = 'http://' + urlHost + ':' + snap.port + '/?key=' + encodeURIComponent(token);
+  if (process.env.BRAINSTORM_OPEN_CMD) {
+    try { exec(process.env.BRAINSTORM_OPEN_CMD + ' ' + JSON.stringify(url), () => {}); } catch (e) { return false; }
+    return true;
+  }
+  const launcher = browserLauncherForPlatform(url);
+  if (!launcher) return false;
+  try {
+    const child = execFile(launcher.bin, launcher.args, () => {});
+    child.unref();
+    return true;
+  } catch (e) {
+    return false;
+  }
+}
+
+function chatJson(status, port, urlHost, opened) {
+  const body = {
     status,
     url: 'http://' + urlHost + ':' + Number(port) + '/',
     port: Number(port)
-  }) + '\n';
+  };
+  if (opened !== undefined) body.opened = opened;
+  return JSON.stringify(body) + '\n';
 }
 
 async function main(argv) {
@@ -92,16 +154,24 @@ async function main(argv) {
     process.exit(snap ? 0 : 1);
   }
   if (cmd === 'print') {
+    // print <status> <stateDir> <urlHost> [opened: true|false|skip]
     const status = argv[1];
     const stateDir = argv[2];
     const urlHost = argv[3] || 'localhost';
+    const openedArg = argv[4];
     const snap = inspect(stateDir);
     if (!snap) {
       process.stderr.write('{"error":"missing server-info"}\n');
       process.exit(1);
     }
-    process.stdout.write(chatJson(status, snap.port, urlHost));
+    const opened = openedArg === 'true' ? true : openedArg === 'false' ? false : undefined;
+    process.stdout.write(chatJson(status, snap.port, urlHost, opened));
     return;
+  }
+  if (cmd === 'open') {
+    // open <stateDir> <tokenFile> <urlHost>  -> exit 0 if a launcher ran
+    const ok = openBrowser(argv[1], argv[2], argv[3] || 'localhost');
+    process.exit(ok ? 0 : 1);
   }
   process.stderr.write('{"error":"unknown lifecycle-lib command"}\n');
   process.exit(1);
@@ -110,3 +180,5 @@ async function main(argv) {
 if (require.main === module) {
   main(process.argv.slice(2)).catch(() => process.exit(1));
 }
+
+module.exports = { cmdlineOf, identityMatches, isReady, inspect, browserLauncherForPlatform, openBrowser };

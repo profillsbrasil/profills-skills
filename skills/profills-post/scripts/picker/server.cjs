@@ -174,14 +174,14 @@ h1 { color: #333; } p { color: #666; }
 }
 
 const FORBIDDEN_PAGE = `<!DOCTYPE html>
-<html>
-<head><meta charset="utf-8"><title>Session key required</title>
+<html lang="pt-BR">
+<head><meta charset="utf-8"><title>Picker de posts</title>
 <style>body { font-family: system-ui, sans-serif; padding: 2rem; max-width: 800px; margin: 0 auto; }
-h1 { color: #333; } p { color: #666; } code { background: #f0f0f0; padding: 0.1em 0.3em; border-radius: 4px; }</style>
+h1 { color: #333; } p { color: #666; }</style>
 </head>
-<body><h1>Session key required</h1>
-<p>This page needs the full URL your coding agent gave you, including the
-<code>?key=&hellip;</code> part. Copy the complete URL and open it again.</p></body></html>`;
+<body><h1>Essa aba não está liberada</h1>
+<p>O picker só abre pela aba que o Claude abre pra você. Volte no chat e peça:
+<b>“abre o picker de novo”</b>. Se a aba não aparecer, ele te diz o que fazer.</p></body></html>`;
 
 function bootstrapPage(key) {
   const jsonKey = JSON.stringify(String(key));
@@ -251,7 +251,8 @@ function isFullDocument(html) {
 }
 
 function wrapInFrame(content) {
-  return renderBranding(frameTemplate).replace('<!-- CONTENT -->', content);
+  // split/join: String.replace would expand $&, $' and $$ inside the post text.
+  return renderBranding(frameTemplate).split('<!-- CONTENT -->').join(content);
 }
 
 function isScreenFile(name) {
@@ -445,7 +446,7 @@ function handleRequest(req, res) {
     // `/files/` would otherwise resolve to CONTENT_DIR and crash readFileSync (EISDIR).
     if (!fileName || fileName.startsWith('.') || !isRegularFileInsideContentDir(filePath)) {
       res.writeHead(404, securityHeaders());
-      res.end('Not found');
+      res.end('Não encontrado');
       return;
     }
     const ext = path.extname(filePath).toLowerCase();
@@ -454,7 +455,7 @@ function handleRequest(req, res) {
     res.end(fs.readFileSync(filePath));
   } else {
     res.writeHead(404, securityHeaders());
-    res.end('Not found');
+    res.end('Não encontrado');
   }
 }
 
@@ -619,10 +620,12 @@ function startServer() {
       if (!fs.existsSync(filePath)) return; // file was deleted
       touchActivity();
 
+      // Any new or rewritten screen starts a fresh choice: a click recorded
+      // against the previous screen must not be read as a choice on this one.
+      const eventsFile = path.join(STATE_DIR, 'events');
+      if (fs.existsSync(eventsFile)) fs.unlinkSync(eventsFile);
       if (!knownFiles.has(filename)) {
         knownFiles.add(filename);
-        const eventsFile = path.join(STATE_DIR, 'events');
-        if (fs.existsSync(eventsFile)) fs.unlinkSync(eventsFile);
         console.log(JSON.stringify({ type: 'screen-added', file: filePath }));
         maybeOpenBrowser();
       } else {

@@ -20,10 +20,8 @@ while [[ $# -gt 0 ]]; do
 done
 
 if [[ -z "$DADOS_DIR" && -z "$SESSION_DIR" ]]; then
-  TOPLEVEL="$(cd "$SCRIPT_DIR" && git rev-parse --show-toplevel 2>/dev/null || true)"
+  TOPLEVEL="$(git rev-parse --show-toplevel 2>/dev/null || true)"
   if [[ -n "$TOPLEVEL" && -d "$TOPLEVEL/linkedin-data" ]]; then
-    DADOS_DIR="$TOPLEVEL/linkedin-data"
-  elif [[ -n "$TOPLEVEL" ]]; then
     DADOS_DIR="$TOPLEVEL/linkedin-data"
   else
     DADOS_DIR="${HOME}/Profills LinkedIn"
@@ -127,12 +125,17 @@ if [[ -f "$PID_FILE" ]]; then
   fi
 
   if kill -0 "$pid" 2>/dev/null; then
-    echo '{"status": "failed", "error": "process still running"}'
+    echo '{"status": "failed", "error": "o processo continua rodando"}'
     exit 1
   fi
 
   rm -f "$PID_FILE" "$SERVER_ID_FILE" "${STATE_DIR}/server.log"
   mark_stopped "stop-server.sh"
+
+  # The session is over: its screen and its choice must not survive into the
+  # next one. Drafts live in DADOS/drafts/, never here.
+  rm -f "${STATE_DIR}/events"
+  find "${SESSION_DIR}/content" -mindepth 1 -maxdepth 1 -type f \( -name '*.json' -o -name '*.html' \) -delete 2>/dev/null || true
 
   # Only delete ephemeral /tmp directories
   if [[ "$SESSION_DIR" == /tmp/* ]]; then
