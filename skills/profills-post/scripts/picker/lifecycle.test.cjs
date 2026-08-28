@@ -312,15 +312,17 @@ test('a choice from the previous session never survives a restart or a rewritten
   assert.equal(fs.existsSync(eventsFile), false);
   assert.equal(fs.existsSync(screenFile), true);
 
-  // A crashed session (no clean stop) loses its choice on the next start, and
-  // the restarted server still serves the same screen.
+  // The next server is a new round: the old choice is gone, the old screen is
+  // archived (not served), and the tab opens on the waiting page.
   fs.mkdirSync(stateDir, { recursive: true });
   fs.writeFileSync(eventsFile, JSON.stringify({ type: 'click', choice: 'B' }) + '\n');
   const restarted = parseOneJson(runStart(dadosDir).stdout);
   assert.equal(fs.existsSync(eventsFile), false);
-  assert.equal(fs.existsSync(screenFile), true);
+  assert.equal(fs.existsSync(screenFile), false);
+  assert.equal(fs.existsSync(path.join(sessionDir(dadosDir), 'content', '.anterior', 'tema.json')), true);
   const page = await fetchScreen(restarted.url, tokenOf(dadosDir));
-  assert.equal(page.body.includes('Outra rodada'), true);
+  assert.equal(page.body.includes('Outra rodada'), false);
+  assert.equal(page.body.includes('Esperando os rascunhos'), true);
 });
 
 test('cmdlineOf falls back to ps when procfs is missing', () => {

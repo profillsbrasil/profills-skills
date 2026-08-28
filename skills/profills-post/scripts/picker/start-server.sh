@@ -180,10 +180,15 @@ fi
 
 mkdir -p "$CONTENT_DIR" "$STATE_DIR"
 rm -f "${STATE_DIR}/server-stopped" "$LOG_FILE"
-# A new server must not inherit a choice: the events file is append-only and a
-# click from the previous run would read as today's. The screen in content/
-# stays, so a restart after a crash or idle timeout shows the same options.
+# A new server is a new round: no choice and no screen from the previous one
+# may show up as today's. events is append-only, so it goes; screens move to
+# content/.anterior/ (hidden: the server ignores dotfiles), where the eval
+# outputs and the human can still find them. The tab opens on the waiting page
+# until the agent writes this round's screen.
 rm -f "${STATE_DIR}/events"
+mkdir -p "${CONTENT_DIR}/.anterior"
+find "$CONTENT_DIR" -mindepth 1 -maxdepth 1 -type f \( -name '*.json' -o -name '*.html' \) \
+  -exec mv -f {} "${CONTENT_DIR}/.anterior/" \; 2>/dev/null || true
 
 SERVER_ID=""
 if [[ -r /dev/urandom ]]; then

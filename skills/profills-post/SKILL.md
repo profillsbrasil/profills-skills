@@ -105,7 +105,7 @@ As opções abrem no **picker local** desta skill, no formato do feed. Não use 
 bash "<pasta desta skill>/scripts/picker/start-server.sh" --dados-dir "<DADOS>" --open
 ```
 
-O comando devolve um JSON `{status, url, port, opened}`. A `url` sozinha não abre: a aba só entra pela chave que o `--open` carrega, e essa chave nunca vai para o chat. Então não cole a `url` nem acrescente query. Com `opened: true`, diga que a aba abriu no navegador. Com `opened: false` (sem tela gráfica, SSH, navegador que não respondeu), diga em uma frase que a aba não abriu neste ambiente e ofereça escolher pelo chat. Se ele fechou a aba ou diz que não vê nada, rode o mesmo comando de novo: `already_running` só reabre a aba; `started` ou `replaced` quer dizer que o picker tinha caído — a tela gravada continua lá e volta a aparecer.
+O comando devolve um JSON `{status, url, port, opened}`. A `url` sozinha não abre: a aba só entra pela chave que o `--open` carrega, e essa chave nunca vai para o chat. Então não cole a `url` nem acrescente query. Com `opened: true`, diga que a aba abriu no navegador. Com `opened: false` (sem tela gráfica, SSH, navegador que não respondeu), diga em uma frase que a aba não abriu neste ambiente e ofereça escolher pelo chat. Se ele fechou a aba ou diz que não vê nada, rode o mesmo comando de novo: `already_running` só reabre a aba; `started` ou `replaced` quer dizer que o picker não estava no ar — a aba abre em branco e você grava a tela de novo, com nome novo. Toda tela de rodada anterior vai para `content/.anterior/`; a aba nunca abre mostrando post de outro dia.
 
 No Windows (Git Bash) o comando fica preso no terminal: rode em background e leia a primeira linha do stdout, que é o mesmo JSON.
 
@@ -115,11 +115,7 @@ Depois que ele copia no navegador, leia `DADOS/.picker/current/state/events`: um
 
 Salve **todas** as variações em `DADOS/drafts/<AAAA-MM-DD>-<tema-slug>/variacoes.md` (crie a pasta): uma seção por variação, com ângulo, categoria de hook e família de hook no cabeçalho dela e o texto integral abaixo. O picker some quando a sessão acaba; as descartadas ficam no arquivo.
 
-Pare com:
-
-```
-bash "<pasta desta skill>/scripts/picker/stop-server.sh" --dados-dir "<DADOS>"
-```
+O picker fica no ar até o fim do passo 9: os passos 8 e 9 mostram o preview nele.
 
 Concluído quando o picker está no ar com uma opção por variação, o `variacoes.md` existe no disco com todas elas (ângulo, categoria e família por variação) e o usuário escolheu uma — pelo Copiar ou pelo chat.
 
@@ -141,7 +137,13 @@ Concluído quando o arquivo existe no disco no formato acima, o script devolve `
 
 Pedidos de iteração ("encurta o 2", "troca o gancho", "deixa mais direto") mexem só no trecho afetado: grave um JSON de tela **com nome novo** em `DADOS/.picker/current/content/` e reescreva o rascunho já salvo no passo 8, no mesmo arquivo.
 
-Concluído quando o picker mostra o ajuste, o arquivo em `DADOS/drafts/` bate com ele e o `checar-formato.js` volta `ok: true` no arquivo reescrito.
+Quando ele der o post por fechado, pare o picker:
+
+```
+bash "<pasta desta skill>/scripts/picker/stop-server.sh" --dados-dir "<DADOS>"
+```
+
+Concluído quando o picker mostrou o ajuste, o arquivo em `DADOS/drafts/` bate com ele, o `checar-formato.js` volta `ok: true` no arquivo reescrito e o picker foi parado.
 
 ## Restrições de formato (LinkedIn)
 
