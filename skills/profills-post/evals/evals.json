@@ -36,7 +36,9 @@
         "Rodar `scripts/checar-formato.js` com `--voz linkedin-data/voz.md` sobre o arquivo salvo devolve `ok: true` (exit 0).",
         "NEGATIVA: o `## Do Not Copy` já preenchido é obedecido — nenhuma variação usa tom institucional de comunicado nem CTA mandando o leitor para o blog — e outputs/ não traz linkedin-data/refs/cetromaquinas.md alterado (a skill não repergunta o que já estava respondido).",
         "NEGATIVA: nenhuma frase do texto do post da Cetro é reaproveitada no rascunho, e todo número do texto salvo vem do voz.md (Provas) ou do catálogo — nada inventado na hora.",
-        "O post salvo fecha com um CTA de uma das 4 categorias de moldes.md, com verbo nomeado e uma única ação pedida."
+        "O post salvo fecha com um CTA de uma das 4 categorias de moldes.md, com verbo nomeado e uma única ação pedida.",
+        "Depois de rodar start-server.sh, não cola a `url` nem query com chave no chat. Lê `opened` do JSON: com `false`, diz em uma frase que a aba não abriu e oferece escolher pelo chat (A/B/C); com `true`, diz que a aba abriu.",
+        "stop-server.sh não é chamado antes da escolha nem antes do preview final; é chamado uma vez no fim (passo 8 sem ajuste, ou passo 9 com ajuste)."
       ]
     },
     {
