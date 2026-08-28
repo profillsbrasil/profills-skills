@@ -197,7 +197,36 @@ archive_round() {
   done
   # Only after every screen is out of the way: the append-only choice file.
   rm -f "${STATE_DIR}/events"
+  # Keep the newest 30 archived screens; drafts/ is the real archive.
+  ls -1t "${CONTENT_DIR}/.anterior" 2>/dev/null | tail -n +31 | while IFS= read -r old; do
+    rm -f "${CONTENT_DIR}/.anterior/$old"
+  done
 }
+
+# One start at a time per pasta DADOS. mkdir is atomic; a stale lock (owner
+# dead) is taken over. A concurrent caller waits for the first to finish and
+# then follows the normal path, which finds the live picker (already_running).
+LOCK_DIR="${DADOS_DIR}/.picker/.start-lock"
+mkdir -p "${DADOS_DIR}/.picker"
+lock_start() {
+  local waited=0 owner
+  while ! mkdir "$LOCK_DIR" 2>/dev/null; do
+    owner="$(cat "$LOCK_DIR/pid" 2>/dev/null || true)"
+    if [[ -n "$owner" ]] && ! kill -0 "$owner" 2>/dev/null; then
+      rm -rf "$LOCK_DIR"
+      continue
+    fi
+    if (( waited >= 100 )); then
+      echo '{"error": "outro start do picker está rodando há mais de 10 segundos"}'
+      exit 1
+    fi
+    sleep 0.1
+    waited=$((waited + 1))
+  done
+  echo "$$" > "$LOCK_DIR/pid"
+  trap 'rm -rf "$LOCK_DIR"' EXIT
+}
+lock_start
 
 if node "$LIFECYCLE_LIB" ready "$STATE_DIR"; then
   archive_round
@@ -245,14 +274,15 @@ if is_windows_like_shell; then
   OWNER_PID=""
 fi
 
-# Shown inside a JSON string: the inner quotes around DADOS_DIR are escaped.
 json_escape() {
   local v="$1"
   v="${v//\\/\\\\}"
   v="${v//\"/\\\"}"
   printf '%s' "$v"
 }
-RECOVERY="bash \\\"$(json_escape "$SCRIPT_DIR")/start-server.sh\\\" --dados-dir \\\"$(json_escape "$DADOS_DIR")\\\" --host \\\"$(json_escape "$BIND_HOST")\\\" --url-host \\\"$(json_escape "$URL_HOST")\\\" --foreground"
+# printf %q makes each argument safe to paste into bash; json_escape makes the
+# whole line safe inside the JSON string.
+RECOVERY="$(json_escape "bash $(printf '%q' "$SCRIPT_DIR/start-server.sh") --dados-dir $(printf '%q' "$DADOS_DIR") --host $(printf '%q' "$BIND_HOST") --url-host $(printf '%q' "$URL_HOST") --foreground")"
 
 if [[ "$FOREGROUND" == "true" ]]; then
   env BRAINSTORM_DIR="$SESSION_DIR" BRAINSTORM_HOST="$BIND_HOST" BRAINSTORM_URL_HOST="$URL_HOST" BRAINSTORM_OWNER_PID="$OWNER_PID" node server.cjs "--brainstorm-server-id=$SERVER_ID" > "$LOG_FILE" 2>&1 &

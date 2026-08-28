@@ -369,6 +369,33 @@ test('archive_round never overwrites within the same second', () => {
   }
 });
 
+test('two concurrent starts leave exactly one server', async (t) => {
+  const dadosDir = makeDados();
+  t.after(() => {
+    runStop(dadosDir);
+    fs.rmSync(dadosDir, { recursive: true, force: true });
+  });
+  const run = () => new Promise((resolve) => {
+    const child = spawn('bash', [START, '--dados-dir', dadosDir], { env: { ...process.env, BRAINSTORM_LIFECYCLE_CHECK_MS: '200' } });
+    let out = '';
+    child.stdout.on('data', (d) => { out += d; });
+    child.on('exit', (code) => resolve({ code, out }));
+  });
+  const [a, b] = await Promise.all([run(), run()]);
+  assert.equal(a.code, 0, a.out);
+  assert.equal(b.code, 0, b.out);
+  const ja = parseOneJson(a.out);
+  const jb = parseOneJson(b.out);
+  assert.equal(ja.port, jb.port, 'both callers must report the same picker');
+  assert.deepEqual([ja.status, jb.status].sort(), ['already_running', 'started']);
+  const stateDir = path.join(sessionDir(dadosDir), 'state');
+  const pid = Number(fs.readFileSync(path.join(stateDir, 'server.pid'), 'utf8'));
+  const procs = spawnSync('pgrep', ['-f', '[b]rainstorm-server-id='], { encoding: 'utf8' }).stdout.trim().split('\n').filter(Boolean);
+  assert.equal(procs.includes(String(pid)), true);
+  assert.equal(fs.existsSync(path.join(dadosDir, '.picker', '.start-lock')), false, 'lock must be released');
+  assert.equal(await httpAccepts(ja.url, dadosDir), true);
+});
+
 test('cmdlineOf falls back to ps when procfs is missing', () => {
   const lib = path.join(SCRIPT_DIR, 'lifecycle-lib.cjs');
   const probe = spawnSync('node', ['-e', `
@@ -440,7 +467,10 @@ test('recovery error line is valid JSON even with spaces in DADOS', () => {
     assert.equal(r.status, 1);
     const body = parseOneJson(r.stdout);
     assert.match(body.error, /foi encerrado/);
-    assert.equal(body.error.includes('"' + dadosDir + '"'), true);
+    // The suggested command must survive a bash round-trip with the spaced path intact.
+    const cmd = body.error.replace(/^.*aberto: /, '');
+    const echoed = spawnSync('bash', ['-c', 'set -- ' + cmd.replace(/^bash /, '') + '; printf "%s\\n" "$@"'], { encoding: 'utf8' }).stdout.split('\n');
+    assert.equal(echoed[2], dadosDir);
   } finally {
     fs.rmSync(base, { recursive: true, force: true });
   }

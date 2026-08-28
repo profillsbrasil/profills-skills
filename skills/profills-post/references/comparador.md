@@ -11,7 +11,7 @@ O motor já existe em `scripts/picker/picker-frame.html`. Escrever HTML na mão 
 3. Grave `DADOS/.picker/current/content/<nome>.json` com o objeto abaixo. Nome novo a cada revisão.
 4. Depois que ele copia, leia `DADOS/.picker/current/state/events` (`choice` A/B/C, vale a última linha). O chat vale se ele digitar.
 
-O `assets/preview-template.html` continua como referência visual do card. Não publique Artifact neste passo.
+Referência visual do card: abra `scripts/picker/picker-frame.html` cru no navegador (renderiza o `EXEMPLO`). Não publique Artifact neste passo.
 
 ### Campos do JSON de tela
 
