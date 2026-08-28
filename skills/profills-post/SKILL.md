@@ -105,13 +105,13 @@ As opções abrem no **picker local** desta skill, no formato do feed. Não use 
 bash "<pasta desta skill>/scripts/picker/start-server.sh" --dados-dir "<DADOS>" --open
 ```
 
-O comando devolve um JSON `{status, url, port, opened}`. A `url` sozinha não abre: a aba só entra pela chave que o `--open` carrega, e essa chave nunca vai para o chat. Então não cole a `url` nem acrescente query. Com `opened: true`, diga que a aba abriu no navegador. Com `opened: false` (sem tela gráfica, SSH), diga em uma frase que o navegador não abriu neste ambiente e ofereça escolher pelo chat. Se ele fechou a aba ou diz que não vê nada, rode o mesmo comando de novo: com o picker já no ar ele só reabre a aba.
+O comando devolve um JSON `{status, url, port, opened}`. A `url` sozinha não abre: a aba só entra pela chave que o `--open` carrega, e essa chave nunca vai para o chat. Então não cole a `url` nem acrescente query. Com `opened: true`, diga que a aba abriu no navegador. Com `opened: false` (sem tela gráfica, SSH, navegador que não respondeu), diga em uma frase que a aba não abriu neste ambiente e ofereça escolher pelo chat. Se ele fechou a aba ou diz que não vê nada, rode o mesmo comando de novo: `already_running` só reabre a aba; `started` ou `replaced` quer dizer que o picker tinha caído — a tela gravada continua lá e volta a aparecer.
 
 No Windows (Git Bash) o comando fica preso no terminal: rode em background e leia a primeira linha do stdout, que é o mesmo JSON.
 
 Grave a tela em `DADOS/.picker/current/content/<tema-slug>.json`, nome novo a cada revisão. O JSON é o bloco `DADOS` de `references/comparador.md`: `kicker`, `titulo`, `subtitulo`, `empresa`, `opcoes[]` (ângulo, porquê, texto, foto). Cada card tem Copiar (A, B, C…).
 
-Depois que ele copia no navegador, leia `DADOS/.picker/current/state/events`: uma linha JSON por clique, campo `choice` com a letra; vale a **última** linha, porque ele pode mudar de ideia. O arquivo é zerado a cada tela gravada e a cada start, então nada ali é de outra rodada. O chat vale se ele digitar a letra.
+Depois que ele copia no navegador, leia `DADOS/.picker/current/state/events`: uma linha JSON por clique, campo `choice` com a letra; vale a **última** linha, porque ele pode mudar de ideia. O arquivo é zerado a cada tela gravada e sempre que o servidor sobe, então leia só depois de gravar a tela desta rodada. O chat vale se ele digitar a letra.
 
 Salve **todas** as variações em `DADOS/drafts/<AAAA-MM-DD>-<tema-slug>/variacoes.md` (crie a pasta): uma seção por variação, com ângulo, categoria de hook e família de hook no cabeçalho dela e o texto integral abaixo. O picker some quando a sessão acaba; as descartadas ficam no arquivo.
 

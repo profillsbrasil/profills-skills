@@ -110,37 +110,51 @@ function browserLauncherForPlatform(url, {
 
 // Opens the picker in the user's browser with the session key in the URL, so
 // the tab gets the cookie and later key-less visits pass the gate. The key
-// never reaches stdout: only {opened: true|false} does.
-function openBrowser(stateDir, tokenFile, urlHost) {
+// never reaches stdout: only {opened: true|false} does. "Opened" means the
+// launcher ran and did not fail within the grace window (ENOENT and non-zero
+// exits arrive asynchronously, so a bare try/catch would always say true).
+function openBrowser(stateDir, tokenFile, urlHost, graceMs = 1500) {
   const snap = inspect(stateDir);
-  if (!snap) return false;
+  if (!snap) return Promise.resolve(false);
   let token;
   try {
     token = readTrim(tokenFile);
   } catch (e) {
-    return false;
+    return Promise.resolve(false);
   }
-  if (!token) return false;
-  const url = 'http://' + urlHost + ':' + snap.port + '/?key=' + encodeURIComponent(token);
+  if (!token) return Promise.resolve(false);
+  const host = urlHost.includes(':') && !urlHost.startsWith('[') ? '[' + urlHost + ']' : urlHost;
+  const url = 'http://' + host + ':' + snap.port + '/?key=' + encodeURIComponent(token);
+  let child;
   if (process.env.BRAINSTORM_OPEN_CMD) {
-    try { exec(process.env.BRAINSTORM_OPEN_CMD + ' ' + JSON.stringify(url), () => {}); } catch (e) { return false; }
-    return true;
+    child = exec(process.env.BRAINSTORM_OPEN_CMD + ' ' + JSON.stringify(url));
+  } else {
+    const launcher = browserLauncherForPlatform(url);
+    if (!launcher) return Promise.resolve(false);
+    child = execFile(launcher.bin, launcher.args);
   }
-  const launcher = browserLauncherForPlatform(url);
-  if (!launcher) return false;
-  try {
-    const child = execFile(launcher.bin, launcher.args, () => {});
-    child.unref();
-    return true;
-  } catch (e) {
-    return false;
-  }
+  return new Promise((resolve) => {
+    let settled = false;
+    const done = (ok) => {
+      if (settled) return;
+      settled = true;
+      resolve(ok);
+    };
+    child.on('error', () => done(false));
+    child.on('exit', (code) => done(code === 0));
+    setTimeout(() => {
+      // Still running after the grace window: a browser that stays attached.
+      child.unref();
+      done(true);
+    }, graceMs).unref();
+  });
 }
 
 function chatJson(status, port, urlHost, opened) {
+  const host = urlHost.includes(':') && !urlHost.startsWith('[') ? '[' + urlHost + ']' : urlHost;
   const body = {
     status,
-    url: 'http://' + urlHost + ':' + Number(port) + '/',
+    url: 'http://' + host + ':' + Number(port) + '/',
     port: Number(port)
   };
   if (opened !== undefined) body.opened = opened;
@@ -170,7 +184,7 @@ async function main(argv) {
   }
   if (cmd === 'open') {
     // open <stateDir> <tokenFile> <urlHost>  -> exit 0 if a launcher ran
-    const ok = openBrowser(argv[1], argv[2], argv[3] || 'localhost');
+    const ok = await openBrowser(argv[1], argv[2], argv[3] || 'localhost');
     process.exit(ok ? 0 : 1);
   }
   process.stderr.write('{"error":"unknown lifecycle-lib command"}\n');

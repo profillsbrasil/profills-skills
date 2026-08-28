@@ -27,7 +27,6 @@ function runStart(dadosDir, extraArgs = [], extraEnv = {}) {
     env: {
       ...process.env,
       BRAINSTORM_LIFECYCLE_CHECK_MS: '200',
-      BRAINSTORM_OPEN: '',
       ...extraEnv
     }
   });
@@ -208,8 +207,7 @@ test('owner exit clears pid and server-info', async (t) => {
       START,
       DADOS: dadosDir,
       OUT: outFile,
-      BRAINSTORM_LIFECYCLE_CHECK_MS: '200',
-      BRAINSTORM_OPEN: ''
+      BRAINSTORM_LIFECYCLE_CHECK_MS: '200'
     },
     stdio: 'ignore'
   });
@@ -307,19 +305,99 @@ test('a choice from the previous session never survives a restart or a rewritten
   writeScreen(dadosDir, 'tema.json', { ...SAMPLE, titulo: 'Outra rodada' });
   await waitUntil(() => !fs.existsSync(eventsFile), 2000, 'screen-updated kept the old choice');
 
-  // Stop outside /tmp keeps the folder but not the screen or the choice.
+  // Stop outside /tmp keeps the folder and the screen, drops the choice.
+  const screenFile = path.join(sessionDir(dadosDir), 'content', 'tema.json');
   fs.writeFileSync(eventsFile, JSON.stringify({ type: 'click', choice: 'B' }) + '\n');
   assert.equal(parseOneJson(runStop(dadosDir).stdout).status, 'stopped');
   assert.equal(fs.existsSync(eventsFile), false);
-  assert.equal(fs.existsSync(path.join(sessionDir(dadosDir), 'content', 'tema.json')), false);
+  assert.equal(fs.existsSync(screenFile), true);
 
-  // A crashed session (no clean stop) is wiped by the next start.
+  // A crashed session (no clean stop) loses its choice on the next start, and
+  // the restarted server still serves the same screen.
   fs.mkdirSync(stateDir, { recursive: true });
   fs.writeFileSync(eventsFile, JSON.stringify({ type: 'click', choice: 'B' }) + '\n');
-  writeScreen(dadosDir, 'tema.json', SAMPLE);
-  parseOneJson(runStart(dadosDir).stdout);
+  const restarted = parseOneJson(runStart(dadosDir).stdout);
   assert.equal(fs.existsSync(eventsFile), false);
-  assert.equal(fs.existsSync(path.join(sessionDir(dadosDir), 'content', 'tema.json')), false);
+  assert.equal(fs.existsSync(screenFile), true);
+  const page = await fetchScreen(restarted.url, tokenOf(dadosDir));
+  assert.equal(page.body.includes('Outra rodada'), true);
+});
+
+test('cmdlineOf falls back to ps when procfs is missing', () => {
+  const lib = path.join(SCRIPT_DIR, 'lifecycle-lib.cjs');
+  const probe = spawnSync('node', ['-e', `
+    const { cmdlineOf } = require(${JSON.stringify(lib)});
+    const args = cmdlineOf(process.pid);
+    process.stdout.write(JSON.stringify(args));
+  `], { encoding: 'utf8', env: { ...process.env, BRAINSTORM_PROC_DIR: '/nonexistent-procfs' } });
+  assert.equal(probe.status, 0, probe.stderr);
+  const args = JSON.parse(probe.stdout);
+  assert.ok(Array.isArray(args) && args.length > 0, 'ps fallback returned nothing');
+  assert.ok(args.some((a) => /node/.test(a)), 'ps fallback did not see the node binary');
+});
+
+test('port fallback still opens with a key the gate accepts', async (t) => {
+  const dadosDir = makeDados();
+  const seen = path.join(dadosDir, 'opened-urls');
+  const launcher = path.join(dadosDir, 'launcher.sh');
+  fs.writeFileSync(launcher, '#!/usr/bin/env bash\nprintf \'%s\\n\' "$1" >> "' + seen + '"\n');
+  fs.chmodSync(launcher, 0o700);
+  const env = { BRAINSTORM_OPEN_CMD: launcher };
+  t.after(() => {
+    runStop(dadosDir);
+    fs.rmSync(dadosDir, { recursive: true, force: true });
+  });
+
+  const first = parseOneJson(runStart(dadosDir, ['--open'], env).stdout);
+  assert.equal(parseOneJson(runStop(dadosDir).stdout).status, 'stopped');
+
+  // Squat the remembered port so the next start must fall back to another one.
+  const squatter = http.createServer((req, res) => res.end('squat'));
+  await new Promise((resolve) => squatter.listen(first.port, '127.0.0.1', resolve));
+  t.after(() => squatter.close());
+
+  const second = parseOneJson(runStart(dadosDir, ['--open'], env).stdout);
+  assert.notEqual(second.port, first.port, 'server did not fall back');
+  assert.equal(second.opened, true);
+  await waitUntil(() => fs.existsSync(seen) && fs.readFileSync(seen, 'utf8').trim().split('\n').length === 2, 2000, 'launcher not called after fallback');
+  const openedUrl = fs.readFileSync(seen, 'utf8').trim().split('\n')[1];
+  assert.equal(openedUrl.startsWith(second.url), true);
+  assert.equal((await request(openedUrl)).status, 200, 'opened tab must pass the gate after a port fallback');
+  assert.equal(await httpAccepts(second.url, dadosDir), true);
+});
+
+test('opened is false when the launcher does not exist or fails', async (t) => {
+  const dadosDir = makeDados();
+  t.after(() => {
+    runStop(dadosDir);
+    fs.rmSync(dadosDir, { recursive: true, force: true });
+  });
+  const missing = parseOneJson(runStart(dadosDir, ['--open'], { BRAINSTORM_OPEN_CMD: path.join(dadosDir, 'no-such-launcher') }).stdout);
+  assert.equal(missing.opened, false);
+  const failing = parseOneJson(runStart(dadosDir, ['--open'], { BRAINSTORM_OPEN_CMD: 'false' }).stdout);
+  assert.equal(failing.opened, false);
+});
+
+test('recovery error line is valid JSON even with spaces in DADOS', () => {
+  const base = fs.mkdtempSync(path.join(os.tmpdir(), 'profills picker '));
+  const dadosDir = path.join(base, 'Profills LinkedIn');
+  fs.mkdirSync(dadosDir);
+  try {
+    // A node that dies at once makes start-server.sh take the "was killed" branch.
+    const fakeBin = path.join(base, 'bin');
+    fs.mkdirSync(fakeBin);
+    fs.writeFileSync(path.join(fakeBin, 'node'), '#!/usr/bin/env bash\ncase "$1" in *lifecycle-lib.cjs) exec ' + process.execPath + ' "$@";; esac\nexit 3\n');
+    fs.chmodSync(path.join(fakeBin, 'node'), 0o700);
+    const r = spawnSync('bash', [START, '--dados-dir', dadosDir], {
+      encoding: 'utf8', timeout: 15000, env: { ...process.env, PATH: fakeBin + ':' + process.env.PATH }
+    });
+    assert.equal(r.status, 1);
+    const body = parseOneJson(r.stdout);
+    assert.match(body.error, /foi encerrado/);
+    assert.equal(body.error.includes('"' + dadosDir + '"'), true);
+  } finally {
+    fs.rmSync(base, { recursive: true, force: true });
+  }
 });
 
 test('ready works without /proc (macOS path)', async (t) => {
@@ -346,7 +424,7 @@ test('foreground prints the same JSON first, then holds', async (t) => {
     fs.rmSync(dadosDir, { recursive: true, force: true });
   });
   const fg = spawn('bash', [START, '--dados-dir', dadosDir, '--foreground'], {
-    env: { ...process.env, BRAINSTORM_LIFECYCLE_CHECK_MS: '200', BRAINSTORM_OPEN: '' },
+    env: { ...process.env, BRAINSTORM_LIFECYCLE_CHECK_MS: '200' },
     stdio: ['ignore', fs.openSync(outFile, 'w'), 'ignore']
   });
   t.after(() => {
@@ -394,11 +472,15 @@ test('--open launches with the key and reports opened, also when already running
   }
 
   const headless = parseOneJson(runStart(dadosDir, ['--open'], { BRAINSTORM_OPEN_CMD: '', DISPLAY: '', WAYLAND_DISPLAY: '' }).stdout);
-  if (process.platform === 'linux') assert.equal(headless.opened, false);
+  if (process.platform === 'linux' && !/microsoft/i.test(os.release())) assert.equal(headless.opened, false);
 });
 
 test('an option flag without a value fails fast in pt-BR', () => {
-  const r = spawnSync('bash', [START, '--dados-dir'], { encoding: 'utf8', timeout: 5000 });
+  for (const script of [START, STOP]) {
+    const r = spawnSync('bash', [script, '--dados-dir'], { encoding: 'utf8', timeout: 5000 });
+    assert.equal(r.status, 1, path.basename(script) + ' did not fail');
+    assert.match(parseOneJson(r.stdout).error, /precisa de um valor/);
+  }
+  const r = spawnSync('bash', [START, '--dados-dir', '--open'], { encoding: 'utf8', timeout: 5000 });
   assert.equal(r.status, 1);
-  assert.match(parseOneJson(r.stdout).error, /precisa de um valor/);
 });

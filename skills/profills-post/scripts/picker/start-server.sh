@@ -30,7 +30,7 @@ URL_HOST=""
 IDLE_TIMEOUT_MINUTES=""
 OPEN="false"
 need_value() {
-  if [[ $# -lt 2 || -z "$2" ]]; then
+  if [[ $# -lt 2 || -z "$2" || "$2" == --* ]]; then
     echo "{\"error\": \"$1 precisa de um valor\"}"
     exit 1
   fi
@@ -152,7 +152,9 @@ LIFECYCLE_LIB="${SCRIPT_DIR}/lifecycle-lib.cjs"
 finish() {
   local status="$1"
   local opened="skip"
-  if [[ "$OPEN" == "true" ]]; then
+  if [[ "$OPEN" == "true" && "$BIND_HOST" != "127.0.0.1" && "$BIND_HOST" != "localhost" ]]; then
+    opened="false"
+  elif [[ "$OPEN" == "true" ]]; then
     if node "$LIFECYCLE_LIB" open "$STATE_DIR" "$BRAINSTORM_TOKEN_FILE" "$URL_HOST"; then
       opened="true"
     else
@@ -178,10 +180,10 @@ fi
 
 mkdir -p "$CONTENT_DIR" "$STATE_DIR"
 rm -f "${STATE_DIR}/server-stopped" "$LOG_FILE"
-# A new server is a new session: no screen and no choice from the previous one
-# may be read as today's. The choice file is append-only, so it must go here.
+# A new server must not inherit a choice: the events file is append-only and a
+# click from the previous run would read as today's. The screen in content/
+# stays, so a restart after a crash or idle timeout shows the same options.
 rm -f "${STATE_DIR}/events"
-find "$CONTENT_DIR" -mindepth 1 -maxdepth 1 -type f \( -name '*.json' -o -name '*.html' \) -delete 2>/dev/null || true
 
 SERVER_ID=""
 if [[ -r /dev/urandom ]]; then
@@ -210,7 +212,8 @@ if is_windows_like_shell; then
   OWNER_PID=""
 fi
 
-RECOVERY="$SCRIPT_DIR/start-server.sh --dados-dir \"$DADOS_DIR\" --host $BIND_HOST --url-host $URL_HOST --foreground"
+# Shown inside a JSON string: the inner quotes around DADOS_DIR are escaped.
+RECOVERY="$SCRIPT_DIR/start-server.sh --dados-dir \\\"$DADOS_DIR\\\" --host $BIND_HOST --url-host $URL_HOST --foreground"
 
 if [[ "$FOREGROUND" == "true" ]]; then
   env BRAINSTORM_DIR="$SESSION_DIR" BRAINSTORM_HOST="$BIND_HOST" BRAINSTORM_URL_HOST="$URL_HOST" BRAINSTORM_OWNER_PID="$OWNER_PID" node server.cjs "--brainstorm-server-id=$SERVER_ID" > "$LOG_FILE" 2>&1 &

@@ -703,11 +703,11 @@ function startServer() {
     // one after an EADDRINUSE fallback) so it can't collide with another server's
     // cookie in the shared localhost jar.
     COOKIE_NAME = 'brainstorm-key-' + PORT;
-    // Record the bound port AND token so the next restart of this session reuses
-    // them — but ONLY when we got our preferred port. On a fallback we bound a
-    // *different* port because someone else holds the preferred one; persisting
-    // would overwrite the shared files and strand that other session's open tab.
-    if (PORT_FILE && !triedFallback) {
+    // Record the bound port AND token so the next restart reuses them. The
+    // files are per pasta DADOS and there is one live picker per DADOS, so a
+    // port fallback must overwrite them too: start-server.sh --open reads the
+    // key from TOKEN_FILE, and a stale key there means a 403 with no way out.
+    if (PORT_FILE) {
       try { fs.writeFileSync(PORT_FILE, String(PORT)); } catch (e) { /* best effort */ }
       if (TOKEN_FILE) {
         try {

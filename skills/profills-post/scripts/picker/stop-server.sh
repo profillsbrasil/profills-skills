@@ -9,6 +9,10 @@ SESSION_DIR=""
 while [[ $# -gt 0 ]]; do
   case "$1" in
     --dados-dir|--project-dir)
+      if [[ $# -lt 2 || -z "$2" || "$2" == --* ]]; then
+        echo '{"error": "--dados-dir precisa de um valor"}'
+        exit 1
+      fi
       DADOS_DIR="$2"
       shift 2
       ;;
@@ -132,10 +136,9 @@ if [[ -f "$PID_FILE" ]]; then
   rm -f "$PID_FILE" "$SERVER_ID_FILE" "${STATE_DIR}/server.log"
   mark_stopped "stop-server.sh"
 
-  # The session is over: its screen and its choice must not survive into the
-  # next one. Drafts live in DADOS/drafts/, never here.
+  # The choice belongs to the session that just ended. The screen stays in
+  # content/ (evals and a later restart read it); drafts live in DADOS/drafts/.
   rm -f "${STATE_DIR}/events"
-  find "${SESSION_DIR}/content" -mindepth 1 -maxdepth 1 -type f \( -name '*.json' -o -name '*.html' \) -delete 2>/dev/null || true
 
   # Only delete ephemeral /tmp directories
   if [[ "$SESSION_DIR" == /tmp/* ]]; then
