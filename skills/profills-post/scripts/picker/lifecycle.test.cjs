@@ -79,7 +79,8 @@ function serverDown(url) {
 
 function request(url, headers) {
   return new Promise((resolve, reject) => {
-    const req = http.get(url, { headers: headers || {} }, (res) => {
+    // agent:false — a pooled keep-alive socket to a restarted server on the same port would reset.
+    const req = http.get(url, { headers: headers || {}, agent: false }, (res) => {
       const chunks = [];
       res.on('data', (c) => chunks.push(c));
       res.on('end', () => {
@@ -90,7 +91,7 @@ function request(url, headers) {
         });
       });
     });
-    req.on('error', reject);
+    req.on('error', (e) => reject(new Error(e.message + ' for GET ' + url.replace(/key=.*/, 'key=REDACTED'))));
     req.setTimeout(2000, () => {
       req.destroy();
       reject(new Error('timeout'));
@@ -306,8 +307,18 @@ test('a choice from the previous session never survives a restart or a rewritten
   writeScreen(dadosDir, 'tema.json', { ...SAMPLE, titulo: 'Outra rodada' });
   await waitUntil(() => !fs.existsSync(eventsFile), 2000, 'screen-updated kept the old choice');
 
-  // Stop outside /tmp keeps the folder and the screen, drops the choice.
+  // A second start while the picker is up (already_running) is a new round too:
+  // the screen goes to .anterior/ and the tab shows the waiting page.
   const screenFile = path.join(sessionDir(dadosDir), 'content', 'tema.json');
+  const again = parseOneJson(runStart(dadosDir).stdout);
+  assert.equal(again.status, 'already_running');
+  assert.equal(fs.existsSync(screenFile), false);
+  assert.equal(fs.readdirSync(path.join(sessionDir(dadosDir), 'content', '.anterior')).some((f) => f.endsWith('-tema.json')), true);
+  assert.equal((await fetchScreen(again.url, tokenOf(dadosDir))).body.includes('Esperando os rascunhos'), true);
+  writeScreen(dadosDir, 'tema.json', { ...SAMPLE, titulo: 'Outra rodada' });
+  await new Promise((resolve) => setTimeout(resolve, 400));
+
+  // Stop outside /tmp keeps the folder and the screen, drops the choice.
   fs.writeFileSync(eventsFile, JSON.stringify({ type: 'click', choice: 'B' }) + '\n');
   assert.equal(parseOneJson(runStop(dadosDir).stdout).status, 'stopped');
   assert.equal(fs.existsSync(eventsFile), false);
@@ -320,7 +331,7 @@ test('a choice from the previous session never survives a restart or a rewritten
   const restarted = parseOneJson(runStart(dadosDir).stdout);
   assert.equal(fs.existsSync(eventsFile), false);
   assert.equal(fs.existsSync(screenFile), false);
-  assert.equal(fs.existsSync(path.join(sessionDir(dadosDir), 'content', '.anterior', 'tema.json')), true);
+  assert.equal(fs.readdirSync(path.join(sessionDir(dadosDir), 'content', '.anterior')).filter((f) => f.endsWith('-tema.json')).length, 2, 'archives must not overwrite each other');
   const page = await fetchScreen(restarted.url, tokenOf(dadosDir));
   assert.equal(page.body.includes('Outra rodada'), false);
   assert.equal(page.body.includes('Esperando os rascunhos'), true);

@@ -139,7 +139,7 @@ if [[ -f "$PID_FILE" ]]; then
   mark_stopped "stop-server.sh"
 
   # The choice belongs to the session that just ended. The screen stays in
-  # content/ (evals and a later restart read it); drafts live in DADOS/drafts/.
+  # content/ (eval outputs read it; the next start archives it); drafts live in DADOS/drafts/.
   rm -f "${STATE_DIR}/events"
 
   # Only delete ephemeral /tmp directories

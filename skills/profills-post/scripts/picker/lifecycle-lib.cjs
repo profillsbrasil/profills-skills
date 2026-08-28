@@ -1,4 +1,7 @@
 'use strict';
+// browserLauncherForPlatform and the browser-opening flow derive from obra/superpowers
+// (skills/brainstorming/scripts/server.cjs), MIT License, Copyright (c) 2025 Jesse Vincent.
+// See LICENSE-obra-superpowers in this folder.
 
 const fs = require('fs');
 const http = require('http');

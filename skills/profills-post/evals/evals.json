@@ -17,7 +17,7 @@
         "NEGATIVA: o texto salvo não contém nenhuma das palavras banidas do voz.md (\"solução robusta\", \"alavancar\", \"parceiro estratégico\", \"de forma assertiva\", \"estado da arte\") nem as construções de 'Isso não sou eu' (abertura motivacional, três adjetivos em sequência, empresa em terceira pessoa), e nenhum arquivo de linkedin-data/catalog/raw/ aparece alterado em outputs/.",
         "Existe em outputs/linkedin-data/.picker/current/content/ um JSON de tela com titulo, empresa e opcoes[], uma opção por variação, cada uma com texto integral.",
         "A resposta final fecha com o próximo passo e não usa vocabulário interno (slug, quality gate, expert panel, ICP, Push/Shine).",
-        "Depois de rodar start-server.sh, não cola a `url` nem query com chave no chat; como o JSON volta `opened: false` no sandbox, diz em uma frase que a aba não abriu e oferece escolher pelo chat (A/B/C).",
+        "Depois de rodar start-server.sh, não cola a `url` nem query com chave no chat. Lê `opened` do JSON: com `false`, diz em uma frase que a aba não abriu e oferece escolher pelo chat (A/B/C); com `true`, diz que a aba abriu.",
         "stop-server.sh não é chamado antes da escolha nem antes do preview final: o picker fica no ar até o fim do passo 9."
       ]
     },
@@ -55,7 +55,7 @@
         "O variacoes.md traz 3-5 variações com texto integral, ângulo distinto por variação, as três famílias de hook cobertas e nenhuma categoria repetida.",
         "Existe em outputs/linkedin-data/.picker/current/content/ um JSON de tela com uma opção por variação, e a escolha foi pedida no picker (Copiar A/B/C) ou no chat.",
         "NEGATIVA: a skill não fabrica catálogo — outputs/ não contém nenhum linkedin-data/catalog/<slug>.md novo nem dossiê de empresa criado para justificar o post.",
-        "Depois de rodar start-server.sh, não cola a `url` nem query com chave no chat; como o JSON volta `opened: false` no sandbox, diz em uma frase que a aba não abriu e oferece escolher pelo chat (A/B/C)."
+        "Depois de rodar start-server.sh, não cola a `url` nem query com chave no chat. Lê `opened` do JSON: com `false`, diz em uma frase que a aba não abriu e oferece escolher pelo chat (A/B/C); com `true`, diz que a aba abriu."
       ]
     },
     {
@@ -74,7 +74,7 @@
         "NEGATIVA: nem linkedin-data/catalog/skymsen.md nem linkedin-data/catalog/raw/skymsen/2026-07-14/posts.json aparecem alterados em outputs/ — a skill lê o catálogo, não o reescreve.",
         "Existe em outputs/linkedin-data/.picker/current/content/ um JSON de tela (titulo, empresa, opcoes[]) e a escolha do ângulo foi pedida depois de mostrar o picker, não antes.",
         "Nenhuma variação imita o padrão que o usuário disse não querer (post de data comemorativa) nem repete o tom institucional 'nós da empresa' do catálogo da Skymsen; o texto salvo está na primeira pessoa da voz do usuário.",
-        "Depois de rodar start-server.sh, não cola a `url` nem query com chave no chat; como o JSON volta `opened: false` no sandbox, diz em uma frase que a aba não abriu e oferece escolher pelo chat (A/B/C)."
+        "Depois de rodar start-server.sh, não cola a `url` nem query com chave no chat. Lê `opened` do JSON: com `false`, diz em uma frase que a aba não abriu e oferece escolher pelo chat (A/B/C); com `true`, diz que a aba abriu."
       ]
     },
     {
@@ -111,7 +111,7 @@
         "Rodar `scripts/checar-formato.js` com `--voz linkedin-data/voz.md` sobre o arquivo salvo em outputs/linkedin-data/drafts/<AAAA-MM-DD>-<tema-slug>.md devolve `ok: true` (exit 0).",
         "A linha de contexto do arquivo salvo registra que o post saiu sem referência de catálogo (a Tecnox não tinha coleta aproveitável) e aponta a origem de cada número do texto, todos vindos de `linkedin-data/voz.md`.",
         "Existe em outputs/linkedin-data/.picker/current/content/ um JSON de tela com uma opção por variação, e a escolha foi pedida no picker (Copiar A/B/C) ou no chat.",
-        "Depois de rodar start-server.sh, não cola a `url` nem query com chave no chat; como o JSON volta `opened: false` no sandbox, diz em uma frase que a aba não abriu e oferece escolher pelo chat (A/B/C)."
+        "Depois de rodar start-server.sh, não cola a `url` nem query com chave no chat. Lê `opened` do JSON: com `false`, diz em uma frase que a aba não abriu e oferece escolher pelo chat (A/B/C); com `true`, diz que a aba abriu."
       ]
     }
   ]

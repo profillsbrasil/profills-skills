@@ -105,7 +105,7 @@ As opções abrem no **picker local** desta skill, no formato do feed. Não use 
 bash "<pasta desta skill>/scripts/picker/start-server.sh" --dados-dir "<DADOS>" --open
 ```
 
-O comando devolve um JSON `{status, url, port, opened}`. A `url` sozinha não abre: a aba só entra pela chave que o `--open` carrega, e essa chave nunca vai para o chat. Então não cole a `url` nem acrescente query. Com `opened: true`, diga que a aba abriu no navegador. Com `opened: false` (sem tela gráfica, SSH, navegador que não respondeu), diga em uma frase que a aba não abriu neste ambiente e ofereça escolher pelo chat. Se ele fechou a aba ou diz que não vê nada, rode o mesmo comando de novo: `already_running` só reabre a aba; `started` ou `replaced` quer dizer que o picker não estava no ar — a aba abre em branco e você grava a tela de novo, com nome novo. Toda tela de rodada anterior vai para `content/.anterior/`; a aba nunca abre mostrando post de outro dia.
+O comando devolve um JSON `{status, url, port, opened}`. A `url` sozinha não abre: a aba só entra pela chave que o `--open` carrega, e essa chave nunca vai para o chat. Então não cole a `url` nem acrescente query. Com `opened: true`, diga que a aba abriu no navegador. Com `opened: false` (sem tela gráfica, SSH, navegador que não respondeu), diga em uma frase que a aba não abriu neste ambiente e ofereça escolher pelo chat. Se ele fechou a aba ou diz que não vê nada, rode o mesmo comando de novo (`already_running` reabre a aba; `started`/`replaced` quer dizer que o picker não estava no ar). Todo start é uma rodada nova: o script move as telas anteriores para `content/.anterior/` e a aba abre na página de espera até você gravar a tela — por isso, depois de qualquer start, grave a tela desta rodada com nome novo.
 
 No Windows (Git Bash) o comando fica preso no terminal: rode em background e leia a primeira linha do stdout, que é o mesmo JSON.
 
@@ -131,7 +131,7 @@ Se a variação escolhida usa padrão diferente do que você anunciou no passo 1
 
 Antes de dar por pronto, rode `node "<pasta desta skill>/scripts/checar-formato.js" "<DADOS>/drafts/<AAAA-MM-DD>-<tema-slug>.md" --voz "<DADOS>/voz.md"` no arquivo salvo (`--voz` sempre que o `voz.md` existir; sem ele, o script avisa que o gate de banidas não foi medido). Aviso não impede salvar: `corpo_curto` no arquivo final é a pergunta "ficou curto — quer engordar ou vai assim?", e a resposta dele decide.
 
-Concluído quando o arquivo existe no disco no formato acima, o script devolve `ok: true` nele, os avisos foram conversados, e as linhas de contexto trazem ângulo, categoria de hook e a origem de cada número.
+Concluído quando o arquivo existe no disco no formato acima, o script devolve `ok: true` nele, os avisos foram conversados, e as linhas de contexto trazem ângulo, categoria de hook e a origem de cada número. Se ele deu o post por fechado sem pedir ajuste, pare o picker aqui com o comando do passo 9.
 
 ### 9. Ajuste o que ele pedir
 

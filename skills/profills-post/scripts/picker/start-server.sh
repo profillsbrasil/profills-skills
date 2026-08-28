@@ -173,7 +173,29 @@ finish() {
   node "$LIFECYCLE_LIB" print "$status" "$STATE_DIR" "$URL_HOST" "$opened"
 }
 
+# Every start is a new round: the previous round's choice and screens must not
+# be read or shown as today's. events is append-only, so it goes; screens move
+# to content/.anterior/ (hidden: the server ignores dotfiles) where a human can
+# still find them. The tab shows the waiting page until this round's screen is
+# written — the agent always writes it right after start.
+archive_round() {
+  rm -f "${STATE_DIR}/events"
+  mkdir -p "${CONTENT_DIR}/.anterior"
+  local f dest n
+  for f in "$CONTENT_DIR"/*.json "$CONTENT_DIR"/*.html; do
+    [[ -f "$f" ]] || continue
+    dest="${CONTENT_DIR}/.anterior/$(date +%Y%m%d-%H%M%S)-$(basename "$f")"
+    n=1
+    while [[ -e "$dest" ]]; do
+      dest="${CONTENT_DIR}/.anterior/$(date +%Y%m%d-%H%M%S)-${n}-$(basename "$f")"
+      n=$((n + 1))
+    done
+    mv -f "$f" "$dest" 2>/dev/null || true
+  done
+}
+
 if node "$LIFECYCLE_LIB" ready "$STATE_DIR"; then
+  archive_round
   finish already_running
   exit 0
 fi
@@ -189,15 +211,7 @@ fi
 
 mkdir -p "$CONTENT_DIR" "$STATE_DIR"
 rm -f "${STATE_DIR}/server-stopped" "$LOG_FILE"
-# A new server is a new round: no choice and no screen from the previous one
-# may show up as today's. events is append-only, so it goes; screens move to
-# content/.anterior/ (hidden: the server ignores dotfiles), where the eval
-# outputs and the human can still find them. The tab opens on the waiting page
-# until the agent writes this round's screen.
-rm -f "${STATE_DIR}/events"
-mkdir -p "${CONTENT_DIR}/.anterior"
-find "$CONTENT_DIR" -mindepth 1 -maxdepth 1 -type f \( -name '*.json' -o -name '*.html' \) \
-  -exec mv -f {} "${CONTENT_DIR}/.anterior/" \; 2>/dev/null || true
+archive_round
 
 SERVER_ID=""
 if [[ -r /dev/urandom ]]; then
