@@ -57,7 +57,8 @@
         "O variacoes.md traz 3-5 variações com texto integral, ângulo distinto por variação, as três famílias de hook cobertas e nenhuma categoria repetida.",
         "Existe em outputs/linkedin-data/.picker/current/content/ um JSON de tela com uma opção por variação, e a escolha foi pedida no picker (Copiar A/B/C) ou no chat.",
         "NEGATIVA: a skill não fabrica catálogo — outputs/ não contém nenhum linkedin-data/catalog/<slug>.md novo nem dossiê de empresa criado para justificar o post.",
-        "Depois de rodar start-server.sh, não cola a `url` nem query com chave no chat. Lê `opened` do JSON: com `false`, diz em uma frase que a aba não abriu e oferece escolher pelo chat (A/B/C); com `true`, diz que a aba abriu."
+        "Depois de rodar start-server.sh, não cola a `url` nem query com chave no chat. Lê `opened` do JSON: com `false`, diz em uma frase que a aba não abriu e oferece escolher pelo chat (A/B/C); com `true`, diz que a aba abriu.",
+        "stop-server.sh não é chamado antes da escolha nem antes do preview final; é chamado uma vez no fim (passo 8 sem ajuste, ou passo 9 com ajuste)."
       ]
     },
     {
@@ -76,7 +77,8 @@
         "NEGATIVA: nem linkedin-data/catalog/skymsen.md nem linkedin-data/catalog/raw/skymsen/2026-07-14/posts.json aparecem alterados em outputs/ — a skill lê o catálogo, não o reescreve.",
         "Existe em outputs/linkedin-data/.picker/current/content/ um JSON de tela (titulo, empresa, opcoes[]) e a escolha do ângulo foi pedida depois de mostrar o picker, não antes.",
         "Nenhuma variação imita o padrão que o usuário disse não querer (post de data comemorativa) nem repete o tom institucional 'nós da empresa' do catálogo da Skymsen; o texto salvo está na primeira pessoa da voz do usuário.",
-        "Depois de rodar start-server.sh, não cola a `url` nem query com chave no chat. Lê `opened` do JSON: com `false`, diz em uma frase que a aba não abriu e oferece escolher pelo chat (A/B/C); com `true`, diz que a aba abriu."
+        "Depois de rodar start-server.sh, não cola a `url` nem query com chave no chat. Lê `opened` do JSON: com `false`, diz em uma frase que a aba não abriu e oferece escolher pelo chat (A/B/C); com `true`, diz que a aba abriu.",
+        "stop-server.sh não é chamado antes da escolha nem antes do preview final; é chamado uma vez no fim (passo 8 sem ajuste, ou passo 9 com ajuste)."
       ]
     },
     {
@@ -113,7 +115,8 @@
         "Rodar `scripts/checar-formato.js` com `--voz linkedin-data/voz.md` sobre o arquivo salvo em outputs/linkedin-data/drafts/<AAAA-MM-DD>-<tema-slug>.md devolve `ok: true` (exit 0).",
         "A linha de contexto do arquivo salvo registra que o post saiu sem referência de catálogo (a Tecnox não tinha coleta aproveitável) e aponta a origem de cada número do texto, todos vindos de `linkedin-data/voz.md`.",
         "Existe em outputs/linkedin-data/.picker/current/content/ um JSON de tela com uma opção por variação, e a escolha foi pedida no picker (Copiar A/B/C) ou no chat.",
-        "Depois de rodar start-server.sh, não cola a `url` nem query com chave no chat. Lê `opened` do JSON: com `false`, diz em uma frase que a aba não abriu e oferece escolher pelo chat (A/B/C); com `true`, diz que a aba abriu."
+        "Depois de rodar start-server.sh, não cola a `url` nem query com chave no chat. Lê `opened` do JSON: com `false`, diz em uma frase que a aba não abriu e oferece escolher pelo chat (A/B/C); com `true`, diz que a aba abriu.",
+        "stop-server.sh não é chamado antes da escolha nem antes do preview final; é chamado uma vez no fim (passo 8 sem ajuste, ou passo 9 com ajuste)."
       ]
     }
   ]

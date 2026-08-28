@@ -43,6 +43,30 @@ if [[ -z "$SESSION_DIR" ]]; then
 fi
 
 STATE_DIR="${SESSION_DIR}/state"
+
+# A stop by hand (--dados-dir) also clears a start lock nobody will release:
+# owner dead, or lock left by a start killed midway. A live owner keeps it.
+# Runs first so every exit path below benefits.
+if [[ -n "$DADOS_DIR" ]]; then
+  LOCK_DIR="${DADOS_DIR}/.picker/.start-lock"
+  if [[ -d "$LOCK_DIR" ]]; then
+    lock_alive="false"
+    for marker in "$LOCK_DIR"/owner.*; do
+      [[ -e "$marker" ]] || continue
+      if kill -0 "${marker##*/owner.}" 2>/dev/null; then
+        lock_alive="true"
+      fi
+    done
+    [[ "$lock_alive" == "true" ]] || rm -rf "$LOCK_DIR"
+  fi
+  # Staging dir of a waiter that died: the name carries its pid.
+  for leftover in "${LOCK_DIR}".new.*; do
+    [[ -e "$leftover" ]] || continue
+    if ! kill -0 "${leftover##*.new.}" 2>/dev/null; then
+      rm -rf "$leftover"
+    fi
+  done
+fi
 PID_FILE="${STATE_DIR}/server.pid"
 SERVER_ID_FILE="${STATE_DIR}/server-instance-id"
 
@@ -150,10 +174,4 @@ if [[ -f "$PID_FILE" ]]; then
   echo '{"status": "stopped"}'
 else
   echo '{"status": "not_running"}'
-fi
-
-# A stop by hand also clears a start lock nobody will release (start killed
-# before writing its pid, or pid reused by another process).
-if [[ -n "$DADOS_DIR" ]]; then
-  rm -rf "${DADOS_DIR}/.picker/.start-lock"
 fi

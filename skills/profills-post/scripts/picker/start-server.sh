@@ -203,52 +203,66 @@ archive_round() {
   done
 }
 
-# One start at a time per pasta DADOS. mkdir is atomic; a stale lock (owner
-# dead, or never got to write its pid) is taken over by renaming it first, so
-# only one waiter wins the takeover. A concurrent caller waits for the first to
-# finish and then follows the normal path, which finds the live picker
-# (already_running). The lock covers the decision only: foreground releases it
-# before holding the terminal, so a second start still gets already_running.
+# One start at a time per pasta DADOS. The lock is a directory that is born
+# holding its owner's marker, owner.<pid>: a private dir is filled first and
+# then renamed into place (rename(2) is atomic and fails while a non-empty lock
+# exists), so a waiter never sees a lock without an owner. A stale lock (owner
+# dead) is taken over by removing exactly that owner's marker, which cannot
+# touch a lock that meanwhile changed hands; the empty dir is then claimed by
+# one waiter. A concurrent caller waits for the first to finish and follows the
+# normal path, which finds the live picker (already_running). The lock covers
+# the decision only: foreground releases it before holding the terminal.
 LOCK_DIR="${DADOS_DIR}/.picker/.start-lock"
 if ! mkdir -p "${DADOS_DIR}/.picker"; then
   echo "{\"error\": \"não consegui criar ${DADOS_DIR}/.picker (permissão ou disco cheio)\"}"
   exit 1
 fi
-take_over_lock() {
-  local grave="${LOCK_DIR}.stale.$$.${RANDOM}"
-  mv "$LOCK_DIR" "$grave" 2>/dev/null && rm -rf "$grave"
+lock_owner() {
+  local marker
+  for marker in "$LOCK_DIR"/owner.*; do
+    [[ -e "$marker" ]] || continue
+    printf '%s' "${marker##*/owner.}"
+    return 0
+  done
+  return 1
 }
+# Only the owner may remove the lock; a process whose lock was replaced must
+# not delete its successor's.
 unlock_start() {
-  rm -rf "$LOCK_DIR"
+  if [[ -e "$LOCK_DIR/owner.$$" ]]; then
+    rm -rf "$LOCK_DIR"
+  fi
   trap - EXIT
 }
 lock_start() {
   local waited=0 owner
-  while ! mkdir "$LOCK_DIR" 2>/dev/null; do
-    owner="$(cat "$LOCK_DIR/pid" 2>/dev/null || true)"
+  local mine="${LOCK_DIR}.new.$$"
+  rm -rf "$mine"
+  mkdir "$mine" && : > "$mine/owner.$$" || {
+    echo "{\"error\": \"não consegui escrever em ${DADOS_DIR}/.picker\"}"
+    exit 1
+  }
+  trap 'rm -rf "$mine"' EXIT
+  until node "$LIFECYCLE_LIB" claim "$mine" "$LOCK_DIR" 2>/dev/null; do
+    owner="$(lock_owner || true)"
     if [[ -n "$owner" ]] && ! kill -0 "$owner" 2>/dev/null; then
-      take_over_lock
-      continue
-    fi
-    # No pid after 2 s: the owner died between mkdir and writing it.
-    if [[ -z "$owner" ]] && (( waited >= 20 )) && [[ -d "$LOCK_DIR" ]]; then
-      take_over_lock
-      continue
+      rm -f "$LOCK_DIR/owner.$owner"
     fi
     if (( waited >= 100 )); then
-      echo "{\"error\": \"outro start do picker está rodando há mais de 10 segundos. Se não há nenhum, apague a pasta ${LOCK_DIR} ou rode stop-server.sh --dados-dir na mesma pasta\"}"
+      rm -rf "$mine"
+      echo "{\"error\": \"outro start do picker está rodando há mais de 10 segundos. Se não há nenhum, rode stop-server.sh --dados-dir na mesma pasta ou apague ${LOCK_DIR}\"}"
       exit 1
     fi
     sleep 0.1
     waited=$((waited + 1))
   done
-  echo "$$" > "$LOCK_DIR/pid"
-  trap 'rm -rf "$LOCK_DIR"' EXIT
+  trap 'unlock_start' EXIT
 }
 lock_start
 
 if node "$LIFECYCLE_LIB" ready "$STATE_DIR"; then
   archive_round
+  unlock_start
   finish already_running
   exit 0
 fi
@@ -337,9 +351,11 @@ fi
 
 # Same JSON in both modes. Foreground then holds the terminal until the server
 # exits, so callers in that mode read the first line and keep the call running.
+# The decision is made once the server is ready: release the lock before the
+# browser launcher, which may be slow, and before foreground holds the terminal.
+unlock_start
 finish "$OCCUPANCY"
 if [[ "$FOREGROUND" == "true" ]]; then
-  unlock_start
   wait "$SERVER_PID"
   exit $?
 fi

@@ -526,7 +526,7 @@ test('stale lock with a dead pid is taken over by exactly one of many waiters', 
   const lock = path.join(dadosDir, '.picker', '.start-lock');
   fs.mkdirSync(lock, { recursive: true });
   const dead = spawnSync('bash', ['-c', 'echo $$'], { encoding: 'utf8' }).stdout.trim();
-  fs.writeFileSync(path.join(lock, 'pid'), dead + '\n');
+  fs.writeFileSync(path.join(lock, 'owner.' + dead), '');
   const run = () => new Promise((resolve) => {
     const child = spawn('bash', [START, '--dados-dir', dadosDir], { env: { ...process.env, BRAINSTORM_LIFECYCLE_CHECK_MS: '200' } });
     let out = '';
@@ -539,7 +539,7 @@ test('stale lock with a dead pid is taken over by exactly one of many waiters', 
   assert.equal(fs.existsSync(lock), false);
 });
 
-test('lock left without a pid is taken over after a short wait', () => {
+test('an empty lock dir (takeover cut short) is claimed at once', () => {
   const dadosDir = makeDados();
   try {
     fs.mkdirSync(path.join(dadosDir, '.picker', '.start-lock'), { recursive: true });
@@ -554,14 +554,26 @@ test('lock left without a pid is taken over after a short wait', () => {
   }
 });
 
-test('stop-server --dados-dir clears a lock nobody will release', () => {
+test('stop-server --dados-dir clears a dead lock and keeps a live one', () => {
   const dadosDir = makeDados();
   try {
     const lock = path.join(dadosDir, '.picker', '.start-lock');
     fs.mkdirSync(lock, { recursive: true });
-    fs.writeFileSync(path.join(lock, 'pid'), String(process.pid) + '\n'); // alive: a reused pid
+    fs.writeFileSync(path.join(lock, 'owner.' + process.pid), ''); // a start still deciding
     assert.equal(parseOneJson(runStop(dadosDir).stdout).status, 'not_running');
+    assert.equal(fs.existsSync(lock), true, 'a live owner must keep its lock');
+
+    const dead = spawnSync('bash', ['-c', 'echo $$'], { encoding: 'utf8' }).stdout.trim();
+    fs.unlinkSync(path.join(lock, 'owner.' + process.pid));
+    fs.writeFileSync(path.join(lock, 'owner.' + dead), '');
+    fs.mkdirSync(lock + '.new.' + dead);
+    // stale_pid branch: a server.pid nobody owns must not skip the cleanup.
+    const stateDir = path.join(sessionDir(dadosDir), 'state');
+    fs.mkdirSync(stateDir, { recursive: true });
+    fs.writeFileSync(path.join(stateDir, 'server.pid'), dead + '\n');
+    assert.equal(parseOneJson(runStop(dadosDir).stdout).status, 'stale_pid');
     assert.equal(fs.existsSync(lock), false);
+    assert.equal(fs.existsSync(lock + '.new.' + dead), false);
   } finally {
     fs.rmSync(dadosDir, { recursive: true, force: true });
   }
