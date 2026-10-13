@@ -51,22 +51,10 @@ Para editar as skills, clone o repo; `.claude/skills` já aponta para `skills/`.
 
 O plugin é para o vendedor com conta ativa no CRM da Profills. Ele traz o servidor do CRM e a skill `crm-profills-conexao`, que confere a conexão e refaz o login. O agente busca clientes, lê propostas e registra atendimentos em seu nome, com as mesmas permissões da sua tela.
 
-Se o conector do CRM já está no seu claude.ai, ele também aparece no Claude Code, e você não instala o plugin.
-
-No Claude Code:
+Para instalar, cole este pedido no seu agente, no Claude Code, no claude.ai, no Claude Desktop ou no Codex:
 
 ```
-claude plugin marketplace add https://github.com/profillsbrasil/profills-skills
-claude plugin install crm-profills@profills-skills
+Instale o CRM da Profills seguindo https://raw.githubusercontent.com/profillsbrasil/crm-profills-mcp-docs/main/INSTALAR.md
 ```
 
-No Codex:
-
-```
-codex plugin marketplace add profillsbrasil/profills-skills
-codex plugin add crm-profills@profills-skills
-```
-
-Depois da instalação, faça o login no CRM com a sua conta: `/mcp` dentro do Claude Code, ou `codex mcp login crm-profills` no Codex.
-
-O passo a passo de cada app, o login e o conector do claude.ai e do ChatGPT estão na doc pública: [profillsbrasil/crm-profills-mcp-docs](https://github.com/profillsbrasil/crm-profills-mcp-docs).
+O agente instala o plugin e pede o seu login no CRM. A doc completa está em [profillsbrasil/crm-profills-mcp-docs](https://github.com/profillsbrasil/crm-profills-mcp-docs).
