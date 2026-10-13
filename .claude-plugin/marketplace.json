@@ -1,6 +1,6 @@
 {
   "name": "profills-skills",
-  "description": "Skills de conteúdo LinkedIn da Profills para o time comercial",
+  "description": "Plugins da Profills para o time comercial: conteúdo do LinkedIn e o CRM no agente",
   "owner": {
     "name": "Profills",
     "email": "dev@profills.com"
@@ -10,6 +10,14 @@
       "name": "profills-skills",
       "source": "./",
       "description": "Pipeline de conteúdo LinkedIn da Profills: radar → garimpo → post, mais voz, navegador e setup"
+    },
+    {
+      "name": "crm-profills",
+      "source": {
+        "source": "url",
+        "url": "https://github.com/profillsbrasil/crm-profills-mcp-docs.git"
+      },
+      "description": "CRM da Profills no Claude Code e no Codex: o servidor MCP com os tools do CRM e a skill que confere a conexão"
     }
   ]
 }
