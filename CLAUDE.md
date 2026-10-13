@@ -11,10 +11,10 @@ Os princípios operacionais de cada skill (medido vs inferido, inspirar-não-cop
 | Caminho | O que é |
 |---|---|
 | `skills/<nome>/` | Fonte canônica das skills (`SKILL.md` + `references/` + `assets/` + `evals/`). `.claude/skills/*` são **symlinks** para cá — editar sempre em `skills/`. |
-| `.claude-plugin/` | Manifesto do plugin (`plugin.json`) + marketplace (`marketplace.json`, `source: "./"`) — é o que torna `claude plugin install profills-skills@profills-skills` possível em outra máquina. |
+| `.claude-plugin/` | Manifesto do plugin (`plugin.json`) e marketplace (`marketplace.json`) com duas entradas: `profills-skills` (`source: "./"`, este repo) e `crm-profills` (`source: "url"`, o repo público `profillsbrasil/crm-profills-mcp-docs`, que é dono do plugin do CRM). A entrada do CRM usa `url` e não `github` porque o Codex lê este mesmo marketplace e pula a fonte `github`. |
 | `linkedin-data/` | A pasta `DADOS` (ver regra em Invariantes) quando o diretório atual é este repo — dado vivo do usuário, não fixture de exemplo. Nome em inglês de propósito: descreve o dado (posts do LinkedIn), não uma skill; renomeá-lo quebraria os contratos de path das 6 skills + o histórico. |
 | `research/linkedin-skills-achados.md` | Pesquisa que fundou o projeto (jul/2026): fatos testados sobre o LinkedIn, ToS, por que não usar scraper/API. **Está truncado no meio da última seção** — não procurar ali uma conclusão que não existe. |
-| `README.md` | Guia de instalação em pt-BR para o comercial (não dev): pré-requisitos, comandos, tabela das 6 skills. |
+| `README.md` | Guia de instalação em pt-BR para o comercial (não dev): pré-requisitos, comandos, tabela das 6 skills, e uma seção curta do plugin do CRM que aponta para a doc pública dele. |
 
 ## O pipeline e seus contratos (handoff por arquivo)
 

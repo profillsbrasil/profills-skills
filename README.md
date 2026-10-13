@@ -1,13 +1,22 @@
 # profills-skills
 
+Marketplace com dois plugins da Profills para o time comercial. Cada plugin se instala sozinho: instale só o que você usa.
+
+| Plugin | Para quem | O que faz |
+|---|---|---|
+| `profills-skills` | Quem posta no LinkedIn da Profills | Acompanha o que as empresas de referência postam e gera rascunhos de post. |
+| `crm-profills` | Vendedor com conta ativa no CRM | Liga o CRM ao Claude Code ou ao Codex, com as permissões da sua tela. |
+
+## Conteúdo do LinkedIn (`profills-skills`)
+
 Pipeline de conteúdo para o LinkedIn da Profills: acompanha o que as empresas de referência postam e transforma isso em rascunhos de post prontos para revisar e publicar — tudo conduzido dentro do Claude Code, sem precisar mexer em código.
 
-## Pré-requisitos
+### Pré-requisitos
 
 - [Claude Code](https://claude.com/claude-code) instalado e com login feito.
 - Google Chrome ou um derivado (Brave, Edge, Arc, Vivaldi, Opera) com a extensão **Claude para Chrome** instalada — é o navegador que a coleta usa para ler os posts do LinkedIn.
 
-## Instalar
+### Instalar
 
 Abra o terminal — no Windows, o **PowerShell**; no Linux ou Mac, o terminal normal — e rode estes dois comandos (no Windows, instale antes o [Git for Windows](https://git-scm.com/downloads/win), que o comando usa para baixar as skills):
 
@@ -18,14 +27,14 @@ claude plugin install profills-skills@profills-skills
 
 Depois, dentro do Claude Code, digite `/profills-setup` — ela confere o resto, cria a pasta neste PC e aponta o próximo passo: a voz, se ainda não existir; senão o primeiro post, para ver o fluxo.
 
-## Atualizar
+### Atualizar
 
 ```
 claude plugin marketplace update profills-skills
 claude plugin update profills-skills@profills-skills
 ```
 
-## As skills
+### As skills
 
 | Skill | O que faz |
 |---|---|
@@ -37,3 +46,27 @@ claude plugin update profills-skills@profills-skills
 | `profills-setup` | Instala, confere e atualiza tudo — e cria a pasta de dados na primeira vez. |
 
 Para editar as skills, clone o repo; `.claude/skills` já aponta para `skills/`.
+
+## CRM no agente (`crm-profills`)
+
+O plugin é para o vendedor com conta ativa no CRM da Profills. Ele traz o servidor do CRM e a skill `crm-profills-conexao`, que confere a conexão e refaz o login. O agente busca clientes, lê propostas e registra atendimentos em seu nome, com as mesmas permissões da sua tela.
+
+Se o conector do CRM já está no seu claude.ai, ele também aparece no Claude Code, e você não instala o plugin.
+
+No Claude Code:
+
+```
+claude plugin marketplace add https://github.com/profillsbrasil/profills-skills
+claude plugin install crm-profills@profills-skills
+```
+
+No Codex:
+
+```
+codex plugin marketplace add profillsbrasil/profills-skills
+codex plugin add crm-profills@profills-skills
+```
+
+Depois da instalação, faça o login no CRM com a sua conta: `/mcp` dentro do Claude Code, ou `codex mcp login crm-profills` no Codex.
+
+O passo a passo de cada app, o login e o conector do claude.ai e do ChatGPT estão na doc pública: [profillsbrasil/crm-profills-mcp-docs](https://github.com/profillsbrasil/crm-profills-mcp-docs).
