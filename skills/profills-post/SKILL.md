@@ -131,6 +131,8 @@ Se a variação escolhida usa padrão diferente do que você anunciou no passo 1
 
 Antes de dar por pronto, rode `node "<pasta desta skill>/scripts/checar-formato.js" "<DADOS>/drafts/<AAAA-MM-DD>-<tema-slug>.md" --voz "<DADOS>/voz.md"` no arquivo salvo (`--voz` sempre que o `voz.md` existir; sem ele, o script avisa que o gate de banidas não foi medido). Aviso não impede salvar: `corpo_curto` no arquivo final é a pergunta "ficou curto — quer engordar ou vai assim?", e a resposta dele decide.
 
+Com o arquivo salvo, rode `node "<pasta desta skill>/../profills-setup/scripts/mapa.js" "<DADOS>"`, que atualiza o resumo da pasta em `<DADOS>/CLAUDE.md`; se ele não voltar `ok: true`, avise em uma frase que o resumo não foi atualizado e siga.
+
 Concluído quando o arquivo existe no disco no formato acima, o script devolve `ok: true` nele, os avisos foram conversados, e as linhas de contexto trazem ângulo, categoria de hook e a origem de cada número. Se ele deu o post por fechado sem pedir ajuste, pare o picker aqui com o comando do passo 9.
 
 ### 9. Ajuste o que ele pedir

@@ -90,6 +90,8 @@ Concluído quando a rejeição está gravada em `DADOS/voz.md`, o cabeçalho reg
 
 ## Próximo passo
 
+Antes de fechar, rode `node "<pasta desta skill>/../profills-setup/scripts/mapa.js" "<DADOS>"`, que atualiza o resumo da pasta em `<DADOS>/CLAUDE.md`; se ele não voltar `ok: true`, avise em uma frase que o resumo não foi atualizado e siga.
+
 - **Outra skill invocou você** (a `profills-post`, porque `DADOS/voz.md` não existia): diga em uma frase onde salvou e devolva o controle — o rascunho que ele pediu continua de onde parou, sem sugestão sua.
 - **O usuário chamou você**: feche com **uma** sugestão só — "salvei em `<caminho>`; agora, quando eu escrever um post, ele já sai com a sua cara — quer testar com `/profills-post`?".
 

@@ -130,6 +130,8 @@ Depois de todas as empresas, dois arquivos:
    **Rodada com parte das empresas**: se o `_summary.md` já existe, **edite-o** — atualize a data do cabeçalho e só as linhas das empresas desta rodada, preservando as demais como estão (elas são o retrato da coleta delas, com a data delas). Criar do zero só quando o arquivo não existe. Se a tabela antiga não tiver uma coluna de data por empresa, acrescente-a ao migrar: sem ela, linhas de rodadas diferentes viram um comparativo falso.
 2. `DADOS/refs/INDEX.md` — na linha de cada empresa com `status: ok`, troque o campo `sem catálogo` ou `catálogo …` pela data desta rodada (`catálogo AAAA-MM-DD`), no mesmo lugar e sem mexer nos outros campos da linha (o formato é da `profills-radar`); empresa com outro status mantém o campo como estava — sem perfil, sem carimbo. É esse campo que a `profills-radar` lê para não mandar re-catalogar quem acabou de sair.
 
+Com os dois gravados, rode `node "<pasta desta skill>/../profills-setup/scripts/mapa.js" "<DADOS>"`, que atualiza o resumo da pasta em `<DADOS>/CLAUDE.md`; se ele não voltar `ok: true`, avise em uma frase que o resumo não foi atualizado e siga.
+
 Concluído quando o `_summary.md` cobre todas as empresas da seleção (as com dados e as sem) com os números do `metricas.js`, as linhas de empresas fora desta rodada continuam como estavam, e, no `INDEX.md`, só as linhas das empresas com `status: ok` mostram a data de hoje.
 
 ### 8. Monte o dashboard visual

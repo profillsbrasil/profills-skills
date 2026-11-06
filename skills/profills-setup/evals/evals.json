@@ -174,6 +174,23 @@
         "NEGATIVA — RESPOSTA FINAL: não devolve o controle à profills-radar e não diz que a pasta está pronta; diz que o pedido original ('quais empresas eu acompanho') espera o Node ser instalado",
         "RESPOSTA FINAL: a única ação sugerida é instalar o Node, sem sugerir `/profills-voz`, `/profills-radar` ou `/profills-post`"
       ]
+    },
+    {
+      "id": 11,
+      "prompt": "Configura as skills da Profills nesse PC. (Contexto: shell Bash; `claude plugin list` mostra profills-skills; `~/.claude/skills/humanize-pt-br/SKILL.md` existe; `command -v node` responde `/usr/bin/node` e `command -v npx` responde `/usr/bin/npx`; o diretório atual é um repo git de outro projeto — não o repo-fonte das skills, sem `linkedin-data/` na raiz; nesta sandbox a pasta `home-sandbox/` faz o papel de `~`, e `home-sandbox/Profills LinkedIn/` ainda não existe.)",
+      "expected_output": "Diagnostica em silêncio e mostra a tabela de oito linhas com a pasta de dados, a versão da pasta e o arquivo de voz em ❌. Cria `home-sandbox/Profills LinkedIn/` com `refs/`, `catalog/raw/`, `drafts/`, `boletins/` e `.profills.json`, e roda `node \"<pasta da skill>/scripts/mapa.js\" \"<DADOS>\"`, que cria `CLAUDE.md` dentro da pasta com o bloco fixo do template, o bloco do mapa (versão 2, nenhuma empresa ainda, `voz.md` faltando) e a seção `## Notas da equipe`. Antes da sugestão final, diz que daqui em diante o Claude deve ser aberto dentro dessa pasta, com o caminho `~/Profills LinkedIn` no formato do sistema e o comando `cd` seguido de `claude`. Termina com uma sugestão só, `/profills-voz`.",
+      "files": [
+        "evals/files/1"
+      ],
+      "expectations": [
+        "ARTEFATO: a cópia em outputs/ traz `home-sandbox/Profills LinkedIn/CLAUDE.md`, e ele tem, nesta ordem, os marcadores `<!-- profills:fixo:inicio -->`, `<!-- profills:fixo:fim -->`, `<!-- profills:mapa:inicio -->`, `<!-- profills:mapa:fim -->` e a linha `## Notas da equipe`",
+        "ARTEFATO: o trecho do `CLAUDE.md` entre `<!-- profills:fixo:inicio -->` e `<!-- profills:fixo:fim -->` é byte a byte igual ao mesmo trecho de `skills/profills-setup/assets/claude-dados-template.md`, sinal de que veio do `mapa.js` e não de texto escrito à mão",
+        "ARTEFATO: o bloco do mapa no `CLAUDE.md` traz uma linha `Estado em AAAA-MM-DD.`, a linha `- Versão da pasta: 2.` e diz que `voz.md` não existe",
+        "O transcript mostra o `mapa.js` rodado com o caminho da pasta de dados e a saída JSON dele com `\"ok\": true`",
+        "NEGATIVA: nenhum `CLAUDE.md` é criado fora de `home-sandbox/Profills LinkedIn/`, e a árvore de outputs/ não tem `linkedin-data/`",
+        "RESPOSTA FINAL: diz em uma frase para abrir o Claude dentro da pasta de dados, mostrando o caminho dela e o comando `cd` seguido de `claude`, sem chamar isso de segunda sugestão",
+        "RESPOSTA FINAL: termina com exatamente uma sugestão de próximo passo, `/profills-voz`, justificada pela ausência de voz.md, sem citar outra skill"
+      ]
     }
   ]
 }
