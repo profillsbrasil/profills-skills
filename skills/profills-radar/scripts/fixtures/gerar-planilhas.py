@@ -24,7 +24,7 @@ COLUNAS_CANAIS = [
     "Fonte do endereço", "Conferido em", "Observação",
 ]
 
-D20 = datetime.datetime(2026, 10, 20, 12, 0)
+D20 = datetime.datetime(2026, 8, 20, 12, 0)
 MAPA = [
     ["F001", "Alfa Cartonagem", "Brasil", "Sistema e caixas", "Concorrente direto", "Alta",
      "Caixas cartonadas e envasadoras próprias.", "Leite e sucos.", "Lançamentos de formato e cases.",
@@ -40,7 +40,7 @@ MAPA = [
     ["F005", "Épsilon Pack", "Espanha", "Caixas", "Concorrente direto", "Alta",
      "Caixas e tampas.", "Sucos.", "Expansão ibérica.", "Épsilon Pack. Não confundir com Epsilon Tubos.", "", "https://epsilon.example/", D20],
     ["F006", "Zeta Papéis", "Japão", "Caixas", "Concorrente direto", "Urgente",
-     "Papel cartão.", "Bebidas.", "Barreiras.", "Zeta Papéis.", "", "https://zeta.example/", "2026-10-21"],
+     "Papel cartão.", "Bebidas.", "Barreiras.", "Zeta Papéis.", "", "https://zeta.example/", "2026-08-21"],
     ["F007", "Eta Cartons", "Índia", "Caixas", "Concorrente direto", "Média",
      "Caixas para água.", "Água.", "White label.", "Eta Cartons.", "", "https://eta.example/", D20],
     ["F008", "Teta Líquidos", "Peru", "Caixas", "Concorrente direto", "Média",

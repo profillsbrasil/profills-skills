@@ -382,8 +382,8 @@ const CAMADAS = [
   { prioridade: 'Validação', intervalo_dias: 28 },
   { prioridade: 'a definir', intervalo_dias: null },
 ];
-// A profills-garimpo navega página por página no navegador logado: passar de uma dúzia de páginas
-// numa sessão é o volume que o compliance dela trata como uso fora do humano.
+// Cada empresa custa algumas páginas no navegador logado; 12 já somam as "dezenas de páginas, não
+// centenas" por sessão de profills-garimpo/references/compliance.md.
 const LIMITE_POR_RODADA = 12;
 
 // Cada empresa cai em exatamente um balde. Ordem: camada, depois o catálogo mais antigo (nunca primeiro).

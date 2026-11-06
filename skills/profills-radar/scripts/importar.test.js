@@ -70,8 +70,8 @@ caso('simular lê as duas abas e não grava nada', () => {
 
 caso('data serial do Excel e data em texto viram AAAA-MM-DD', () => {
   const r = importar(montar());
-  assert.strictEqual(novaPorNome(r.json, 'Alfa Cartonagem').pesquisa, '2026-10-20');
-  assert.strictEqual(novaPorNome(r.json, 'Zeta Papéis').pesquisa, '2026-10-21');
+  assert.strictEqual(novaPorNome(r.json, 'Alfa Cartonagem').pesquisa, '2026-08-20');
+  assert.strictEqual(novaPorNome(r.json, 'Zeta Papéis').pesquisa, '2026-08-21');
 });
 
 caso('sem LinkedIn e perfil pessoal ficam com linkedin não e slug do nome', () => {
@@ -127,6 +127,15 @@ caso('parecida forte vira pergunta, não fusão', () => {
   const gama = novaPorNome(importar(montar()).json, 'Gama Embalagens');
   assert.deepStrictEqual(gama.parecidas.map((p) => p.slug), ['omega-embalagens']);
   assert.deepStrictEqual(novaPorNome(importar(montar()).json, 'Beta Envase').parecidas, [], 'Beta e Eta não passam do corte de 0,85');
+});
+
+caso('--pular deixa a linha de fora e diz qual', () => {
+  const refs = montar();
+  const r = importar(refs, '--pular', 'F003', '--aplicar');
+  assert.strictEqual(r.json.ok, true);
+  assert.deepStrictEqual(r.json.puladas, [{ id_planilha: 'F003', nome: 'Gama Embalagens' }]);
+  assert.ok(!novaPorNome(r.json, 'Gama Embalagens'));
+  assert.ok(!fs.existsSync(path.join(refs, 'gama-embalagens.md')));
 });
 
 caso('aplicar duas vezes não muda nenhum byte', () => {

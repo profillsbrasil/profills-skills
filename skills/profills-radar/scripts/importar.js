@@ -5,7 +5,7 @@
 // ficha por empresa nova, pelo assets/dossie-template.md, e a linha dela no INDEX.md pelo formatarLinha do
 // indice.js; empresa que já está na lista só ganha prioridade e grupo quando estavam "a definir" ou vazios.
 // Idempotente: rodar de novo com a mesma planilha não muda nenhum byte.
-// Uso:     node scripts/importar.js <planilha.xlsx> <DADOS>/refs [--aplicar] [--hoje AAAA-MM-DD]
+// Uso:     node scripts/importar.js <planilha.xlsx> <DADOS>/refs [--aplicar] [--pular <ID>]... [--hoje AAAA-MM-DD]
 // Exemplo: node scripts/importar.js concorrentes.xlsx "$HOME/Profills LinkedIn/refs"
 //          → {"novas":[...],"ja_existem":[],"sem_linkedin":[...],"perfil_pessoal":[...],"problemas":[],"ok":true}
 // Saída: JSON em stdout. Exit 0 = ok · 1 = coluna ou aba faltando, índice com problema, ou conflito de endereço · 2 = erro de uso.
@@ -387,8 +387,8 @@ function acharNaLista(e, examinado, pasta) {
 
 const PROBLEMAS_ACEITOS = new Set(['pasta_ausente', 'indice_vazio']);
 
-function planejar(planilhaPath, pasta, hoje) {
-  const saida = { planilha: planilhaPath, refs: pasta, hoje, novas: [], ja_existem: [], sem_linkedin: [], perfil_pessoal: [], problemas: [], ok: false };
+function planejar(planilhaPath, pasta, hoje, pular) {
+  const saida = { planilha: planilhaPath, refs: pasta, hoje, novas: [], ja_existem: [], sem_linkedin: [], perfil_pessoal: [], puladas: [], problemas: [], ok: false };
   let planilha;
   try {
     planilha = lerPlanilha(planilhaPath);
@@ -424,6 +424,11 @@ function planejar(planilhaPath, pasta, hoje) {
   const fichas = new Set(fs.existsSync(pasta) ? fs.readdirSync(pasta) : []);
 
   for (const e of empresas) {
+    // --pular: a linha que o usuário disse ser uma empresa que já está na lista com outro nome.
+    if (pular.has(e.id_planilha)) {
+      saida.puladas.push({ id_planilha: e.id_planilha, nome: e.nome });
+      continue;
+    }
     if (vistosId.has(e.id_planilha)) {
       saida.problemas.push({ tipo: 'id_repetido_na_planilha', id_planilha: e.id_planilha, detalhe: `o ID ${e.id_planilha} aparece nas linhas ${vistosId.get(e.id_planilha)} e ${e.registro.linha} da aba "${ABAS.mapa.nome}"` });
       continue;
@@ -555,13 +560,19 @@ function aplicar(pasta, plano) {
 
 function principal(argv) {
   const args = argv.slice(2);
-  const uso = 'Uso: node scripts/importar.js <planilha.xlsx> <DADOS>/refs [--aplicar] [--hoje AAAA-MM-DD]';
+  const uso = 'Uso: node scripts/importar.js <planilha.xlsx> <DADOS>/refs [--aplicar] [--pular <ID>]... [--hoje AAAA-MM-DD]';
   const posicionais = [];
   let aplicarAgora = false;
+  const pular = new Set();
   let hoje = hojeISO();
   for (let i = 0; i < args.length; i++) {
     const a = args[i];
     if (a === '--aplicar') aplicarAgora = true;
+    else if (a === '--pular') {
+      const id = args[++i];
+      if (!id) morrer('Uso: --pular precisa do ID da linha na planilha, ex.: --pular G007.');
+      pular.add(id);
+    }
     else if (a === '--hoje') {
       hoje = args[++i];
       if (!hoje || !indice.dataValida(hoje)) morrer('Uso: --hoje precisa de uma data AAAA-MM-DD, ex.: --hoje 2026-11-06.');
@@ -573,7 +584,7 @@ function principal(argv) {
   if (!fs.existsSync(planilha) || !fs.statSync(planilha).isFile()) morrer(`Planilha não encontrada: ${planilha}`);
   if (fs.existsSync(refs) && !fs.statSync(refs).isDirectory()) morrer(`Não é uma pasta: ${refs}`);
 
-  const { saida, plano } = planejar(planilha, refs, hoje);
+  const { saida, plano } = planejar(planilha, refs, hoje, pular);
   saida.aplicado = false;
   saida.arquivos_gravados = 0;
   if (aplicarAgora && saida.ok) {

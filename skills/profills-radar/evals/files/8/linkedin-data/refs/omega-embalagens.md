@@ -7,7 +7,7 @@
 - **Setor**: embalagens flexíveis
 - **Porte**: empresa fictícia de teste
 - **País / idioma dos posts**: BR · PT
-- **Última pesquisa**: 2026-09-01
+- **Última pesquisa**: 2026-07-01
 - **Confirmação do usuário**: [a confirmar]
 
 ## Por que é referência
