@@ -9,7 +9,7 @@
     {
       "name": "profills-skills",
       "source": "./",
-      "description": "Pipeline de conteúdo LinkedIn da Profills: radar → garimpo → post, mais voz, navegador e setup"
+      "description": "Pipeline de conteúdo LinkedIn da Profills: radar → garimpo → post, mais boletim, voz, navegador e setup"
     },
     {
       "name": "crm-profills",

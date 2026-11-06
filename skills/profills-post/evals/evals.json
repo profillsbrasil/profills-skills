@@ -133,6 +133,21 @@
         "NEGATIVA: outputs/ não contém linkedin-data/voz.md e o transcript não registra nenhuma [PERGUNTA] de tom, público ou o que ele vende feita para substituir a voz; nenhuma voz é inventada nem gravada pela metade.",
         "A resposta final termina com UMA única sugestão de próximo passo, rodar a profills-voz (/profills-voz) quando ele tiver os ~10 minutos, sem emendar outras."
       ]
+    },
+    {
+      "id": 8,
+      "prompt": "Gera um post da pauta 2 do boletim. (Contexto: o número que o usuário dá é \"na linha anterior, cliente que envasava 300 frascos por dia na mão passou a 1.800 com a máquina\"; a opinião é \"lote pequeno é justamente onde a máquina se paga, porque é onde o operador mais erra o peso\"; o mecanismo é \"regula o bico pro frasco, testa 10 frascos na balança, libera a linha\". Ele escolhe a variação recomendada.)",
+      "expected_output": "- Abre o boletim mais novo de linkedin-data/boletins/ (2026-08-24.md, não o de 17/08) e lê a pauta 2: \"Envasar à mão ainda compensa no lote pequeno?\", ângulo contrarian.\n- Acha o post citado pelo link no posts.json da Nordic Fill Systems (22/08, hook_categoria question) e anuncia o padrão que vai reusar: ângulo contrarian com hook de pergunta, inspirado no que a Nordic Fill Systems postou.\n- Lê a voz e o Do Not Copy da ficha da Nordic Fill Systems (já preenchido, não pergunta de novo).\n- Escreve as variações do zero em pt-BR, sem traduzir o texto em inglês do post, com a primeira variação no ângulo contrarian.\n- Salva o escolhido em linkedin-data/drafts/2026-08-24-<tema-slug>.md no formato fixo, com a Nordic Fill Systems como empresa que inspirou e a origem do número (resposta do usuário).",
+      "files": [
+        "evals/files/8"
+      ],
+      "expectations": [
+        "O transcript lê `linkedin-data/boletins/2026-08-24.md` (e não toma a pauta do `2026-08-17.md`) e diz em uma frase que pegou a pauta 2, \"Envasar à mão ainda compensa no lote pequeno?\", e o post de 22/08 da Nordic Fill Systems.",
+        "O transcript anuncia o par ângulo `contrarian` + hook `question` lido do `posts.json` da Nordic Fill Systems antes de gerar as variações.",
+        "NEGATIVA: o transcript não registra [PERGUNTA] sobre o que não copiar da Nordic Fill Systems, porque a seção `## Do Not Copy` da ficha já tem resposta.",
+        "ARTEFATO: `linkedin-data/drafts/2026-08-24-<tema-slug>/variacoes.md` existe e a primeira variação tem ângulo contrarian; nenhuma variação contém frase do post em inglês (\"Is manual filling still worth it for small batches?\") nem a tradução literal dela.",
+        "ARTEFATO: `linkedin-data/drafts/2026-08-24-<tema-slug>.md` tem as linhas de contexto com a Nordic Fill Systems como empresa que inspirou e a origem do número 1.800 como resposta do usuário, e `checar-formato.js` com `--voz linkedin-data/voz.md` volta `ok: true` nele."
+      ]
     }
   ]
 }

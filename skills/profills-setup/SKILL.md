@@ -58,7 +58,7 @@ Mostre exatamente uma tabela, com **estas nove linhas, nesta ordem e com este te
 
 | Peça | O que faz | Status |
 |---|---|---|
-| Plugin `profills-skills` | Traz as 6 skills: setup, voz, radar, navegador, garimpo, post | ✅/❌ |
+| Plugin `profills-skills` | Traz as 7 skills: setup, voz, radar, navegador, garimpo, post, boletim | ✅/❌ |
 | humanize-pt-br | Tira as marcas de IA do texto final | ✅/❌ |
 | Node/npx | Roda as contas das skills (radar, garimpo, post) e instala a humanize-pt-br | ✅/❌ |
 | Pasta de dados | Guarda empresas, catálogos e rascunhos | ✅/❌ |
@@ -74,7 +74,7 @@ Concluído quando as oito linhas diagnosticadas estão preenchidas (a da extens�
 
 Nesta ordem, um item por vez:
 
-- **Plugin ❌** (fora do caso "via repo" — instalação que parou no meio, ou pasta copiada na mão): explique que isso baixa e ativa as 6 skills.
+- **Plugin ❌** (fora do caso "via repo" — instalação que parou no meio, ou pasta copiada na mão): explique que isso baixa e ativa as 7 skills.
   ```
   claude plugin marketplace add https://github.com/profillsbrasil/profills-skills
   claude plugin install profills-skills@profills-skills
