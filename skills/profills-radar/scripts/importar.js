@@ -4,11 +4,12 @@
 // dela no LinkedIn e compara com o índice que já existe. Sem --aplicar só simula. Com --aplicar grava uma
 // ficha por empresa nova, pelo assets/dossie-template.md, e a linha dela no INDEX.md pelo formatarLinha do
 // indice.js; empresa que já está na lista só ganha prioridade e grupo quando estavam "a definir" ou vazios.
-// Idempotente: rodar de novo com a mesma planilha não muda nenhum byte.
+// Qualquer dúvida sobre o dado (célula vazia ou ilegível, mesmo nome com outra página) vira problema
+// com o ID e a linha da planilha, e nada é gravado. Idempotente: rodar de novo não muda nenhum byte.
 // Uso:     node scripts/importar.js <planilha.xlsx> <DADOS>/refs [--aplicar] [--pular <ID>]... [--hoje AAAA-MM-DD]
 // Exemplo: node scripts/importar.js concorrentes.xlsx "$HOME/Profills LinkedIn/refs"
 //          → {"novas":[...],"ja_existem":[],"sem_linkedin":[...],"perfil_pessoal":[...],"problemas":[],"ok":true}
-// Saída: JSON em stdout. Exit 0 = ok · 1 = coluna ou aba faltando, índice com problema, ou conflito de endereço · 2 = erro de uso.
+// Saída: JSON em stdout. Exit 0 = ok · 1 = há problemas[] (nada gravado) · 2 = erro de uso, arquivo que não é .xlsx ou planilha corrompida.
 
 const fs = require('fs');
 const path = require('path');
@@ -30,7 +31,23 @@ function hojeISO() {
 
 // ---------- zip e xlsx ----------
 
+const TABELA_CRC = Array.from({ length: 256 }, (_, n) => {
+  let c = n;
+  for (let k = 0; k < 8; k++) c = c & 1 ? 0xedb88320 ^ (c >>> 1) : c >>> 1;
+  return c >>> 0;
+});
+
+function crc32(buffer) {
+  let c = 0xffffffff;
+  for (const b of buffer) c = TABELA_CRC[(c ^ b) & 0xff] ^ (c >>> 8);
+  return (c ^ 0xffffffff) >>> 0;
+}
+
+class PlanilhaCorrompida extends Error {}
+const corrompida = (detalhe) => new PlanilhaCorrompida(`planilha corrompida (${detalhe}); peça ao comercial para salvar de novo pelo Excel ou baixar outra cópia`);
+
 // Lê o zip pelo diretório central, que é onde ficam os tamanhos certos de cada arquivo.
+// Um byte trocado pode inflar sem erro e virar outro texto: só o CRC-32 e o tamanho garantem o conteúdo.
 function lerZip(buffer) {
   let fim = -1;
   for (let i = buffer.length - 22; i >= Math.max(0, buffer.length - 65557); i--) {
@@ -40,34 +57,55 @@ function lerZip(buffer) {
     }
   }
   if (fim < 0) throw new Error('o arquivo não é um .xlsx (zip sem diretório central)');
-  const total = buffer.readUInt16LE(fim + 10);
-  let p = buffer.readUInt32LE(fim + 16);
   const arquivos = new Map();
-  for (let n = 0; n < total; n++) {
-    if (buffer.readUInt32LE(p) !== 0x02014b50) throw new Error('diretório central do zip corrompido');
-    const metodo = buffer.readUInt16LE(p + 10);
-    const tamanho = buffer.readUInt32LE(p + 20);
-    const nomeLen = buffer.readUInt16LE(p + 28);
-    const extraLen = buffer.readUInt16LE(p + 30);
-    const comentarioLen = buffer.readUInt16LE(p + 32);
-    const local = buffer.readUInt32LE(p + 42);
-    const nome = buffer.toString('utf8', p + 46, p + 46 + nomeLen);
-    arquivos.set(nome, { metodo, tamanho, local });
-    p += 46 + nomeLen + extraLen + comentarioLen;
+  try {
+    const total = buffer.readUInt16LE(fim + 10);
+    let p = buffer.readUInt32LE(fim + 16);
+    for (let n = 0; n < total; n++) {
+      if (buffer.readUInt32LE(p) !== 0x02014b50) throw corrompida('diretório central do zip estragado');
+      const nomeLen = buffer.readUInt16LE(p + 28);
+      const nome = buffer.toString('utf8', p + 46, p + 46 + nomeLen);
+      arquivos.set(nome, {
+        metodo: buffer.readUInt16LE(p + 10),
+        crc: buffer.readUInt32LE(p + 16),
+        tamanho: buffer.readUInt32LE(p + 20),
+        descomprimido: buffer.readUInt32LE(p + 24),
+        local: buffer.readUInt32LE(p + 42),
+      });
+      p += 46 + nomeLen + buffer.readUInt16LE(p + 30) + buffer.readUInt16LE(p + 32);
+    }
+  } catch (e) {
+    throw e instanceof PlanilhaCorrompida ? e : corrompida('diretório central do zip fora do arquivo');
   }
   return (nome) => {
     const a = arquivos.get(nome);
     if (!a) return null;
+    if (a.local + 30 > buffer.length || buffer.readUInt32LE(a.local) !== 0x04034b50) throw corrompida(`cabeçalho de "${nome}" estragado`);
     const inicio = a.local + 30 + buffer.readUInt16LE(a.local + 26) + buffer.readUInt16LE(a.local + 28);
+    if (inicio + a.tamanho > buffer.length) throw corrompida(`"${nome}" termina antes do fim declarado`);
     const dados = buffer.subarray(inicio, inicio + a.tamanho);
-    let xml;
-    if (a.metodo === 0) xml = dados.toString('utf8');
-    else if (a.metodo === 8) xml = zlib.inflateRawSync(dados).toString('utf8');
-    else throw new Error(`"${nome}" usa uma compressão que este leitor não conhece (${a.metodo})`);
+    let cru;
+    if (a.metodo === 0) cru = dados;
+    else if (a.metodo === 8) {
+      try {
+        cru = zlib.inflateRawSync(dados);
+      } catch (e) {
+        throw corrompida(`"${nome}" não descomprime: ${e.message}`);
+      }
+    } else throw new Error(`"${nome}" usa uma compressão que este leitor não conhece (${a.metodo})`);
+    if (cru.length !== a.descomprimido) throw corrompida(`"${nome}" tem ${cru.length} bytes e o zip declara ${a.descomprimido}`);
+    if (crc32(cru) !== a.crc) throw corrompida(`"${nome}" não confere com o CRC-32 do zip`);
+    const xml = cru.toString('utf8');
     // Planilha gravada pelo OpenXML SDK prefixa cada elemento (<x:row>, <x:c>); o Excel não.
     return xml.replace(/<(\/?)[A-Za-z_][\w.-]*:(?=[A-Za-z_])/g, '<$1');
   };
 }
+
+// Célula que a importação não consegue ler como valor: fórmula sem o resultado guardado
+// (planilha gerada por script, nunca aberta no Excel) ou erro do Excel (#REF!, #N/A).
+const FORMULA_SEM_VALOR = Object.freeze({ ilegivel: 'formula_sem_valor' });
+const erroDoExcel = (codigo) => Object.freeze({ ilegivel: 'celula_com_erro', codigo });
+const ilegivel = (v) => v !== null && typeof v === 'object' && 'ilegivel' in v;
 
 function decodificar(texto) {
   return texto.replace(/&(#x[0-9a-f]+|#\d+|amp|lt|gt|quot|apos);/gi, (_, e) => {
@@ -125,10 +163,11 @@ function lerLinhas(xml, compartilhadas) {
       const v = corpo.match(/<v>([\s\S]*?)<\/v>/);
       let valor = null;
       if (tipo === 'inlineStr') valor = textoDe(corpo);
+      else if (/<f\b/.test(corpo) && (!v || v[1] === '')) valor = FORMULA_SEM_VALOR;
+      else if (tipo === 'e') valor = erroDoExcel(v ? decodificar(v[1]) : '?');
       else if (tipo === 's') valor = v ? compartilhadas[Number(v[1])] : null;
       else if (tipo === 'str' || tipo === 'd') valor = v ? decodificar(v[1]) : null;
       else if (tipo === 'b') valor = v ? v[1] === '1' : null;
-      else if (tipo === 'e') valor = null;
       else valor = v ? Number(v[1]) : null;
       celulas[ref ? colunaDe(ref) : celulas.length] = valor;
     }
@@ -143,8 +182,8 @@ const ABAS = {
   mapa: {
     nome: 'Mapa competitivo',
     colunas: [
-      { campo: 'id', cabecalho: 'ID', obrigatoria: true },
-      { campo: 'nome', cabecalho: 'Empresa / unidade', obrigatoria: true },
+      { campo: 'id', cabecalho: 'ID', obrigatoria: true, exigeValor: true },
+      { campo: 'nome', cabecalho: 'Empresa / unidade', obrigatoria: true, exigeValor: true },
       { campo: 'origem', cabecalho: 'Origem', obrigatoria: true },
       { campo: 'papel', cabecalho: 'Papel no mercado', obrigatoria: true },
       { campo: 'relacao', cabecalho: 'Relação com GT', obrigatoria: false },
@@ -161,8 +200,8 @@ const ABAS = {
   canais: {
     nome: 'Canais digitais',
     colunas: [
-      { campo: 'id', cabecalho: 'ID empresa', obrigatoria: true },
-      { campo: 'canal', cabecalho: 'Canal', obrigatoria: true },
+      { campo: 'id', cabecalho: 'ID empresa', obrigatoria: true, exigeValor: true },
+      { campo: 'canal', cabecalho: 'Canal', obrigatoria: true, exigeValor: true },
       { campo: 'regiao', cabecalho: 'Região / escopo', obrigatoria: false },
       { campo: 'url', cabecalho: 'URL', obrigatoria: true },
       { campo: 'status', cabecalho: 'Status da identificação', obrigatoria: false },
@@ -182,16 +221,19 @@ function texto(valor) {
   return t || null;
 }
 
+// Devolve a data AAAA-MM-DD, ou null com o texto que veio, para a nota dizer qual data era inválida.
 function dataDe(valor, data1904) {
   if (typeof valor === 'number') {
     const base = data1904 ? Date.UTC(1904, 0, 1) : Date.UTC(1899, 11, 30);
-    return new Date(base + Math.floor(valor) * 86400000).toISOString().slice(0, 10);
+    const d = new Date(base + Math.floor(valor) * 86400000);
+    return Number.isNaN(d.getTime()) ? { data: null, bruto: String(valor) } : { data: d.toISOString().slice(0, 10), bruto: null };
   }
-  const t = texto(valor) || '';
+  const t = texto(valor);
+  if (!t) return { data: null, bruto: null };
   const iso = t.match(/^(\d{4}-\d{2}-\d{2})/);
   const br = t.match(/^(\d{2})\/(\d{2})\/(\d{4})/);
   const d = iso ? iso[1] : br ? `${br[3]}-${br[2]}-${br[1]}` : null;
-  return d && indice.dataValida(d) ? d : null;
+  return d && indice.dataValida(d) ? { data: d, bruto: null } : { data: null, bruto: t };
 }
 
 // O cabeçalho é a linha com mais nomes de coluna conhecidos; as linhas de cima são título e resumo.
@@ -212,17 +254,36 @@ function lerTabela(linhas, aba, data1904) {
   if (faltando.length) {
     return { erro: { tipo: 'coluna_ausente', aba: aba.nome, colunas: faltando, detalhe: `a aba "${aba.nome}" não tem a(s) coluna(s) ${faltando.map((c) => `"${c}"`).join(', ')} (cabeçalho na linha ${melhor.linha + 1})` } };
   }
+  // Linha de empresa é toda linha abaixo do cabeçalho com alguma das colunas lidas preenchida:
+  // linha sem ID ou sem nome vira problema, porque pular calada seria perder uma empresa.
   const registros = [];
+  const problemas = [];
   for (let i = melhor.linha + 1; i < linhas.length; i++) {
     const celulas = linhas[i] || [];
+    const brutos = aba.colunas.map((c) => [c, melhor.posicoes.has(c.campo) ? celulas[melhor.posicoes.get(c.campo)] : null]);
+    if (brutos.every(([, b]) => !ilegivel(b) && !texto(b))) continue;
     const r = { linha: i + 1 };
-    for (const c of aba.colunas) {
-      const bruto = melhor.posicoes.has(c.campo) ? celulas[melhor.posicoes.get(c.campo)] : null;
-      r[c.campo] = c.data ? dataDe(bruto, data1904) : texto(bruto);
+    const daLinha = [];
+    for (const [c, bruto] of brutos) {
+      if (ilegivel(bruto)) {
+        r[c.campo] = null;
+        daLinha.push({ tipo: bruto.ilegivel, coluna: c.cabecalho, ...(bruto.codigo ? { codigo: bruto.codigo } : {}) });
+      } else if (c.data) {
+        const { data, bruto: textoDaData } = dataDe(bruto, data1904);
+        r[c.campo] = data;
+        r[`${c.campo}_invalida`] = textoDaData;
+      } else {
+        r[c.campo] = texto(bruto);
+        if (c.exigeValor && !r[c.campo]) daLinha.push({ tipo: 'celula_vazia', coluna: c.cabecalho });
+      }
     }
-    if (r.id) registros.push(r);
+    for (const p of daLinha) {
+      const oQue = { formula_sem_valor: 'tem uma fórmula sem o resultado guardado', celula_com_erro: `tem o erro ${p.codigo} do Excel`, celula_vazia: 'está vazia' }[p.tipo];
+      problemas.push({ ...p, id_planilha: r.id, aba: aba.nome, linha: r.linha, detalhe: `aba "${aba.nome}", linha ${r.linha}${r.id ? ` (ID ${r.id})` : ''}: a coluna "${p.coluna}" ${oQue}` });
+    }
+    registros.push(r);
   }
-  return { registros };
+  return { registros, problemas };
 }
 
 // ---------- da planilha para empresas ----------
@@ -231,23 +292,37 @@ function slugDoNome(nome) {
   return indice.normalizar(nome).replace(/\s+/g, '-');
 }
 
+// O que não é /company/ nem /in/ guarda o tipo da página (showcase, school, groups…) para o motivo.
 function classificarEndereco(url) {
   for (const e of ENDERECOS) {
     const m = url.match(e.re);
-    if (m) return { tipo: e.tipo, slug: m[1] ? decodeURIComponent(m[1]).toLowerCase() : null };
+    if (!m) continue;
+    let slug = m[1] || null;
+    try {
+      slug = slug && decodeURIComponent(slug);
+    } catch (erro) {
+      // %XX torto fica como veio e cai em slug_invalido, com o endereço no detalhe
+    }
+    return { tipo: e.tipo, slug: slug && slug.toLowerCase() };
   }
-  return { tipo: 'desconhecido', slug: null };
+  const linkedin = url.match(/linkedin\.com\/([^/?#\s]+)/i);
+  return { tipo: 'outra_pagina', slug: null, pagina: linkedin ? linkedin[1].toLowerCase() : 'fora do LinkedIn' };
+}
+
+function prioridadeCanonica(valor) {
+  return indice.PRIORIDADES.find((p) => indice.normalizar(p) === indice.normalizar(valor || '')) || null;
 }
 
 // Regra determinística de grupo: um texto de "Grupo e nomes relacionados" que cita o ID de outra linha
-// junta as duas no mesmo grupo, e o grupo leva o nome da primeira empresa dele na ordem da planilha.
+// junta as duas no mesmo grupo. Devolve, para cada linha, o índice da primeira linha do grupo dela na
+// ordem da planilha (null fora de grupo); é dela que o grupo tira o nome, no planejar.
 // Nome de marca solto no texto não junta ninguém: "não confundir com X" também cita nomes.
 function grupos(registros) {
   const pai = registros.map((_, i) => i);
   const raiz = (i) => (pai[i] === i ? i : (pai[i] = raiz(pai[i])));
   registros.forEach((r, i) => {
     registros.forEach((outro, j) => {
-      if (i === j || !r.relacionados) return;
+      if (i === j || !r.relacionados || !outro.id) return;
       const citado = new RegExp(`(^|[^A-Za-z0-9])${outro.id.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')}([^A-Za-z0-9]|$)`);
       if (citado.test(r.relacionados)) {
         const [a, b] = [raiz(i), raiz(j)].sort((x, y) => x - y);
@@ -257,28 +332,31 @@ function grupos(registros) {
   });
   const tamanho = new Map();
   registros.forEach((_, i) => tamanho.set(raiz(i), (tamanho.get(raiz(i)) || 0) + 1));
-  return registros.map((_, i) => (tamanho.get(raiz(i)) > 1 ? registros[raiz(i)].nome : null));
+  return registros.map((_, i) => (tamanho.get(raiz(i)) > 1 ? raiz(i) : null));
 }
 
 function montarEmpresas(mapa, canais, hoje) {
-  const grupoDe = grupos(mapa);
+  const raizDe = grupos(mapa);
   return mapa.map((r, i) => {
     const notas = [];
     const linkedin = canais.filter((c) => c.id === r.id && indice.normalizar(c.canal || '') === 'linkedin');
     const comUrl = linkedin.filter((c) => c.url).map((c) => ({ ...c, ...classificarEndereco(c.url) }));
     const paginas = comUrl.filter((c) => c.tipo === 'pagina');
     const pessoais = comUrl.filter((c) => c.tipo === 'perfil_pessoal');
-    for (const c of comUrl.filter((x) => x.tipo === 'desconhecido')) notas.push(`endereço do LinkedIn que não é página de empresa: ${c.url}`);
+    const outras = comUrl.filter((c) => c.tipo === 'outra_pagina');
+    for (const c of outras) notas.push(`endereço do LinkedIn que não é página de empresa (${c.pagina}): ${c.url}`);
 
     let endereco;
     if (paginas.length) endereco = { tipo: 'pagina', motivo: null };
     else if (pessoais.length) endereco = { tipo: 'perfil_pessoal', motivo: 'a planilha aponta só um perfil pessoal no LinkedIn, não a página da empresa; a profills-garimpo não coleta perfil de pessoa' };
+    else if (outras.length) endereco = { tipo: 'outra_pagina', motivo: `o endereço não é página de empresa: ${outras.map((c) => `${c.pagina} (${c.url})`).join('; ')}; a profills-garimpo só coleta linkedin.com/company/` };
     else if (linkedin.length) endereco = { tipo: 'sem_url', motivo: `a planilha não traz endereço no LinkedIn (status: ${linkedin.map((c) => c.status).filter(Boolean).join('; ') || 'sem status'})` };
     else endereco = { tipo: 'sem_url', motivo: 'a planilha não traz o canal LinkedIn desta empresa' };
 
-    const prioridade = indice.PRIORIDADES.includes(r.prioridade) ? r.prioridade : 'a definir';
-    if (r.prioridade && prioridade !== r.prioridade) notas.push(`a planilha dizia prioridade "${r.prioridade}", fora da lista (${indice.PRIORIDADES.join(', ')}); ficou "a definir"`);
-    if (!r.conferido) notas.push(`a planilha não traz a data "Conferido em"; a pesquisa ficou com a data de hoje (${hoje})`);
+    const prioridade = r.prioridade ? prioridadeCanonica(r.prioridade) || 'a definir' : 'a definir';
+    if (r.prioridade && !prioridadeCanonica(r.prioridade)) notas.push(`a planilha dizia prioridade "${r.prioridade}", fora da lista (${indice.PRIORIDADES.join(', ')}); ficou "a definir"`);
+    if (r.conferido_invalida) notas.push(`a data "Conferido em" veio inválida na planilha ("${r.conferido_invalida}"); a pesquisa ficou com a data de hoje (${hoje})`);
+    else if (!r.conferido) notas.push(`a planilha não traz a data "Conferido em"; a pesquisa ficou com a data de hoje (${hoje})`);
 
     return {
       registro: r,
@@ -290,7 +368,8 @@ function montarEmpresas(mapa, canais, hoje) {
       pagina: paginas[0] || null,
       paginas_extras: paginas.slice(1),
       prioridade,
-      grupo: grupoDe[i],
+      raiz_do_grupo: raizDe[i],
+      grupo: null,
       pesquisa: r.conferido || hoje,
       notas,
     };
@@ -317,6 +396,7 @@ const SEM_DADO = 'não informado na planilha';
 
 function renderizarFicha(e, contexto) {
   const r = e.registro;
+  const conferida = r.conferido || (r.conferido_invalida ? `data inválida ("${r.conferido_invalida}")` : 'data não informada');
   const endereco = (p) => `\`${p.slug}\` (\`linkedin.com/company/${p.slug}\`)`;
   const extras = e.paginas_extras.map((p) => `${endereco(p)}${[p.regiao, p.observacao].filter(Boolean).length ? ` — ${[p.regiao, p.observacao].filter(Boolean).join(': ')}` : ''}`);
   const valores = {
@@ -330,7 +410,7 @@ function renderizarFicha(e, contexto) {
     'País / idioma dos posts': `${(r.origem || '[a confirmar]').replace(/·/g, '-')} · idioma a confirmar na coleta`,
     'Última pesquisa': e.pesquisa,
     'Confirmação do usuário': '[a confirmar]',
-    Fonte: `planilha "${contexto.planilha}", ID ${r.id}, conferida em ${r.conferido || 'data não informada'}; importada em ${contexto.hoje}`,
+    Fonte: `planilha "${contexto.planilha}", ID ${r.id}, conferida em ${conferida}; importada em ${contexto.hoje}`,
   };
 
   const linhaDoLinkedin = e.pagina && (e.pagina.status || e.pagina.observacao) ? [e.pagina.status, e.pagina.observacao].filter(Boolean).join(' — ') : null;
@@ -353,7 +433,7 @@ function renderizarFicha(e, contexto) {
   const secoes = {
     'Por que é referência': [r.relacao, r.acompanhar ? `O que acompanhar: ${r.acompanhar}` : null].filter(Boolean).join('. ') || `A planilha "${contexto.planilha}" lista a empresa sem dizer por quê.`,
     Contexto: contextoLinhas.length
-      ? [...contextoLinhas.map(([k, v]) => `- **${k}**: ${v}`), '', `Fonte: planilha "${contexto.planilha}", conferida em ${r.conferido || 'data não informada'}.`].join('\n')
+      ? [...contextoLinhas.map(([k, v]) => `- **${k}**: ${v}`), '', `Fonte: planilha "${contexto.planilha}", conferida em ${conferida}.`].join('\n')
       : `A planilha "${contexto.planilha}" não traz contexto desta empresa; a primeira re-pesquisa completa esta seção.`,
     Similares: similares.length ? similares.join('\n') : 'A planilha não aponta similares; a primeira re-pesquisa completa esta seção.',
     'Tendências do setor': 'A planilha não traz tendências do setor; a primeira re-pesquisa completa esta seção.',
@@ -371,18 +451,36 @@ function renderizarFicha(e, contexto) {
 
 // ---------- o plano ----------
 
+// `por` diz como casou: pelo endereço (slug) é a mesma página; pelo nome, o endereço ainda pode divergir.
 function acharNaLista(e, examinado, pasta) {
   const slugs = new Set([e.slug, ...e.paginas_extras.map((p) => p.slug)]);
   const porSlug = new Map(examinado.empresas.map((x) => [x.slug, x]));
-  for (const s of slugs) if (porSlug.has(s)) return { existente: porSlug.get(s), parecidas: [] };
+  for (const s of slugs) if (porSlug.has(s)) return { existente: porSlug.get(s), por: 'endereço', parecidas: [] };
   const nome = indice.normalizar(e.nome);
   const mesmoNome = examinado.empresas.find((x) => indice.normalizar(x.nome) === nome);
-  if (mesmoNome) return { existente: mesmoNome, parecidas: [] };
+  if (mesmoNome) return { existente: mesmoNome, por: 'nome', parecidas: [] };
   const candidatos = indice.candidatosParecidos(pasta, e.nome).filter((c) => porSlug.has(c.slug));
   const forte = candidatos.find((c) => c.inteira >= 0.9);
-  if (forte) return { existente: porSlug.get(forte.slug), parecidas: [] };
+  if (forte) return { existente: porSlug.get(forte.slug), por: 'nome parecido', parecidas: [] };
   // Numa planilha de dezenas de linhas, o 0,7 da busca manual faria "Beta" parecer "Eta": aqui só 0,85 ou mais.
-  return { existente: null, parecidas: candidatos.filter((c) => c.semelhanca >= 0.85).map(({ nome: n, slug, semelhanca, por }) => ({ nome: n, slug, semelhanca, por })) };
+  return { existente: null, por: null, parecidas: candidatos.filter((c) => c.semelhanca >= 0.85).map(({ nome: n, slug, semelhanca, por }) => ({ nome: n, slug, semelhanca, por })) };
+}
+
+// Casou pelo nome e a planilha traz uma página que a lista não tem: seguir perderia uma das duas.
+function conflitoDeEndereco(e, existente, por) {
+  if (por === 'endereço' || !e.linkedin) return null;
+  const naLista = existente.linkedin ? existente.slug : null;
+  const endereco = (s) => (s ? `linkedin.com/company/${s}` : 'sem página no LinkedIn');
+  return {
+    tipo: 'conflito_de_endereco',
+    id_planilha: e.id_planilha,
+    linha: e.registro.linha,
+    nome: e.nome,
+    nome_na_lista: existente.nome,
+    na_lista: naLista,
+    na_planilha: e.slug,
+    detalhe: `${e.nome} (ID ${e.id_planilha}, linha ${e.registro.linha}) é ${existente.nome} da lista pelo ${por}, mas a lista tem ${endereco(naLista)} e a planilha traz ${endereco(e.slug)}`,
+  };
 }
 
 const PROBLEMAS_ACEITOS = new Set(['pasta_ausente', 'indice_vazio']);
@@ -404,9 +502,17 @@ function planejar(planilhaPath, pasta, hoje, pular) {
     }
     const t = lerTabela(linhas, aba, planilha.data1904);
     if (t.erro) saida.problemas.push(t.erro);
-    else tabelas[chave] = t.registros;
+    else {
+      saida.problemas.push(...t.problemas);
+      // Linha com célula ilegível fica de fora do plano; o ok já é false por causa do problema dela.
+      const ruins = new Set(t.problemas.map((p) => p.linha));
+      tabelas[chave] = t.registros.filter((r) => !ruins.has(r.linha));
+      if (chave === 'mapa' && !t.registros.length) {
+        saida.problemas.push({ tipo: 'planilha_sem_empresas', aba: aba.nome, detalhe: `a aba "${aba.nome}" tem o cabeçalho, mas nenhuma linha de empresa abaixo dele` });
+      }
+    }
   }
-  if (saida.problemas.length) return { saida, plano: null };
+  if (!tabelas.mapa || !tabelas.canais) return { saida, plano: null };
 
   const examinado = indice.examinar(pasta, hoje);
   const semFichas = examinado.problemas.every((p) => p.tipo === 'indice_ausente') && !examinado.fichas_orfas.length;
@@ -417,42 +523,60 @@ function planejar(planilhaPath, pasta, hoje, pular) {
   }
 
   const empresas = montarEmpresas(tabelas.mapa, tabelas.canais, hoje);
-  const contexto = { planilha: path.basename(planilhaPath), hoje, empresas, template: lerTemplate() };
   const vistosId = new Map();
   const vistosSlug = new Map();
-  const plano = { criar: [], atualizar: [] };
-  const fichas = new Set(fs.existsSync(pasta) ? fs.readdirSync(pasta) : []);
+  const achadas = new Map();
 
   for (const e of empresas) {
-    // --pular: a linha que o usuário disse ser uma empresa que já está na lista com outro nome.
+    // --pular: a linha que o usuário disse ser uma empresa que já está na lista com outro nome, ou
+    // a linha cujo endereço ele decidiu manter como está na lista.
     if (pular.has(e.id_planilha)) {
       saida.puladas.push({ id_planilha: e.id_planilha, nome: e.nome });
       continue;
     }
     if (vistosId.has(e.id_planilha)) {
-      saida.problemas.push({ tipo: 'id_repetido_na_planilha', id_planilha: e.id_planilha, detalhe: `o ID ${e.id_planilha} aparece nas linhas ${vistosId.get(e.id_planilha)} e ${e.registro.linha} da aba "${ABAS.mapa.nome}"` });
+      saida.problemas.push({ tipo: 'id_repetido_na_planilha', id_planilha: e.id_planilha, linha: e.registro.linha, detalhe: `o ID ${e.id_planilha} aparece nas linhas ${vistosId.get(e.id_planilha)} e ${e.registro.linha} da aba "${ABAS.mapa.nome}"` });
       continue;
     }
     vistosId.set(e.id_planilha, e.registro.linha);
     if (!indice.SLUG_VALIDO.test(e.slug)) {
-      saida.problemas.push({ tipo: 'slug_invalido', id_planilha: e.id_planilha, detalhe: `${e.nome}: o endereço "${e.slug}" tem caractere fora de letras, números, "-" e "_"` });
+      saida.problemas.push({ tipo: 'slug_invalido', id_planilha: e.id_planilha, linha: e.registro.linha, detalhe: `${e.nome}: o endereço "${e.slug}" tem caractere fora de letras, números, "-" e "_"` });
       continue;
     }
     if (vistosSlug.has(e.slug)) {
-      saida.problemas.push({ tipo: 'endereco_repetido_na_planilha', id_planilha: e.id_planilha, detalhe: `${e.nome} e ${vistosSlug.get(e.slug)} dão o mesmo endereço "${e.slug}"` });
+      saida.problemas.push({ tipo: 'endereco_repetido_na_planilha', id_planilha: e.id_planilha, linha: e.registro.linha, detalhe: `${e.nome} e ${vistosSlug.get(e.slug)} dão o mesmo endereço "${e.slug}"` });
       continue;
     }
     vistosSlug.set(e.slug, e.nome);
+    const achada = acharNaLista(e, examinado, pasta);
+    const conflito = achada.existente && conflitoDeEndereco(e, achada.existente, achada.por);
+    if (conflito) {
+      saida.problemas.push(conflito);
+      continue;
+    }
+    achadas.set(e, achada);
+  }
 
+  // O grupo leva o nome da primeira empresa dele na planilha, como ela se chama na lista quando já
+  // está lá. A empresa que já está na lista não recebe grupo que é só o nome dela mesma.
+  for (const e of empresas) {
+    if (e.raiz_do_grupo === null) continue;
+    const raiz = empresas[e.raiz_do_grupo];
+    const raizNaLista = achadas.has(raiz) && achadas.get(raiz).existente;
+    e.grupo = raizNaLista ? raizNaLista.nome : raiz.nome;
+  }
+
+  const contexto = { planilha: path.basename(planilhaPath), hoje, empresas, template: lerTemplate() };
+  const plano = { criar: [], atualizar: [] };
+  const fichas = new Set(fs.existsSync(pasta) ? fs.readdirSync(pasta) : []);
+  for (const [e, { existente, parecidas }] of achadas) {
     if (!e.linkedin) {
       (e.endereco.tipo === 'perfil_pessoal' ? saida.perfil_pessoal : saida.sem_linkedin).push({ nome: e.nome, slug: e.slug, motivo: e.endereco.motivo });
     }
-
-    const { existente, parecidas } = acharNaLista(e, examinado, pasta);
     if (existente) {
       const muda = {};
       if ((existente.prioridade || 'a definir') === 'a definir' && e.prioridade !== 'a definir') muda.prioridade = e.prioridade;
-      if (!existente.grupo && e.grupo) muda.grupo = e.grupo;
+      if (!existente.grupo && e.grupo && indice.normalizar(e.grupo) !== indice.normalizar(existente.nome)) muda.grupo = e.grupo;
       saida.ja_existem.push({ id_planilha: e.id_planilha, nome: e.nome, nome_na_lista: existente.nome, slug: existente.slug, muda });
       if (Object.keys(muda).length) plano.atualizar.push({ existente, muda });
       continue;
@@ -462,7 +586,7 @@ function planejar(planilhaPath, pasta, hoje, pular) {
     const arquivo = `${e.slug}.md`;
     // Ficha fora da lista com o mesmo conteúdo é sobra de uma importação que parou antes do índice.
     if (fichas.has(arquivo) && fs.readFileSync(path.join(pasta, arquivo), 'utf8') !== conteudo) {
-      saida.problemas.push({ tipo: 'ficha_fora_da_lista', id_planilha: e.id_planilha, detalhe: `${e.nome}: já existe a ficha "${arquivo}" fora do índice, com outro conteúdo; reindexe ou remova essa ficha antes de importar` });
+      saida.problemas.push({ tipo: 'ficha_fora_da_lista', id_planilha: e.id_planilha, linha: e.registro.linha, detalhe: `${e.nome}: já existe a ficha "${arquivo}" fora do índice, com outro conteúdo; reindexe ou remova essa ficha antes de importar` });
       continue;
     }
     saida.novas.push({
