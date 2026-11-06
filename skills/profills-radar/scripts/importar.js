@@ -470,7 +470,7 @@ function acharNaLista(e, examinado, pasta) {
 function conflitoDeEndereco(e, existente, por) {
   if (por === 'endereço' || !e.linkedin) return null;
   const naLista = existente.linkedin ? existente.slug : null;
-  const endereco = (s) => (s ? `linkedin.com/company/${s}` : 'sem página no LinkedIn');
+  const endereco = (s) => `linkedin.com/company/${s}`;
   return {
     tipo: 'conflito_de_endereco',
     id_planilha: e.id_planilha,
@@ -479,7 +479,7 @@ function conflitoDeEndereco(e, existente, por) {
     nome_na_lista: existente.nome,
     na_lista: naLista,
     na_planilha: e.slug,
-    detalhe: `${e.nome} (ID ${e.id_planilha}, linha ${e.registro.linha}) é ${existente.nome} da lista pelo ${por}, mas a lista tem ${endereco(naLista)} e a planilha traz ${endereco(e.slug)}`,
+    detalhe: `${e.nome} (ID ${e.id_planilha}, linha ${e.registro.linha}) é ${existente.nome} da lista pelo ${por}, mas a lista tem ${naLista ? endereco(naLista) : 'a empresa sem página no LinkedIn'} e a planilha traz ${endereco(e.slug)}`,
   };
 }
 
@@ -494,6 +494,7 @@ function planejar(planilhaPath, pasta, hoje, pular) {
     morrer(`Não deu para ler a planilha "${planilhaPath}": ${e.message}.`);
   }
   const tabelas = {};
+  let idsDoMapa = new Set();
   for (const [chave, aba] of Object.entries(ABAS)) {
     const linhas = planilha.abas.get(aba.nome);
     if (!linhas) {
@@ -507,12 +508,17 @@ function planejar(planilhaPath, pasta, hoje, pular) {
       // Linha com célula ilegível fica de fora do plano; o ok já é false por causa do problema dela.
       const ruins = new Set(t.problemas.map((p) => p.linha));
       tabelas[chave] = t.registros.filter((r) => !ruins.has(r.linha));
+      if (chave === 'mapa') idsDoMapa = new Set(t.registros.map((r) => r.id));
       if (chave === 'mapa' && !t.registros.length) {
         saida.problemas.push({ tipo: 'planilha_sem_empresas', aba: aba.nome, detalhe: `a aba "${aba.nome}" tem o cabeçalho, mas nenhuma linha de empresa abaixo dele` });
       }
     }
   }
   if (!tabelas.mapa || !tabelas.canais) return { saida, plano: null };
+  // --pular com ID que não existe deixaria entrar calada a empresa que o usuário queria fora.
+  for (const id of pular) {
+    if (!idsDoMapa.has(id)) saida.problemas.push({ tipo: 'pular_id_inexistente', id_planilha: id, detalhe: `--pular ${id}: a aba "${ABAS.mapa.nome}" não tem nenhuma linha com esse ID; confira o ID na planilha` });
+  }
 
   const examinado = indice.examinar(pasta, hoje);
   const semFichas = examinado.problemas.every((p) => p.tipo === 'indice_ausente') && !examinado.fichas_orfas.length;

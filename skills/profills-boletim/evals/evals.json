@@ -1,6 +1,6 @@
 {
   "skill_name": "profills-boletim",
-  "nota_fixtures": "Cada eval lista `files` na ordem em que as pastas se copiam: `evals/files/base` primeiro e a pasta do caso por cima, sobrescrevendo. O runner (`.claude/workflows/evals-profills.js`, passo 3 do preparar) diz \"cada pasta listada, por cima\" sem fixar a ordem; os casos daqui contam com a ordem da lista. O `.apagar` de cada caso lista caminhos relativos ao repo do sandbox, apagados depois da cópia; no caso 7 são pastas inteiras (`rm -r`), para que as coletas de 24/08 da base sumam e a rodada de 23/08 fique pela metade.",
+  "nota_fixtures": "Cada eval lista `files` na ordem em que as pastas se copiam: `evals/files/base` primeiro e a pasta do caso por cima, sobrescrevendo. O runner (`.claude/workflows/evals-profills.js`, passo 3 do preparar) diz \"cada pasta listada, por cima\" sem fixar a ordem; os casos daqui contam com a ordem da lista. O `.apagar` de cada caso lista caminhos relativos ao repo do sandbox, apagados depois da cópia; no caso 7 são pastas inteiras (`rm -r`), para que as coletas de 24/08 da base sumam e a rodada de 23/08 fique pela metade; no caso 8 é a pasta de 24/08 da Beta Rótulos, que fica só com a de 25/08, depois de hoje.",
   "evals": [
     {
       "id": 1,
@@ -109,7 +109,23 @@
         "NEGATIVA: nenhuma [TOOL] de navegador abre a página da Alfa Envase ou da Nordic Fill Systems, e outputs/ não tem `linkedin-data/catalog/raw/alfa-envase/2026-08-24/` nem `linkedin-data/catalog/raw/nordic-fill/2026-08-24/`.",
         "ARTEFATO: `linkedin-data/catalog/raw/beta-rotulos/2026-08-24/meta.json` em outputs/ existe com `\"status\": \"sem_posts\"`.",
         "ARTEFATO: `linkedin-data/boletins/2026-08-24.md` em outputs/ cita a rodada de 23/08 com 3 empresas, tem Novidades da Alfa Envase (o post de 21/08) e da Nordic Fill Systems, e põe a Beta Rótulos em Sem novidade, não em Indisponível.",
+        "NEGATIVA: depois que o script volta `faltam_coletar` vazio, o transcript não registra outra [PERGUNTA] entre o boletim da rodada de 23/08 e uma rodada nova: segue direto para gravar o boletim.",
         "A resposta final diz que a rodada de 23/08 foi terminada sem abrir de novo as páginas da Alfa Envase e da Nordic Fill Systems."
+      ]
+    },
+    {
+      "id": 8,
+      "prompt": "Boletim dos concorrentes, por favor.",
+      "expected_output": "- `boletim.js --hoje 2026-08-24` volta exit 1 com o problema `coleta_no_futuro` da Beta Rótulos, na pasta de 2026-08-25.\n- Diz ao comercial, pelo nome e com a data, que a coleta da Beta Rótulos está numa pasta de 25/08, depois de hoje, e pede que ele confira a data, a hora e o fuso do computador.\n- Não apaga nem renomeia a pasta, não invoca a profills-garimpo nem a profills-radar, não abre o LinkedIn e não grava boletim.",
+      "files": [
+        "evals/files/base",
+        "evals/files/8"
+      ],
+      "expectations": [
+        "O transcript roda `boletim.js` e a saída registrada traz o problema `coleta_no_futuro` com a Beta Rótulos e a data 2026-08-25.",
+        "A resposta final cita a Beta Rótulos pelo nome e a data de 25/08 (ou 2026-08-25), e pede que o comercial confira a data, a hora ou o fuso do computador.",
+        "NEGATIVA: o transcript não lê a SKILL.md da profills-garimpo nem a da profills-radar, e nenhuma [TOOL] de navegador abre o LinkedIn.",
+        "ARTEFATO: `linkedin-data/catalog/raw/beta-rotulos/2026-08-25/meta.json` em outputs/ continua igual ao da fixture, e outputs/ não tem `linkedin-data/boletins/2026-08-24.md`."
       ]
     }
   ]

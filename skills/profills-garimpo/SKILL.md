@@ -39,7 +39,7 @@ O **slug é a chave de todos os paths** que você escreve (`catalog/raw/<slug>/�
 
 Arquivo ausente ou vazio → **invoque a `profills-radar`**: é ela que decide as empresas, monta a rodada de até 12 e escreve a seleção.
 
-**Rodada em mais de uma sessão.** A data do cabeçalho (`# Seleção ativa — AAAA-MM-DD`) marca a rodada. Empresa que já tem `catalog/raw/<slug>/<data>/meta.json` com data igual ou posterior à do cabeçalho já foi coletada nesta rodada: tire-a da lista desta sessão e diga ao usuário, pelo nome, quais já estavam feitas. Só colete de novo se ele pedir. É essa regra que deixa coletar as de prioridade Alta numa sessão e o resto na seguinte sem repetir página.
+**Rodada em mais de uma sessão.** A data do cabeçalho (`# Seleção ativa — AAAA-MM-DD`) marca a rodada. Empresa que já tem `catalog/raw/<slug>/<data>/meta.json` com data entre a do cabeçalho e hoje, as duas inclusive, já foi coletada nesta rodada: tire-a da lista desta sessão e diga ao usuário, pelo nome, quais já estavam feitas. Só colete de novo se ele pedir. É essa regra que deixa coletar as de prioridade Alta numa sessão e o resto na seguinte sem repetir página. Pasta com data depois de hoje não conta: ela vem de relógio ou fuso adiantado, e a `profills-boletim` para e avisa o comercial antes de chamar esta skill.
 
 Concluído quando você tem nome, slug e id de cada empresa que falta coletar nesta rodada.
 

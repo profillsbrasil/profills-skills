@@ -293,6 +293,21 @@ const casos = [
     assert.deepStrictEqual(json.problemas.map((p) => p.tipo), ['selecao_no_futuro']);
   }],
 
+  ['coleta com data depois de hoje: exit 1 com coleta_no_futuro, sem mandar a empresa para a garimpo', () => {
+    const dados = montar({ empresas: [['Alfa Envase', 'alfa-envase'], ['Beta Rotulos', 'beta-rotulos']], selecao: ['alfa-envase'] });
+    coleta(dados, 'alfa-envase', '2026-08-17', [post(1)]);
+    coleta(dados, 'alfa-envase', '2026-08-25', [post(2), post(1)]);
+    coleta(dados, 'beta-rotulos', '2026-08-26', [post(3)]);
+    const { status, json } = boletim(dados);
+    assert.strictEqual(status, 1);
+    assert.deepStrictEqual(
+      json.problemas.map((p) => [p.tipo, p.empresa, p.data]),
+      [['coleta_no_futuro', 'Alfa Envase', '2026-08-25']],
+      'só a empresa da rodada; a pasta de quem está fora da rodada não muda nada',
+    );
+    assert.strictEqual(json.rodada, null, 'sem rodada montada, não há faltam_coletar para a garimpo');
+  }],
+
   ['pasta da rodada sem meta.json é coleta interrompida: a empresa continua em faltam_coletar', () => {
     const dados = montar({ empresas: [['Alfa Envase', 'alfa-envase']], selecao: ['alfa-envase'] });
     coleta(dados, 'alfa-envase', '2026-08-17', [post(1)]);

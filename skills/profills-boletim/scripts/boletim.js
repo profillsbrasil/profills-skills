@@ -8,7 +8,7 @@
 // Exemplo: node scripts/boletim.js "$HOME/Profills LinkedIn" --hoje 2026-08-24
 //          → {"acao":"boletim","rodada":{"data":"2026-08-24","faltam_coletar":[]},"empresas":[...],"cobertura":{...},"ok":true}
 //          rodada.situacao diz o que fazer com a seleção: de_hoje, anterior_por_terminar, anterior_sem_boletim, anterior_com_boletim.
-// Saída: JSON em stdout. Exit 0 = ok · 1 = índice ou seleção impedem o boletim (campo problemas) · 2 = erro de uso.
+// Saída: JSON em stdout. Exit 0 = ok · 1 = índice, seleção ou coleta com data depois de hoje impedem o boletim (campo problemas) · 2 = erro de uso.
 
 const fs = require('fs');
 const path = require('path');
@@ -94,15 +94,17 @@ function lerColeta(raiz, slug, data) {
   return coleta;
 }
 
-function datasDeColeta(raiz, slug, hoje) {
+function todasAsDatas(raiz, slug) {
   const pasta = path.join(raiz, slug);
   if (!fs.existsSync(pasta)) return [];
   return fs
     .readdirSync(pasta, { withFileTypes: true })
-    .filter((d) => d.isDirectory() && dataValida(d.name) && d.name <= hoje)
+    .filter((d) => d.isDirectory() && dataValida(d.name))
     .map((d) => d.name)
     .sort();
 }
+
+const datasDeColeta = (raiz, slug, hoje) => todasAsDatas(raiz, slug).filter((d) => d <= hoje);
 
 function cadenciaDe(coleta) {
   if (STATUS_SEM_POSTS.has(coleta.status)) return { data: coleta.data, n_posts: 0, posts_por_semana: 0, janela_dias: coleta.janela_dias, destaque: null };
@@ -180,8 +182,8 @@ function examinarEmpresa(e, rodada, raiz, hoje, avisos) {
   if (e.linkedin === false) return { ...base, cobertura: 'sem_linkedin', motivo: null };
   if (!rodada.slugs.includes(e.slug)) return { ...base, cobertura: 'fora_desta_rodada', motivo: null, ultimo_catalogo: e.catalogo || null };
 
-  // A regra da profills-garimpo: coletada nesta rodada é quem tem meta.json numa pasta com data igual ou
-  // posterior à do cabeçalho. Pasta da rodada sem meta.json é coleta interrompida e a garimpo a refaz.
+  // A regra da profills-garimpo: coletada nesta rodada é quem tem meta.json numa pasta com data entre a do
+  // cabeçalho e hoje. Pasta da rodada sem meta.json é coleta interrompida e a garimpo a refaz.
   const datas = datasDeColeta(raiz, e.slug, hoje);
   const daRodada = datas.filter((d) => d >= rodada.data);
   const completas = daRodada.filter((d) => fs.existsSync(path.join(raiz, e.slug, d, 'meta.json')));
@@ -322,6 +324,16 @@ function principal(argv) {
   }
 
   const raiz = path.join(dados, 'catalog', 'raw');
+  // Pasta com data depois de hoje fica fora da conta, mas a garimpo a contaria como coletada: sem esta
+  // parada, a empresa iria para a garimpo, que a daria por feita, e o boletim a mostraria faltando de novo.
+  for (const e of indice.empresas) {
+    if (e.linkedin === false || !selecao.slugs.includes(e.slug)) continue;
+    for (const data of todasAsDatas(raiz, e.slug).filter((d) => d > hoje)) {
+      saida.problemas.push({ tipo: 'coleta_no_futuro', empresa: e.nome, data, detalhe: `a coleta de ${e.nome} está numa pasta de ${data}, depois de hoje (${hoje}): o relógio ou o fuso do computador estava adiantado quando ela foi gravada` });
+    }
+  }
+  if (saida.problemas.length) return terminar();
+
   for (const e of indice.empresas) {
     const r = examinarEmpresa(e, selecao, raiz, hoje, saida.avisos);
     saida.empresas.push(r);

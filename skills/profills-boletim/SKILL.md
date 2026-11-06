@@ -36,7 +36,9 @@ Rode o script (passo 3) e decida pela `rodada.situacao`. A rodada pode durar mai
 | Saída do script | O que fazer |
 |---|---|
 | `selecao_ausente`, `selecao_sem_data`, `indice_ausente` ou `indice_com_problemas` em `problemas` | Invoque a `profills-radar`. Ela monta a lista pelas camadas de prioridade, pergunta o que faltar (prioridade de empresa nova, troca de empresa) e grava `DADOS/selection.md` com a data de hoje no cabeçalho. Lista vazia é com ela também: a radar conduz a primeira run. |
+| `indice_ilegivel` em `problemas` | O script da `profills-radar` que lê a lista não respondeu: a instalação está incompleta ou quebrada. Diga isso ao comercial em uma frase e invoque a `profills-setup`, que confere a instalação. Rode o script de novo uma vez só; se o problema voltar, pare e diga que a lista não pôde ser lida. |
 | `selecao_no_futuro` em `problemas` | A seleção traz uma data depois de hoje, por relógio da máquina adiantado ou edição à mão. Diga isso ao comercial em uma frase, com a data, e invoque a `profills-radar` para remontar a rodada com a data de hoje. |
+| `coleta_no_futuro` em `problemas` | A coleta de `empresa` está numa pasta de `data`, depois de hoje: o relógio ou o fuso do computador estava adiantado quando ela foi gravada. Diga isso ao comercial com o nome e a data, e peça que ele confira a data, a hora e o fuso do computador. A pasta fica como está: não apague, não renomeie e não invoque a garimpo para essa empresa. Pare aqui; o boletim desta rodada sai quando o script voltar sem esse problema. |
 | `situacao: de_hoje` | A rodada de hoje já está montada: diga isso e siga sem reabrir a seleção, a não ser que o comercial peça outra. |
 | `situacao: anterior_por_terminar` | A rodada de `rodada.data` ficou pela metade. Pergunte se ele quer terminar essa rodada, coletando só as empresas de `faltam_coletar` (diga os nomes), ou montar uma nova pela radar, que abre de novo as páginas já coletadas. Recomende terminar. Terminar segue para o passo 2 sem tocar no `selection.md`. |
 | `situacao: anterior_sem_boletim` | A rodada de `rodada.data` está toda coletada e ainda não virou boletim. Pergunte se ele quer o boletim dessa rodada, sem abrir o LinkedIn, ou uma rodada nova pela radar. Recomende o boletim dessa rodada. |
@@ -50,7 +52,7 @@ Concluído quando o script voltou sem `problemas` e o comercial sabe qual rodada
 
 Rode o script (passo 3) e leia `rodada.faltam_coletar`. Lista vazia: todas as empresas da rodada já têm coleta desta rodada, siga.
 
-Lista com empresas: invoque a `profills-garimpo`. Numa rodada anterior que o comercial escolheu terminar, ela retoma pela data do cabeçalho e coleta só as que faltam. Ela conduz o navegador logado do comercial, conta o tamanho da rodada e o tempo, e oferece as saídas (rodada inteira, só as de prioridade Alta, deixar para depois). Quando ela devolver o controle, rode o script de novo. Se o comercial deixou parte para depois, siga com o que foi coletado: as que faltam entram no boletim como indisponíveis, com o motivo "ainda não coletada nesta rodada".
+Lista com empresas: invoque a `profills-garimpo`. Numa rodada anterior que o comercial escolheu terminar, ela retoma pela data do cabeçalho e coleta só as que faltam. Ela conduz o navegador logado do comercial, conta o tamanho da rodada e o tempo, e oferece as saídas (rodada inteira, só as de prioridade Alta, deixar para depois). Quando ela devolver o controle, rode o script de novo. Terminada a coleta, a `situacao` vira `anterior_sem_boletim`: siga para o boletim dessa rodada sem perguntar de novo, porque o comercial já escolheu no passo 1. Se o comercial deixou parte para depois, siga com o que foi coletado: as que faltam entram no boletim como indisponíveis, com o motivo "ainda não coletada nesta rodada".
 
 Concluído quando `faltam_coletar` está vazio ou o comercial escolheu deixar as restantes para depois.
 
@@ -60,7 +62,7 @@ Concluído quando `faltam_coletar` está vazio ou o comercial escolheu deixar as
 node "<pasta desta skill>/scripts/boletim.js" "<DADOS>"
 ```
 
-"Pasta desta skill" é o diretório onde este `SKILL.md` está. Sai JSON em stdout. Exit 0 = ok; 1 = o índice ou a seleção impedem o boletim (leia `problemas` e siga a tabela do passo 1); 2 = pasta errada.
+"Pasta desta skill" é o diretório onde este `SKILL.md` está. Sai JSON em stdout. Exit 0 = ok; 1 = o índice, a seleção ou uma coleta com data depois de hoje impedem o boletim (leia `problemas` e siga a tabela do passo 1); 2 = pasta errada.
 
 | Campo | Para que serve |
 |---|---|
