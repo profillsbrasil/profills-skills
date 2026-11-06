@@ -39,9 +39,10 @@ function diasEntre(inicio, fim) {
   return Math.round((b - a) / 86400000);
 }
 
-// Todo arquivo entra aqui: INDEX.md salvo no Windows chega com \r\n e o \r sobra no fim do campo.
+// Todo arquivo entra aqui: INDEX.md salvo no Windows chega com \r\n e o \r sobra no fim do campo,
+// e o Bloco de Notas pode gravar um BOM que esconderia a primeira linha do RE_ITEM.
 function lerTexto(caminho) {
-  return fs.readFileSync(caminho, 'utf8').replace(/\r\n/g, '\n');
+  return fs.readFileSync(caminho, 'utf8').replace(/^\uFEFF/, '').replace(/\r\n/g, '\n');
 }
 
 // O campo Setor da ficha é uma frase; a linha do índice quer um rótulo curto.
@@ -293,10 +294,11 @@ function parsearCaudaAntiga(resto) {
   return { id, setor, pais, pesquisa, catalogo, alerta: [alerta, notaDoCatalogo].filter(Boolean).join(' · ') || null, problemas };
 }
 
-// A versão 1 só tinha id, pesquisa, catálogo e ⚠ com chave: qualquer outra chave conhecida é versão 2.
-const CHAVES_DA_VERSAO_2 = ['setor', 'país', 'prioridade', 'linkedin', 'grupo'];
+// Setor e país com chave são obrigatórios na versão 2. Uma só chave não basta: na versão 1 um setor
+// como "grupo industrial" ou um país como "linkedin BR" começam por chave da versão 2.
 function ehCaudaAntiga(resto) {
-  return !separarCampos(resto).some((c) => CHAVES_DA_VERSAO_2.includes(c.chave));
+  const chaves = new Set(separarCampos(resto).map((c) => c.chave));
+  return !(chaves.has('setor') && chaves.has('país'));
 }
 
 function parsearLinha(texto, numero) {

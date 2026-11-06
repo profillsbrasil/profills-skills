@@ -8,7 +8,8 @@
 // Uso:     node scripts/migrar.js <DADOS> [--aplicar] [--hoje AAAA-MM-DD]
 // Exemplo: node scripts/migrar.js "$HOME/Profills LinkedIn"
 //          → {"dados":"...","versao_atual":1,"versao_alvo":2,"acoes":[{"tipo":"converter_indice",...}],"ok":true}
-// Saída: JSON em stdout. Exit 0 = ok · 1 = alguma linha não deu para converter · 2 = erro de uso.
+// Saída: JSON em stdout. Exit 0 = ok · 1 = alguma linha não deu para converter ou a gravação parou
+// no meio (campo erro) · 2 = erro de uso.
 
 const fs = require('fs');
 const path = require('path');
@@ -82,19 +83,37 @@ function converterLinhaAntiga(texto, numero) {
   };
 }
 
+// O índice que fica no disco passa inteiro pelo parser da versão 2: qualquer linha de lista que ele
+// recusa trava a migração, em vez de passar calada e aparecer depois na radar.
+function problemasDaVersao2(linhas) {
+  const problemas = [];
+  linhas.forEach((texto, i) => {
+    if (!indice.RE_ITEM.test(texto)) return;
+    const r = indice.parsearLinha(texto, i + 1);
+    const onde = { linha: i + 1, trecho: texto.slice(0, 120) };
+    if (r.erro) {
+      problemas.push({ ...onde, tipo: r.erro, detalhe: 'o começo da linha não segue "- [Nome](<slug>.md) — `<slug>` · …": confira se o nome tem colchete, se o arquivo está entre parênteses e se o slug está entre crases' });
+    } else {
+      problemas.push(...r.problemas.map((p) => ({ ...onde, ...p })));
+    }
+  });
+  return problemas;
+}
+
 function planejarIndice(dados) {
   const caminho = path.join(dados, 'refs', 'INDEX.md');
   if (!fs.existsSync(caminho)) return { acoes: [], problemas: [] };
-  const original = fs.readFileSync(caminho, 'utf8');
+  // O BOM do Bloco de Notas esconderia a primeira linha do RE_ITEM; o arquivo novo sai sem ele.
+  const original = fs.readFileSync(caminho, 'utf8').replace(/^\uFEFF/, '');
   const quebra = original.includes('\r\n') ? '\r\n' : '\n';
   const linhas = original.split(quebra);
   const problemas = [];
   let convertidas = 0;
 
   const novas = linhas.map((texto, i) => {
-    if (!indice.RE_ITEM.test(texto) || !indice.cabecaDaLinha(texto)) return texto;
+    if (!indice.RE_ITEM.test(texto)) return texto;
     const lida = indice.parsearLinha(texto, i + 1);
-    if (lida.empresa.formato !== 1) return texto;
+    if (lida.erro || lida.empresa.formato !== 1) return texto;
     const r = converterLinhaAntiga(texto, i + 1);
     if (r.problemas.length) {
       problemas.push(...r.problemas);
@@ -105,6 +124,7 @@ function planejarIndice(dados) {
   });
 
   // Tudo ou nada: índice meio convertido confundiria a radar mais que índice todo antigo.
+  if (!problemas.length) problemas.push(...problemasDaVersao2(novas));
   if (problemas.length || !convertidas) return { acoes: [], problemas };
   return {
     acoes: [{ tipo: 'converter_indice', alvo: path.join('refs', 'INDEX.md'), detalhe: `${convertidas} linha(s) passam para o formato novo, com prioridade "a definir"`, conteudo: novas.join(quebra), backup: true }],
@@ -212,15 +232,30 @@ function escreverInteiro(caminho, conteudo) {
   fs.renameSync(temporario, caminho);
 }
 
+const MOTIVOS = {
+  EACCES: 'falta permissão de escrita',
+  EPERM: 'falta permissão de escrita',
+  EROFS: 'o disco está só para leitura',
+  ENOSPC: 'o disco está cheio',
+  EBUSY: 'outro programa está com o arquivo aberto',
+};
+
+// Devolve null quando tudo foi gravado, ou a frase que explica onde e por que parou.
 function aplicar(dados, acoes, pastaBackup) {
   for (const a of acoes) {
-    if (a.tipo === 'criar_pasta') {
-      fs.mkdirSync(path.join(dados, a.alvo), { recursive: true });
-      continue;
+    try {
+      if (a.tipo === 'criar_pasta') {
+        fs.mkdirSync(path.join(dados, a.alvo), { recursive: true });
+        continue;
+      }
+      if (a.backup) copiarParaBackup(dados, pastaBackup, a.alvo);
+      escreverInteiro(path.join(dados, a.alvo), a.conteudo);
+    } catch (e) {
+      const motivo = MOTIVOS[e.code] ? `${MOTIVOS[e.code]} em "${e.path ? path.dirname(e.path) : dados}"` : e.message;
+      return `Não deu para gravar "${path.join(dados, a.alvo)}": ${motivo}. O que já foi gravado continua certo e a pasta não foi marcada como nova; resolva isso e rode de novo com --aplicar, que a migração termina o que faltou.`;
     }
-    if (a.backup) copiarParaBackup(dados, pastaBackup, a.alvo);
-    escreverInteiro(path.join(dados, a.alvo), a.conteudo);
   }
+  return null;
 }
 
 // ---------- argumentos ----------
@@ -249,17 +284,20 @@ function principal(argv) {
   const plano = planejar(dados, hoje);
   const pastaBackup = path.join(dados, '.backup', hoje);
   const temBackup = plano.acoes.some((a) => a.backup);
-  const ok = plano.problemas.length === 0;
-  if (aplicarAgora && plano.acoes.length) aplicar(dados, plano.acoes, pastaBackup);
+  // Com problema, nada é gravado: nem as pastas que faltam, para a pasta não mudar pela metade.
+  const aplicavel = aplicarAgora && plano.acoes.length > 0 && plano.problemas.length === 0;
+  const erro = aplicavel ? aplicar(dados, plano.acoes, pastaBackup) : null;
+  const ok = plano.problemas.length === 0 && !erro;
 
   const saida = {
     dados,
     versao_atual: plano.versao_atual,
     versao_alvo: VERSAO_ALVO,
-    aplicado: aplicarAgora && plano.acoes.length > 0,
+    aplicado: aplicavel && !erro,
     backup: temBackup ? pastaBackup : null,
     acoes: plano.acoes.map(({ tipo, alvo, detalhe }) => ({ tipo, alvo, detalhe })),
     problemas: plano.problemas,
+    ...(erro ? { erro } : {}),
     ok,
   };
   process.stdout.write(JSON.stringify(saida, null, 2) + '\n');
