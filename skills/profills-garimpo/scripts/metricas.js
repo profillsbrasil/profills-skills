@@ -256,6 +256,7 @@ const resultado = {
   formatos: {},
   hooks: {},
   hook_cabe_no_corte_pct: null,
+  idiomas: {},
   destaque_semana: null,
   outliers: null,
   amostra_insuficiente: false,
@@ -356,6 +357,18 @@ if (comCorte.length > 0) {
   if (comCorte.length !== n) avisos.push(`hook_cabe_no_corte_pct medido sobre ${comCorte.length} de ${n} posts (o resto não tem o campo).`);
 } else {
   avisos.push('Nenhum post tem "hook_cabe_no_corte": a % de hooks que cabem no corte não existe nesta coleta.');
+}
+
+// ------------------------------------------------------------------- idioma
+
+// Coletas antigas gravam "PT"/"EN" em maiúscula; o código vale igual.
+const idiomaDe = (p) => (typeof p.idioma === 'string' && p.idioma.trim() !== '' ? p.idioma.trim().toLowerCase() : null);
+resultado.idiomas = distribuicao(posts.map((p) => ({ idioma: idiomaDe(p) })), 'idioma').d;
+const semResumo = posts
+  .map((p, i) => ({ p, i }))
+  .filter(({ p }) => idiomaDe(p) && idiomaDe(p) !== 'pt' && !(typeof p.resumo_pt === 'string' && p.resumo_pt.trim() !== ''));
+if (semResumo.length > 0) {
+  avisos.push(`resumo_pt_ausente: ${semResumo.length} post(s) fora do português sem "resumo_pt" (ex.: ${idDoPost(semResumo[0].p, semResumo[0].i)}, idioma "${idiomaDe(semResumo[0].p)}") — escreva o resumo fiel em pt-BR antes do perfil.`);
 }
 
 // --------------------------------------------------- destaque / outliers

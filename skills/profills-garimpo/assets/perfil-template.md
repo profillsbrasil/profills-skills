@@ -4,7 +4,7 @@
 
 - **Slug**: `<slug>` · **Coletado em**: <AAAA-MM-DD> (`coletado_em`)
 - **Seguidores**: <n> (`seguidores`; "não informados" quando `null`) · **Janela**: <padrão (7 dias) / ampliada (<n> dias)> (`janela`, `janela_dias`) — <n> posts (`n_posts`), de <data> a <data> (`periodo`)
-- **Fonte bruta**: `raw/<slug>/<AAAA-MM-DD>/posts.json`
+- **Fonte bruta**: `raw/<slug>/<AAAA-MM-DD>/posts.json` · **Idiomas**: <distribuição `idiomas`, ex.: en 4, pt 1>
 
 > Neste relatório, [medido] = lido da página (fato); [inferido] = leitura da IA (hipótese).
 
@@ -55,6 +55,12 @@ Janela padrão: o post de `destaque_semana`. Janela ampliada: os posts de `outli
 | Post | Engajamento [medido] | Formato | Hook | Por que engajou (hipótese) [inferido] |
 |---|---|---|---|---|
 | [link](url) | 240 likes / 31 com. | carrossel (Hack-List) | "..." | aplica social-proof + specificity |
+
+## Posts em outro idioma [inferido]
+
+Só quando `idiomas` traz código diferente de `pt`; sem post estrangeiro, apague a seção. Um item por post fora do português, com o `resumo_pt` do `posts.json` copiado sem reescrever. O hook fica no original.
+
+- [post](url) (<data>) · <idioma> · hook original: "<hook>" · em pt-BR: <resumo_pt>
 
 ## Tom de voz [inferido]
 
