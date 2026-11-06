@@ -1,24 +1,26 @@
 # Preview realista de feed
 
-Cada opção é renderizada como um **post real do LinkedIn**: foto do perfil, nome, o texto com o corte do "…mais", o espaço da foto, a barra de reações, Copiar em cada card. Este arquivo é o contrato do JSON. O HTML mora no picker local (`scripts/picker/`), não no Artifact.
+Cada opção é renderizada como um **post real do LinkedIn**: foto do perfil, nome, o texto com o corte do "…mais", o espaço da foto, a barra de reações, Copiar em cada card. Este arquivo é o contrato do JSON.
 
 ## Grave um JSON de tela — não desenhe HTML
 
-O motor já existe em `scripts/picker/picker-frame.html`. Escrever HTML na mão reintroduz corte do "…mais" no lugar errado e visual que muda de rodada. O trabalho é **preencher o JSON**, não desenhar:
+O motor já existe em `scripts/picker/picker-frame.html`. Escrever HTML na mão reintroduz corte do "…mais" no lugar errado e visual que muda de rodada. O trabalho é **preencher o JSON**, não desenhar; o passo 7 do `SKILL.md` diz onde gravar e como ler a escolha.
 
-1. Ligue o picker: `bash "<pasta desta skill>/scripts/picker/start-server.sh" --dados-dir "<DADOS>" --open`.
-2. O JSON de stdout traz `opened`. `true`: a aba abriu. `false`: sem navegador aqui, escolha pelo chat. Não cole a `url` nem chave. Aba fechada ou picker caído: rode o comando de novo e grave a tela de novo (todo start arquiva a anterior).
-3. Grave `DADOS/.picker/current/content/<nome>.json` com o objeto abaixo. Nome novo a cada revisão.
-4. Depois que ele copia, leia `DADOS/.picker/current/state/events` (`choice` A/B/C, vale a última linha). O chat vale se ele digitar.
-
-Referência visual do card: abra `scripts/picker/picker-frame.html` cru no navegador (renderiza o `EXEMPLO`). Não publique Artifact neste passo.
+Referência visual do card: abra `scripts/picker/picker-frame.html` cru no navegador (renderiza o `EXEMPLO`).
 
 ### Campos do JSON de tela
 
 - `kicker` / `titulo` / `subtitulo` — o cabeçalho da página, escrito na linguagem do comercial.
 - `empresa` — `nome`, `iniciais` (do avatar), `descricao`, `seguidores` (opcional).
+- `opcoes[].texto` — o post completo da variação; o motor faz o corte do "…mais", não divida na mão.
 - `opcoes[].angulo` + `opcoes[].porque` — o rótulo acima do card e a justificativa curta; só aparecem no modo comparador.
 - `opcoes[].foto` + `fotoNota` — o que mostrar no espaço da imagem (ex. "foto da fábrica/equipe" / "puxa mais que texto"), ou `foto: null` para post sem imagem.
+
+## Quando a aba não abre ou some
+
+- **Aba fechada ou "não vejo nada"**: rode o mesmo `start-server.sh` de novo. `already_running` reabre a aba; `started` ou `replaced` quer dizer que o picker não estava no ar.
+- **Todo start é uma rodada nova**: o script arquiva as telas em `content/.anterior/` e zera `events`, e a aba abre na página de espera até você gravar a tela. Grave a tela de novo, com nome novo.
+- **Windows (Git Bash)**: o comando fica preso no terminal. Rode em background e leia a primeira linha do stdout, que é o mesmo JSON.
 
 ## O que o motor renderiza (pra você saber o que prometer)
 
