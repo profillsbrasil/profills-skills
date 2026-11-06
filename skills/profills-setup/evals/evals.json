@@ -145,6 +145,35 @@
         "Antes do `--aplicar`, explica ao comercial em linguagem simples o que vai mudar (pastas novas, etiquetas na lista de empresas com prioridade 'a definir', marca da versão) e que guarda uma cópia — sem colar o JSON do script nem usar 'migração', 'schema' ou 'parser'",
         "RESPOSTA FINAL: diz onde ficou a cópia da lista antiga (a pasta `.backup` dentro da pasta de dados) e devolve o controle à profills-radar para o pedido original continuar, sem tabela de diagnóstico e sem sugerir outra skill"
       ]
+    },
+    {
+      "id": 9,
+      "prompt": "(A profills-radar invocou a profills-setup porque `linkedin-data/.profills.json` não existe. O pedido original do usuário era 'quais empresas eu acompanho'. Contexto: shell Bash; o diretório atual é um repo git de trabalho com `linkedin-data/` na raiz, não o repo-fonte das skills; plugin, humanize-pt-br e npx já presentes; a pasta de dados foi criada por uma versão anterior das skills e alguém editou a lista de empresas à mão.)",
+      "expected_output": "Reconhece a pasta antiga e vai ao passo 4. O `migrar.js` sem `--aplicar` volta `ok: false` com `linha_fora_do_formato` na linha da Tecnox do Brasil, que tem um colchete a mais no nome. Não aplica, não devolve o controle à profills-radar e não diz que a pasta está pronta: explica ao comercial, sem JSON, que a linha da Tecnox do Brasil está com o nome quebrado, mostra o nome como está e propõe tirar o `[BR]`, e espera a resposta antes de corrigir.",
+      "files": [
+        "evals/files/9"
+      ],
+      "expectations": [
+        "Roda `node <pasta da skill>/scripts/migrar.js linkedin-data` e a saída no transcript traz `ok: false` com um problema `linha_fora_do_formato` na linha da Tecnox do Brasil",
+        "NEGATIVA: não roda `migrar.js` com `--aplicar` enquanto `problemas[]` está cheio, ou, se rodou, a saída dessa execução traz `aplicado: false`",
+        "NEGATIVA — ARTEFATO: `linkedin-data/refs/INDEX.md` em outputs/ é byte a byte igual ao de evals/files/9, a menos que o usuário tenha aprovado a correção da linha da Tecnox; `linkedin-data/.profills.json`, `linkedin-data/drafts`, `linkedin-data/boletins` e `linkedin-data/.backup` não existem em outputs/",
+        "RESPOSTA FINAL: cita a Tecnox do Brasil pelo nome, mostra o nome como está na lista (com o `[BR]`) e propõe o nome sem o colchete extra, em linguagem de comercial, sem colar o JSON do script",
+        "NEGATIVA — RESPOSTA FINAL: não devolve o controle à profills-radar, não diz que a pasta está pronta ou atualizada e não sugere outra skill; diz que o pedido original ('quais empresas eu acompanho') espera a lista ser consertada"
+      ]
+    },
+    {
+      "id": 10,
+      "prompt": "(A profills-radar invocou a profills-setup porque `linkedin-data/.profills.json` não existe. O pedido original do usuário era 'quais empresas eu acompanho'. Contexto: shell Bash; o diretório atual é um repo git de trabalho com `linkedin-data/` na raiz, não o repo-fonte das skills; plugin e humanize-pt-br presentes; `command -v node` e `command -v npx` não devolvem nada, porque o Node.js não está instalado; a pasta de dados foi criada por uma versão anterior das skills. Quando a skill perguntar sobre o Node, o usuário responde 'deixa para depois'.)",
+      "expected_output": "Reconhece a pasta antiga. Vê que a atualização precisa do Node, ausente, e pergunta com duas opções, 'Instalar o Node agora' recomendada. Com o 'deixa para depois', não roda o `migrar.js`, não mexe na pasta e não devolve o controle à profills-radar: diz em uma frase que a lista de empresas só abre depois que o Node estiver instalado e que o pedido original espera por isso, com a instalação do Node como a única ação sugerida.",
+      "files": [
+        "evals/files/8"
+      ],
+      "expectations": [
+        "Pergunta sobre o Node com duas opções, 'Instalar o Node agora' marcada como recomendada e 'Deixar para depois', antes de qualquer tentativa de atualizar a pasta",
+        "NEGATIVA — ARTEFATO: nada dentro de `linkedin-data/` muda — `refs/INDEX.md` em outputs/ é byte a byte igual ao de evals/files/8, e `.profills.json`, `drafts`, `boletins` e `.backup` não existem em outputs/",
+        "NEGATIVA — RESPOSTA FINAL: não devolve o controle à profills-radar e não diz que a pasta está pronta; diz que o pedido original ('quais empresas eu acompanho') espera o Node ser instalado",
+        "RESPOSTA FINAL: a única ação sugerida é instalar o Node, sem sugerir `/profills-voz`, `/profills-radar` ou `/profills-post`"
+      ]
     }
   ]
 }

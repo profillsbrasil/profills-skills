@@ -34,7 +34,7 @@ Comece pela porta de entrada:
 
 - **Outra skill invocou você** (radar, garimpo, post ou voz). O diagnóstico completo fica para quando o usuário chamar a skill por nome; aqui você resolve só a pasta:
   - **`DADOS` não existia**: vá direto ao item **`DADOS` ❌** do passo 3, crie a pasta já com `boletins/` e o marcador da versão 2, anuncie o caminho e siga para o passo 6.
-  - **`DADOS` existe, mas é antiga** (sem `.profills.json`, ou com `versao_dados` menor que 2): faça o passo 4 inteiro e siga para o passo 6.
+  - **`DADOS` existe, mas é antiga** (sem `.profills.json`, ou com `versao_dados` menor que 2): faça o passo 4 inteiro e siga para o passo 6. Sem Node, conduza o item **Node/npx ❌** do passo 3 antes do passo 4. Se o Node ficou para depois ou o `migrar.js` não chegou a `ok: true`, o passo 6 manda ficar com o usuário, não devolver o controle.
 - **O usuário chamou você** ("instala", "configura", "atualiza", "o que está faltando"): passo 1.
 
 ### 1. Diagnóstico silencioso
@@ -107,11 +107,16 @@ A pasta de dados guarda o trabalho do comercial: empresas, catálogos, rascunhos
 
    Diga também que uma cópia da lista fica guardada antes da mudança. É atualização do que já é dele, dentro do pedido: siga sem pedir licença. Com `problemas[]` cheio, não aplique; vá ao item 5.
 
-3. **Aplique.** Rode o mesmo comando com `--aplicar`. Concluído quando a saída volta `ok: true`. Se a rodada caiu no meio, rodar de novo termina o que faltou.
+3. **Aplique.** Rode o mesmo comando com `--aplicar`. Concluído quando a saída volta `ok: true`. Saída com o campo `erro` quer dizer que a gravação parou no meio: o texto diz qual arquivo e por quê (falta de permissão, disco cheio, arquivo aberto em outro programa). Conte isso ao comercial em uma frase, conduza o conserto e rode de novo; a nova rodada termina o que faltou.
 
 4. **Confira.** Quando existe `<DADOS>/refs/INDEX.md`, rode `node "<pasta desta skill>/../profills-radar/scripts/indice.js" "<DADOS>/refs"` até `ok: true`; problema que sobrar é do índice, e quem o corrige é a `profills-radar`. Depois rode o `migrar.js` sem `--aplicar` mais uma vez: `acoes` tem de voltar `[]`. Concluído quando as duas saídas confirmam.
 
-5. **Linha que não dá para converter.** `problemas[]` com `linha_ambigua` ou `slug_invalido` aponta uma linha da lista de empresas em que não dá para saber o que é setor e o que é país, ou um endereço do LinkedIn com caractere estranho. Nesse caso o script não mexe na lista nem marca a versão. Diga ao comercial o nome da empresa daquela linha e pergunte o setor e o país dela (ou o endereço certo); corrija só essa linha, ainda no formato antigo, e volte ao item 1.
+5. **Linha que não dá para converter.** Com qualquer item em `problemas[]` o script não grava nada: nem a lista, nem as pastas, nem a marca da versão. Cada problema traz `linha` e `trecho`.
+   - `linha_ambigua` ou `slug_invalido`: não dá para saber o que é setor e o que é país, ou o endereço do LinkedIn tem caractere estranho. Diga ao comercial o nome da empresa daquela linha e pergunte o setor e o país dela (ou o endereço certo).
+   - `linha_fora_do_formato`: o começo da linha está quebrado, em geral um colchete dentro do nome (`[Foo [BR]]`). Mostre o nome como está e proponha a versão sem o colchete extra.
+   - Outro tipo (`campo_desconhecido`, `prioridade_invalida`, `campo_ausente`…): o `detalhe` diz o campo e o valor esperado. Mostre a empresa e o valor que veio, e pergunte o certo.
+
+   Corrija só aquela linha, no formato em que ela já está, e volte ao item 1.
 
 6. **Diga onde ficou a cópia.** O campo `backup` da saída é a pasta `<DADOS>/.backup/<data>/`. Mostre o caminho no formato do sistema dele e diga que ali está a lista como era antes. Com `backup: null` nada foi reescrito, e não há cópia a mostrar.
 
@@ -130,7 +135,7 @@ Se a `humanize-pt-br` estiver instalada, rodar o mesmo comando do passo 3 de nov
 
 ### 6. Fecho
 
-- **Outra skill invocou você**: assim que a pasta existe e está na versão atual, devolva o controle a ela — o pedido original do usuário continua de onde parou.
+- **Outra skill invocou você**: assim que a pasta existe e está na versão atual, devolva o controle a ela — o pedido original do usuário continua de onde parou. Com a versão da pasta pendente (Node que ficou para depois, ou `migrar.js` sem `ok: true`), não devolva: a skill que chamou leria a lista antiga, daria `formato_antigo` e chamaria você de novo, em laço. Fique com o usuário, diga em uma frase que o pedido original espera a pasta ficar pronta e conduza o que falta: a instalação do Node (passo 3) ou o conserto da linha (passo 4, item 5).
 - **O usuário chamou você**: termine com exatamente **uma** sugestão.
   - `DADOS/voz.md` não existe → `/profills-voz`. Uma frase: é a conversa da voz dele neste PC.
   - `DADOS/voz.md` existe → `/profills-post`. Uma frase: o setup deste PC está pronto, agora a gente faz um post pra ele ver como funciona. Sem catálogo a post segue só com o tema.
