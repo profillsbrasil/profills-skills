@@ -1,7 +1,9 @@
 # <Nome da Empresa>
 
-- **Endereço no LinkedIn**: `<slug>` (`linkedin.com/company/<slug>`) — `—` quando a empresa não tem página
+- **Endereço no LinkedIn**: `<slug>` (`linkedin.com/company/<slug>`) — `—` quando a empresa não tem página, e aí a linha do índice leva `linkedin não`
 - **ID numérico**: `<id>` — estável mesmo em rebranding; `—` quando a página não mostrou
+- **Prioridade**: <Alta | Média | Adjacente | Validação | a definir> — a que o usuário disse; `a definir` enquanto ele não disse
+- **Grupo**: <o recorte em que o usuário agrupa a empresa> — `—` quando não há
 - **Setor**: <setor>
 - **Porte**: <nº de seguidores / funcionários, se souber>
 - **País / idioma dos posts**: <BR / global · PT / EN>

@@ -19,7 +19,7 @@ Quem usa isto é o **comercial, não dev**: ele não sabe que esse arquivo exist
 
 ## 0. Localize os dados e escolha a branch
 
-**Pasta de dados (`DADOS`)**: se o diretório atual está num repo git com `linkedin-data/` na raiz (`git rev-parse --show-toplevel`), `DADOS` é essa pasta; senão é `~/Profills LinkedIn/`. Se nenhuma das duas existe, invoque a skill `profills-setup` — ela cria a pasta e confere o resto da instalação.
+**Pasta de dados (`DADOS`)**: se o diretório atual está num repo git com `linkedin-data/` na raiz (`git rev-parse --show-toplevel`), `DADOS` é essa pasta; senão é `~/Profills LinkedIn/`. Se nenhuma das duas existe, ou se `DADOS/.profills.json` falta ou traz `versao_dados` menor que 2, invoque a skill `profills-setup` — ela cria ou atualiza a pasta e confere o resto da instalação.
 
 Confira se o arquivo já existe antes de decidir o que fazer: `test -f "<DADOS>/voz.md"` no Bash, `Test-Path "<DADOS>\voz.md"` no PowerShell (`<DADOS>` é o caminho que a regra acima resolveu).
 

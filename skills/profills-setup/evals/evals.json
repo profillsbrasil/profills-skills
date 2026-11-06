@@ -4,14 +4,14 @@
     {
       "id": 1,
       "prompt": "Quero começar a usar as skills da Profills nesse notebook novo. (Contexto: shell Bash; `claude plugin list` não mostra profills-skills; nem ~/.claude/skills nem ~/.agents/skills têm humanize-pt-br; `command -v npx` responde `/usr/bin/npx`; o diretório atual é um repo git de outro projeto — não o repo-fonte das skills; nesta sandbox a pasta `home-sandbox/` faz o papel de `~`, e é lá que qualquer caminho `~/...` deve ser criado.)",
-      "expected_output": "Diagnostica as seis peças em silêncio, sem perguntar nada antes, e mostra UMA tabela com as sete linhas fixas do passo 2 (plugin, humanize-pt-br, Node/npx, pasta de dados, arquivo de voz, extensão do Chrome como 'conferida na hora de coletar', unslop como '—'). Explica em uma frase e roda `claude plugin marketplace add https://github.com/profillsbrasil/profills-skills` seguido de `claude plugin install profills-skills@profills-skills`, avisando depois que pode ser preciso reabrir o Claude Code. Explica e roda `npx skills add othavi0/skills --skill humanize-pt-br -g -y -a claude-code`. Como o diretório atual é um repo git sem `linkedin-data/` e sem `skills/profills-setup/SKILL.md` no toplevel, a pasta de dados é a de fora do repo: cria `home-sandbox/Profills LinkedIn/` com `refs/`, `catalog/raw/` e `drafts/` dentro, confere com `ls -d` e diz o caminho ao usuário no formato do sistema dele (`~/Profills LinkedIn`). Não instala unslop. Termina com uma sugestão só: `/profills-voz`, porque voz.md não existe.",
+      "expected_output": "Diagnostica as sete peças em silêncio, sem perguntar nada antes, e mostra UMA tabela com as oito linhas fixas do passo 2 (plugin, humanize-pt-br, Node/npx, pasta de dados, arquivo de voz, extensão do Chrome como 'conferida na hora de coletar', unslop como '—'). Explica em uma frase e roda `claude plugin marketplace add https://github.com/profillsbrasil/profills-skills` seguido de `claude plugin install profills-skills@profills-skills`, avisando depois que pode ser preciso reabrir o Claude Code. Explica e roda `npx skills add othavi0/skills --skill humanize-pt-br -g -y -a claude-code`. Como o diretório atual é um repo git sem `linkedin-data/` e sem `skills/profills-setup/SKILL.md` no toplevel, a pasta de dados é a de fora do repo: cria `home-sandbox/Profills LinkedIn/` com `refs/`, `catalog/raw/`, `drafts/` e `boletins/` dentro, confere com `ls -d` e diz o caminho ao usuário no formato do sistema dele (`~/Profills LinkedIn`). Não instala unslop. Termina com uma sugestão só: `/profills-voz`, porque voz.md não existe.",
       "files": [
         "evals/files/1"
       ],
       "expectations": [
         "As três subpastas da pasta de dados existem de fato no fim da run — a cópia em outputs/ traz `home-sandbox/Profills LinkedIn/refs`, `home-sandbox/Profills LinkedIn/catalog/raw` e `home-sandbox/Profills LinkedIn/drafts` (ou seus .keep); afirmação no transcript sem esses caminhos em outputs/ é falha",
         "NEGATIVA: não cria `linkedin-data/` na raiz do diretório de trabalho nem trata esse caminho como pasta de dados — a árvore de outputs/ não tem nenhum `linkedin-data/`",
-        "A resposta final traz UMA única tabela, com as sete linhas do passo 2 na ordem e com o texto fixo da coluna 'O que faz' (não uma lista das 6 skills uma a uma, nem uma segunda tabela depois das instalações)",
+        "A resposta final traz UMA única tabela, com as oito linhas do passo 2 na ordem e com o texto fixo da coluna 'O que faz' (não uma lista das 6 skills uma a uma, nem uma segunda tabela depois das instalações)",
         "Na tabela, a extensão do Chrome aparece com o status 'conferida na hora de coletar' e a unslop com '—' (nenhuma das duas como ❌)",
         "Apresenta os dois comandos do plugin nesta ordem e com a URL completa — `claude plugin marketplace add https://github.com/profillsbrasil/profills-skills` e depois `claude plugin install profills-skills@profills-skills` — e avisa que pode ser preciso reabrir o Claude Code",
         "Usa o comando literal `npx skills add othavi0/skills --skill humanize-pt-br -g -y -a claude-code`, precedido de uma frase que explica o que ele faz",
@@ -22,14 +22,14 @@
     {
       "id": 2,
       "prompt": "Instala as skills da Profills aqui. (Contexto: Windows sem Git for Windows; a ferramenta de shell é PowerShell — `command -v npx` devolve erro de sintaxe e `Get-Command npx` não devolve nada; `claude --version` responde 2.0.14; `claude plugin marketplace add https://github.com/profillsbrasil/profills-skills` falha com `spawn git ENOENT`; quando perguntado sobre instalar o Node, o usuário responde 'agora não, deixa pra depois'; nesta sandbox a pasta `home-sandbox/` faz o papel de `C:\\Users\\NOME`.)",
-      "expected_output": "Reconhece pelo erro de sintaxe que o shell é PowerShell e passa a usar a coluna PowerShell de references/shell.md (`Get-Command npx`, `Test-Path`, `New-Item`), sem repetir comandos Bash. Mostra a tabela de sete linhas com plugin, humanize-pt-br e Node/npx em ❌. Diagnostica o `spawn git ENOENT` como Git ausente e conduz a instalação do Git for Windows (https://git-scm.com/downloads/win), pedindo terminal novo e a repetição dos dois comandos do plugin. Pergunta sobre o Node com as duas opções (recomendada: instalar agora); como o usuário recusa, pula a humanize-pt-br sem rodar `npx skills add` e diz em uma frase o que fica de fora (a humanização do texto final). Cria a pasta de dados com `New-Item -ItemType Directory -Force` nas três subpastas, confere com `Test-Path` e mostra o caminho como `C:\\Users\\NOME\\Profills LinkedIn`, nunca com `~`. Fecha pedindo a única ação que destrava o que ficou pendente — instalar o Git e repetir o comando do plugin — sem dizer que está tudo pronto.",
+      "expected_output": "Reconhece pelo erro de sintaxe que o shell é PowerShell e passa a usar a coluna PowerShell de references/shell.md (`Get-Command npx`, `Test-Path`, `New-Item`), sem repetir comandos Bash. Mostra a tabela de oito linhas com plugin, humanize-pt-br e Node/npx em ❌. Diagnostica o `spawn git ENOENT` como Git ausente e conduz a instalação do Git for Windows (https://git-scm.com/downloads/win), pedindo terminal novo e a repetição dos dois comandos do plugin. Pergunta sobre o Node com as duas opções (recomendada: instalar agora); como o usuário recusa, pula a humanize-pt-br sem rodar `npx skills add` e diz em uma frase o que fica de fora (a humanização do texto final). Cria a pasta de dados com `New-Item -ItemType Directory -Force` nas três subpastas, confere com `Test-Path` e mostra o caminho como `C:\\Users\\NOME\\Profills LinkedIn`, nunca com `~`. Fecha pedindo a única ação que destrava o que ficou pendente — instalar o Git e repetir o comando do plugin — sem dizer que está tudo pronto.",
       "files": [
         "evals/files/2"
       ],
       "expectations": [
         "Identifica o shell como PowerShell a partir do erro de sintaxe de `command -v npx` e passa a usar as formas PowerShell do diagnóstico (`Get-Command npx`, `Test-Path`)",
         "NEGATIVA: depois de identificar o shell, nenhum comando Bash (`command -v`, `ls -d`, `mkdir -p`, `test -f`) volta a ser usado ou apresentado ao usuário",
-        "A tabela da resposta final tem as sete linhas fixas do passo 2, com o texto da coluna 'O que faz' em linguagem de comercial, e marca plugin, humanize-pt-br e Node/npx como ❌ (não lista as 6 skills uma a uma nem inventa linhas de dependência)",
+        "A tabela da resposta final tem as oito linhas fixas do passo 2, com o texto da coluna 'O que faz' em linguagem de comercial, e marca plugin, humanize-pt-br e Node/npx como ❌ (não lista as 6 skills uma a uma nem inventa linhas de dependência)",
         "Diagnostica o `spawn git ENOENT` como Git ausente, manda instalar o Git for Windows pelo link https://git-scm.com/downloads/win, pede terminal novo e repete os dois comandos do plugin por escrito (não um genérico 'me chame de novo')",
         "Pergunta sobre o Node com duas opções e a recomendada marcada ('Instalar o Node agora'); com o 'agora não' do usuário, diz em uma frase que radar, garimpo e post só funcionam depois de instalar o Node (não só a humanização)",
         "NEGATIVA: como o usuário recusou o Node, o comando `npx skills add othavi0/skills --skill humanize-pt-br -g -y -a claude-code` não é executado nesta rodada",
@@ -40,7 +40,7 @@
     {
       "id": 3,
       "prompt": "Dá uma olhada no que está faltando pra eu usar as skills da Profills. (Contexto: shell Bash; `claude plugin list` NÃO mostra profills-skills; `~/.claude/skills/humanize-pt-br/SKILL.md` existe; `command -v npx` responde `/usr/bin/npx`; a unslop não está instalada.)",
-      "expected_output": "Percebe que o diretório atual é o repo-fonte (`skills/profills-setup/SKILL.md` no toplevel git) e aplica a exceção 'via repo': o plugin entra na tabela como ✅ com a nota 'via repo', porque as skills vêm dos symlinks de `.claude/skills` — nada é instalado, apesar de `claude plugin list` não mostrar nada. A pasta de dados é a `linkedin-data/` da raiz do repo, que já tem `refs/`, `catalog/raw/`, `drafts/` e `voz.md`. Mostra a tabela de sete linhas com as cinco peças diagnosticadas em ✅, a extensão do Chrome como 'conferida na hora de coletar' e a unslop como '—'. Não roda nenhum comando de instalação ou de atualização, não escreve nada dentro de `linkedin-data/` e não cobra a unslop. Diz em uma frase que o setup deste PC está pronto e agora a gente faz um post pra ele ver como funciona, e termina com uma sugestão só: `/profills-post`, porque voz.md já existe.",
+      "expected_output": "Percebe que o diretório atual é o repo-fonte (`skills/profills-setup/SKILL.md` no toplevel git) e aplica a exceção 'via repo': o plugin entra na tabela como ✅ com a nota 'via repo', porque as skills vêm dos symlinks de `.claude/skills` — nada é instalado, apesar de `claude plugin list` não mostrar nada. A pasta de dados é a `linkedin-data/` da raiz do repo, que já tem `refs/`, `catalog/raw/`, `drafts/` e `voz.md`. Mostra a tabela de oito linhas com as seis peças diagnosticadas em ✅, a extensão do Chrome como 'conferida na hora de coletar' e a unslop como '—'. Não roda nenhum comando de instalação ou de atualização, não escreve nada dentro de `linkedin-data/` e não cobra a unslop. Diz em uma frase que o setup deste PC está pronto e agora a gente faz um post pra ele ver como funciona, e termina com uma sugestão só: `/profills-post`, porque voz.md já existe.",
       "files": [
         "evals/files/3"
       ],
@@ -48,7 +48,7 @@
         "Reconhece o caso repo-fonte pelo arquivo `skills/profills-setup/SKILL.md` no toplevel git e marca o plugin como ✅ com a nota 'via repo', em vez de ❌, mesmo com `claude plugin list` não mostrando profills-skills",
         "NEGATIVA: nenhum comando de instalação ou atualização é executado ou proposto — nada de `claude plugin marketplace add`, `claude plugin install`, `claude plugin update` ou `npx skills add`",
         "NEGATIVA: nada dentro de `linkedin-data/` é criado, alterado ou apagado — a cópia em outputs/ não traz nenhum arquivo de `linkedin-data/` (nem voz.md reescrito, nem rascunho, nem selection.md)",
-        "A resposta final traz UMA tabela com as sete linhas fixas do passo 2, com o texto da coluna 'O que faz' em linguagem de comercial não-dev (sem 'symlink', 'marketplace', 'CLI', 'repositório')",
+        "A resposta final traz UMA tabela com as oito linhas fixas do passo 2, com o texto da coluna 'O que faz' em linguagem de comercial não-dev (sem 'symlink', 'marketplace', 'CLI', 'repositório')",
         "A pasta de dados aparece como ✅ e o caminho citado ao usuário é a `linkedin-data/` da raiz do repo, não `~/Profills LinkedIn`",
         "A extensão do Chrome aparece como linha da tabela com o status 'conferida na hora de coletar' e a unslop como '—' identificada como opcional; a resposta não cobra nem sugere instalar a unslop",
         "RESPOSTA FINAL: com tudo presente, a resposta entrega o diagnóstico inteiro sem nenhuma pergunta ao usuário — nenhum bloco de opções, nenhuma pergunta pendente no texto",
@@ -67,20 +67,22 @@
         "NEGATIVA: não executa nem propõe `claude plugin marketplace add` / `claude plugin install`, e não roda `mkdir` sobre a pasta de dados existente",
         "NEGATIVA: nenhum arquivo dentro de `linkedin-data/` é criado ou alterado — `voz.md` continua idêntico ao da fixture, `drafts/` continua sem nenhum rascunho e `refs/INDEX.md` intacto; a cópia em outputs/ não traz arquivo novo dessa pasta",
         "Menciona o comando literal `npx skills add othavi0/skills --skill humanize-pt-br -g -y -a claude-code` como o que também atualiza a humanize-pt-br",
-        "A resposta final refaz a tabela de sete linhas do passo 2 e a tabela diz o que mudou em cada linha (versão nova, 'sem mudança' ou equivalente), em vez de repetir ✅ sem informação",
+        "A resposta final refaz a tabela de oito linhas do passo 2 e a tabela diz o que mudou em cada linha (versão nova, 'sem mudança' ou equivalente), em vez de repetir ✅ sem informação",
         "O status da pasta de dados na tabela vem de uma checagem real de disco desta run (`ls -d` sobre refs/, catalog/raw/ e drafts/), não de repetição do contexto do pedido",
-        "Termina com exatamente uma sugestão de próximo passo, `/profills-post`, sem menu de opções nem segunda sugestão"
+        "Termina com exatamente uma sugestão de próximo passo, `/profills-post`, sem menu de opções nem segunda sugestão",
+        "Termina rodando a migração da pasta (`node <pasta da skill>/scripts/migrar.js linkedin-data`): como a fixture já está na versão 2, a saída volta `acoes: []` e a resposta não anuncia mudança nenhuma na pasta"
       ]
     },
     {
       "id": 5,
       "prompt": "(A profills-radar invocou a profills-setup porque não achou a pasta de dados. O pedido original do usuário era 'quais empresas eu acompanho'. Contexto: shell Bash; o diretório atual é um clone do repo-fonte profills-skills — `git rev-parse --show-toplevel` aponta pra raiz dele e `skills/profills-setup/SKILL.md` existe lá; plugin via `.claude/skills`, humanize-pt-br e npx já presentes; voz.md não existe.)",
-      "expected_output": "Vai direto ao item DADOS: não roda o diagnóstico completo, não mostra a tabela e não tenta `claude plugin marketplace add` (reconhece o sinal repo-fonte, em que o plugin vem dos symlinks de `.claude/skills`). Cria `linkedin-data/` na raiz do repo — não uma pasta 'Profills LinkedIn' fora dele — com `refs/`, `catalog/raw/` e `drafts/` dentro, e cria `linkedin-data/.gitignore` ignorando `selection.md` e as imagens de `catalog/raw/`. Confere com `ls -d` e com `git check-ignore linkedin-data/selection.md`, anuncia o caminho da pasta em uma frase de comercial e devolve o controle à profills-radar para o pedido original continuar, sem sugerir `/profills-voz` nem nenhuma outra skill.",
+      "expected_output": "Vai direto ao item DADOS: não roda o diagnóstico completo, não mostra a tabela e não tenta `claude plugin marketplace add` (reconhece o sinal repo-fonte, em que o plugin vem dos symlinks de `.claude/skills`). Cria `linkedin-data/` na raiz do repo — não uma pasta 'Profills LinkedIn' fora dele — com `refs/`, `catalog/raw/`, `drafts/` e `boletins/` dentro, e cria `linkedin-data/.gitignore` ignorando `selection.md` e as imagens de `catalog/raw/`. Confere com `ls -d` e com `git check-ignore linkedin-data/selection.md`, anuncia o caminho da pasta em uma frase de comercial e devolve o controle à profills-radar para o pedido original continuar, sem sugerir `/profills-voz` nem nenhuma outra skill.",
       "files": [
         "evals/files/5"
       ],
       "expectations": [
         "A pasta foi criada de fato: a cópia em outputs/ traz `linkedin-data/refs`, `linkedin-data/catalog/raw` e `linkedin-data/drafts` (ou seus .keep), na raiz do repo clonado",
+        "A pasta nasce na versão atual: a cópia em outputs/ traz `linkedin-data/boletins` (ou seu .keep) e `linkedin-data/.profills.json` com `\"versao_dados\": 2`, e nenhum `linkedin-data/.backup/` — pasta nova não tem o que copiar",
         "Cria `linkedin-data/.gitignore` e o conteúdo cobre `selection.md` e as imagens brutas de `catalog/raw/` (`*.png`, `*.jpg` ou a pasta screenshots)",
         "Confirma o ignore rodando `git check-ignore linkedin-data/selection.md` e mostrando a saída, em vez de afirmar que ignorou",
         "NEGATIVA: não cria nenhuma pasta 'Profills LinkedIn' em lugar nenhum do sandbox — a árvore de outputs/ não tem esse caminho",
@@ -93,13 +95,13 @@
     {
       "id": 6,
       "prompt": "(A profills-garimpo invocou a profills-setup porque não achou a pasta de dados completa. O pedido original do usuário era 'cataloga os posts da Cetro'. Contexto: shell Bash; o diretório atual é um repo git de trabalho com `linkedin-data/` na raiz — não é o repo-fonte das skills; plugin, humanize-pt-br e npx já presentes.)",
-      "expected_output": "Resolve a pasta de dados pela regra (repo git com `linkedin-data/` na raiz), vê pelo `ls -d` que só `refs/` existe e cria o que falta — `catalog/raw/` e `drafts/` —, sem tocar no que já está lá. Roda o `ls -d` de novo DEPOIS de criar e só então diz que a pasta está pronta, com a saída do comando no transcript: 'já resolvi' antes dessa saída não vale. Não refaz o diagnóstico completo nem mostra a tabela, não instala nada, anuncia o caminho da pasta e devolve o controle à profills-garimpo.",
+      "expected_output": "Resolve a pasta de dados pela regra (repo git com `linkedin-data/` na raiz): ela existe, mas sem `.profills.json`, então é pasta antiga e o caminho é o passo 4. Roda `migrar.js linkedin-data` sem `--aplicar`, explica em linguagem simples que vai criar as pastas que faltam (`catalog/raw/`, `drafts/`, `boletins/`) e marcar a pasta como versão nova, aplica com `--aplicar` sem tocar no que já está em `refs/`, e confere rodando o `migrar.js` de novo, que volta `acoes: []`: 'já resolvi' antes dessa saída não vale. Não refaz o diagnóstico completo nem mostra a tabela, não instala nada, anuncia o caminho da pasta e devolve o controle à profills-garimpo.",
       "files": [
         "evals/files/6"
       ],
       "expectations": [
-        "Ao fim da run as duas subpastas que faltavam existem de fato: a cópia em outputs/ traz `linkedin-data/catalog/raw` e `linkedin-data/drafts` (ou seus .keep)",
-        "RESPOSTA FINAL: a frase que diz que a pasta está pronta nomeia as três subpastas (`refs/`, `catalog/raw/`, `drafts/`) e as três existem na cópia em outputs/ — dizer 'já resolvi/está pronta' sem que a árvore de outputs/ traga as três é falha",
+        "Ao fim da run as subpastas que faltavam existem de fato: a cópia em outputs/ traz `linkedin-data/catalog/raw`, `linkedin-data/drafts` e `linkedin-data/boletins` (ou seus .keep), e `linkedin-data/.profills.json` com `\"versao_dados\": 2`",
+        "RESPOSTA FINAL: a frase que diz que a pasta está pronta vem depois de uma segunda execução do `migrar.js` com `acoes: []` no transcript, e as quatro subpastas (`refs/`, `catalog/raw/`, `drafts/`, `boletins/`) existem na cópia em outputs/ — dizer 'já resolvi/está pronta' sem essa saída é falha",
         "NEGATIVA: `linkedin-data/refs/INDEX.md` e as fichas de `refs/` continuam idênticos à fixture — nada em refs/ é reescrito, movido, renomeado ou apagado, e a cópia em outputs/ não traz versão alterada desses arquivos",
         "NEGATIVA: não cria uma segunda pasta de dados (nenhuma 'Profills LinkedIn' no sandbox) nem move a `linkedin-data/` existente para outro lugar",
         "Diagnostica a pasta pela regra do DADOS (repo git com `linkedin-data/` na raiz) e cria só as subpastas que faltavam, sem recriar `refs/`",
@@ -110,7 +112,7 @@
     {
       "id": 7,
       "prompt": "Instala as skills da Profills e coloca a unslop junto — vi num vídeo que ela deixa o texto menos robótico. (Contexto: shell Bash; `claude plugin list` mostra profills-skills; `~/.claude/skills/humanize-pt-br/SKILL.md` existe; `command -v npx` responde `/usr/bin/npx`; a unslop não está instalada; o diretório atual é um repo git de trabalho com a pasta de dados na raiz, não o repo-fonte; quando perguntado, o usuário responde 'pode instalar a unslop mesmo assim'.)",
-      "expected_output": "Diagnostica e mostra a tabela: as cinco peças em ✅ e nada a instalar do pipeline. Como o usuário pediu a unslop por nome, põe o conflito na mesa antes de instalar — pergunta com duas opções, 'Seguir só com a humanize-pt-br' (recomendada, porque as duas brigam na regra de travessão) e 'Instalar a unslop mesmo assim'. Com o 'pode instalar', roda `npx skills add cursor/plugins --skill unslop -g -y -a claude-code` (ou a alternativa `theclaymethod/unslop`), registra o conflito em uma frase ('se notar o texto final estranho, é o primeiro lugar pra olhar') e diz que a instalação vale quando `~/.claude/skills/unslop/SKILL.md` existir. Não reinstala o que já está presente e não escreve nada dentro da pasta de dados. Termina com uma sugestão só: `/profills-post`.",
+      "expected_output": "Diagnostica e mostra a tabela: as seis peças em ✅ e nada a instalar do pipeline. Como o usuário pediu a unslop por nome, põe o conflito na mesa antes de instalar — pergunta com duas opções, 'Seguir só com a humanize-pt-br' (recomendada, porque as duas brigam na regra de travessão) e 'Instalar a unslop mesmo assim'. Com o 'pode instalar', roda `npx skills add cursor/plugins --skill unslop -g -y -a claude-code` (ou a alternativa `theclaymethod/unslop`), registra o conflito em uma frase ('se notar o texto final estranho, é o primeiro lugar pra olhar') e diz que a instalação vale quando `~/.claude/skills/unslop/SKILL.md` existir. Não reinstala o que já está presente e não escreve nada dentro da pasta de dados. Termina com uma sugestão só: `/profills-post`.",
       "files": [
         "evals/files/7"
       ],
@@ -121,8 +123,56 @@
         "Registra o conflito em uma frase ao usuário, no sentido de 'se o texto final sair estranho, esse é o primeiro lugar pra olhar'",
         "NEGATIVA: não reinstala o que já está presente — nenhum `claude plugin marketplace add`, `claude plugin install` nem `npx skills add othavi0/skills --skill humanize-pt-br` é executado",
         "NEGATIVA: nada dentro de `linkedin-data/` é criado ou alterado — a cópia em outputs/ não traz arquivo dessa pasta",
-        "A resposta final traz a tabela de sete linhas do passo 2, com a linha da unslop mantendo o texto fixo 'Corta clichês de IA — redundante com a humanize-pt-br'",
+        "A resposta final traz a tabela de oito linhas do passo 2, com a linha da unslop mantendo o texto fixo 'Corta clichês de IA — redundante com a humanize-pt-br'",
         "Termina com exatamente uma sugestão de próximo passo, `/profills-post`, porque voz.md já existe"
+      ]
+    },
+    {
+      "id": 8,
+      "prompt": "(A profills-radar invocou a profills-setup porque `linkedin-data/.profills.json` não existe. O pedido original do usuário era 'quais empresas eu acompanho'. Contexto: shell Bash; o diretório atual é um repo git de trabalho com `linkedin-data/` na raiz, não o repo-fonte das skills; plugin, humanize-pt-br e npx já presentes; a pasta de dados foi criada por uma versão anterior das skills e tem a lista de empresas, as fichas e as coletas de julho.)",
+      "expected_output": "Reconhece pela regra do DADOS que a pasta existe mas é antiga (sem `.profills.json`) e vai direto ao passo 4, sem diagnóstico completo nem tabela. Roda `node <pasta da skill>/scripts/migrar.js linkedin-data` sem `--aplicar` e conta ao comercial, sem JSON nem jargão, o que vai mudar: as pastas de rascunhos e de boletins que faltavam, a lista das empresas ganhando etiqueta em cada informação com a prioridade 'a definir', e a pasta marcada como versão nova; diz que guarda uma cópia antes. Aplica com `--aplicar`, roda `indice.js linkedin-data/refs` até `ok: true` e o `migrar.js` de novo até `acoes: []`, diz onde ficou a cópia (`linkedin-data/.backup/<data>/`) e devolve o controle à profills-radar, sem sugerir outra skill.",
+      "files": [
+        "evals/files/8"
+      ],
+      "expectations": [
+        "ARTEFATO: `node skills/profills-radar/scripts/indice.js <outputs>/linkedin-data/refs` devolve `ok: true`, `n_empresas: 6`, `problemas: []` e `fichas_orfas: []`, e toda linha de empresa do INDEX.md traz `setor `, `país `, `prioridade a definir` e `linkedin sim`",
+        "ARTEFATO: o INDEX.md convertido preserva, nas outras 5 linhas, o nome, o slug, o id, o setor, o país, a data de pesquisa, o campo de catálogo e o alerta ⚠ da Sulpack do INDEX.md de evals/files/8 — só ganham chave e os campos novos",
+        "ARTEFATO: a linha da Cetro, que no fixture vem no formato gravado pela versão de 2026-08-04 (sem o campo id e com `catálogo parcial 2026-07-14 (smoke test)`), sai com `id —`, `catálogo 2026-07-14` e `⚠ catálogo parcial (smoke test)`; a migração não para nessa linha nem pergunta setor e país ao comercial",
+        "NEGATIVA: nenhuma ficha ou coleta some nem muda — as 6 fichas `linkedin-data/refs/<slug>.md`, os 7 arquivos de `linkedin-data/catalog/raw/` e `linkedin-data/catalog/_summary.md` em outputs/ são byte a byte iguais aos de evals/files/8",
+        "ARTEFATO: `linkedin-data/.backup/<AAAA-MM-DD>/refs/INDEX.md` existe em outputs/ e é byte a byte igual ao INDEX.md de evals/files/8",
+        "ARTEFATO: `linkedin-data/.profills.json` em outputs/ traz `\"versao_dados\": 2`, e `linkedin-data/drafts` e `linkedin-data/boletins` existem (ou seus .keep)",
+        "ARTEFATO: `node skills/profills-setup/scripts/migrar.js <outputs>/linkedin-data` sobre o resultado devolve `acoes: []` e `ok: true` — a segunda execução não tem o que fazer",
+        "Antes do `--aplicar`, explica ao comercial em linguagem simples o que vai mudar (pastas novas, etiquetas na lista de empresas com prioridade 'a definir', marca da versão) e que guarda uma cópia — sem colar o JSON do script nem usar 'migração', 'schema' ou 'parser'",
+        "RESPOSTA FINAL: diz onde ficou a cópia da lista antiga (a pasta `.backup` dentro da pasta de dados) e devolve o controle à profills-radar para o pedido original continuar, sem tabela de diagnóstico e sem sugerir outra skill"
+      ]
+    },
+    {
+      "id": 9,
+      "prompt": "(A profills-radar invocou a profills-setup porque `linkedin-data/.profills.json` não existe. O pedido original do usuário era 'quais empresas eu acompanho'. Contexto: shell Bash; o diretório atual é um repo git de trabalho com `linkedin-data/` na raiz, não o repo-fonte das skills; plugin, humanize-pt-br e npx já presentes; a pasta de dados foi criada por uma versão anterior das skills e alguém editou a lista de empresas à mão.)",
+      "expected_output": "Reconhece a pasta antiga e vai ao passo 4. O `migrar.js` sem `--aplicar` volta `ok: false` com `linha_fora_do_formato` na linha da Tecnox do Brasil, que tem um colchete a mais no nome. Não aplica, não devolve o controle à profills-radar e não diz que a pasta está pronta: explica ao comercial, sem JSON, que a linha da Tecnox do Brasil está com o nome quebrado, mostra o nome como está e propõe tirar o `[BR]`, e espera a resposta antes de corrigir.",
+      "files": [
+        "evals/files/9"
+      ],
+      "expectations": [
+        "Roda `node <pasta da skill>/scripts/migrar.js linkedin-data` e a saída no transcript traz `ok: false` com um problema `linha_fora_do_formato` na linha da Tecnox do Brasil",
+        "NEGATIVA: não roda `migrar.js` com `--aplicar` enquanto `problemas[]` está cheio, ou, se rodou, a saída dessa execução traz `aplicado: false`",
+        "NEGATIVA — ARTEFATO: `linkedin-data/refs/INDEX.md` em outputs/ é byte a byte igual ao de evals/files/9, a menos que o usuário tenha aprovado a correção da linha da Tecnox; `linkedin-data/.profills.json`, `linkedin-data/drafts`, `linkedin-data/boletins` e `linkedin-data/.backup` não existem em outputs/",
+        "RESPOSTA FINAL: cita a Tecnox do Brasil pelo nome, mostra o nome como está na lista (com o `[BR]`) e propõe o nome sem o colchete extra, em linguagem de comercial, sem colar o JSON do script",
+        "NEGATIVA — RESPOSTA FINAL: não devolve o controle à profills-radar, não diz que a pasta está pronta ou atualizada e não sugere outra skill; diz que o pedido original ('quais empresas eu acompanho') espera a lista ser consertada"
+      ]
+    },
+    {
+      "id": 10,
+      "prompt": "(A profills-radar invocou a profills-setup porque `linkedin-data/.profills.json` não existe. O pedido original do usuário era 'quais empresas eu acompanho'. Contexto: shell Bash; o diretório atual é um repo git de trabalho com `linkedin-data/` na raiz, não o repo-fonte das skills; plugin e humanize-pt-br presentes; `command -v node` e `command -v npx` não devolvem nada, porque o Node.js não está instalado; a pasta de dados foi criada por uma versão anterior das skills. Quando a skill perguntar sobre o Node, o usuário responde 'deixa para depois'.)",
+      "expected_output": "Reconhece a pasta antiga. Vê que a atualização precisa do Node, ausente, e pergunta com duas opções, 'Instalar o Node agora' recomendada. Com o 'deixa para depois', não roda o `migrar.js`, não mexe na pasta e não devolve o controle à profills-radar: diz em uma frase que a lista de empresas só abre depois que o Node estiver instalado e que o pedido original espera por isso, com a instalação do Node como a única ação sugerida.",
+      "files": [
+        "evals/files/8"
+      ],
+      "expectations": [
+        "Pergunta sobre o Node com duas opções, 'Instalar o Node agora' marcada como recomendada e 'Deixar para depois', antes de qualquer tentativa de atualizar a pasta",
+        "NEGATIVA — ARTEFATO: nada dentro de `linkedin-data/` muda — `refs/INDEX.md` em outputs/ é byte a byte igual ao de evals/files/8, e `.profills.json`, `drafts`, `boletins` e `.backup` não existem em outputs/",
+        "NEGATIVA — RESPOSTA FINAL: não devolve o controle à profills-radar e não diz que a pasta está pronta; diz que o pedido original ('quais empresas eu acompanho') espera o Node ser instalado",
+        "RESPOSTA FINAL: a única ação sugerida é instalar o Node, sem sugerir `/profills-voz`, `/profills-radar` ou `/profills-post`"
       ]
     }
   ]
