@@ -264,10 +264,16 @@ function parsearCaudaAntiga(resto) {
   }
 
   let catalogo = null;
+  let notaDoCatalogo = null;
   const catalogoCampo = campos.pop() || '';
   const mc = catalogoCampo.match(/^catálogo\s+(\d{4}-\d{2}-\d{2})$/);
+  // A versão de 2026-08-04 gravava "catálogo parcial AAAA-MM-DD (nota)"; o qualificador vira alerta.
+  const mq = catalogoCampo.match(/^catálogo\s+(.+?)\s+(\d{4}-\d{2}-\d{2})\s*(.*)$/);
   if (mc && dataValida(mc[1])) catalogo = mc[1];
-  else if (catalogoCampo !== 'sem catálogo') {
+  else if (mq && dataValida(mq[2])) {
+    catalogo = mq[2];
+    notaDoCatalogo = ['catálogo', mq[1], mq[3]].filter(Boolean).join(' ');
+  } else if (catalogoCampo !== 'sem catálogo') {
     problemas.push({ tipo: 'catalogo_fora_do_formato', detalhe: `esperado "sem catálogo" ou "catálogo AAAA-MM-DD", veio "${catalogoCampo}"` });
   }
 
@@ -284,7 +290,7 @@ function parsearCaudaAntiga(resto) {
   if (campos.length === 2) [setor, pais] = campos;
   else problemas.push({ tipo: 'linha_ambigua', detalhe: `esperados 2 campos sem chave (setor e país) entre o id e a pesquisa, vieram ${campos.length}: "${campos.join(' · ')}"` });
 
-  return { id, setor, pais, pesquisa, catalogo, alerta, problemas };
+  return { id, setor, pais, pesquisa, catalogo, alerta: [alerta, notaDoCatalogo].filter(Boolean).join(' · ') || null, problemas };
 }
 
 // A versão 1 só tinha id, pesquisa, catálogo e ⚠ com chave: qualquer outra chave conhecida é versão 2.

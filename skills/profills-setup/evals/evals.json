@@ -136,7 +136,8 @@
       ],
       "expectations": [
         "ARTEFATO: `node skills/profills-radar/scripts/indice.js <outputs>/linkedin-data/refs` devolve `ok: true`, `n_empresas: 6`, `problemas: []` e `fichas_orfas: []`, e toda linha de empresa do INDEX.md traz `setor `, `país `, `prioridade a definir` e `linkedin sim`",
-        "ARTEFATO: o INDEX.md convertido preserva, linha a linha, o nome, o slug, o id, o setor, o país, a data de pesquisa, o campo de catálogo e os dois alertas ⚠ (Cetro e Sulpack) do INDEX.md de evals/files/8 — só ganham chave e os campos novos",
+        "ARTEFATO: o INDEX.md convertido preserva, nas outras 5 linhas, o nome, o slug, o id, o setor, o país, a data de pesquisa, o campo de catálogo e o alerta ⚠ da Sulpack do INDEX.md de evals/files/8 — só ganham chave e os campos novos",
+        "ARTEFATO: a linha da Cetro, que no fixture vem no formato gravado pela versão de 2026-08-04 (sem o campo id e com `catálogo parcial 2026-07-14 (smoke test)`), sai com `id —`, `catálogo 2026-07-14` e `⚠ catálogo parcial (smoke test)`; a migração não para nessa linha nem pergunta setor e país ao comercial",
         "NEGATIVA: nenhuma ficha ou coleta some nem muda — as 6 fichas `linkedin-data/refs/<slug>.md`, os 7 arquivos de `linkedin-data/catalog/raw/` e `linkedin-data/catalog/_summary.md` em outputs/ são byte a byte iguais aos de evals/files/8",
         "ARTEFATO: `linkedin-data/.backup/<AAAA-MM-DD>/refs/INDEX.md` existe em outputs/ e é byte a byte igual ao INDEX.md de evals/files/8",
         "ARTEFATO: `linkedin-data/.profills.json` em outputs/ traz `\"versao_dados\": 2`, e `linkedin-data/drafts` e `linkedin-data/boletins` existem (ou seus .keep)",
