@@ -151,7 +151,9 @@ function lerFicha(pasta, arquivo) {
   return { arquivo, nome, slug, id, setor, pais, pesquisa, prioridade, linkedin, grupo, relacionados };
 }
 
+// Pasta refs/ que ainda não existe é a primeira run: nenhuma ficha, não erro.
 function listarFichas(pasta) {
+  if (!fs.existsSync(pasta)) return [];
   return fs
     .readdirSync(pasta)
     .filter((f) => f.endsWith('.md') && f !== 'INDEX.md')
@@ -405,7 +407,8 @@ function montarRodada(empresas, hoje) {
     const camada = CAMADAS[ordem(item)];
     if (linkedin === false) rodada.sem_linkedin.push(item);
     else if (camada.intervalo_dias === null) rodada.a_definir.push(item);
-    else if (item.dias_desde_catalogo === null || item.dias_desde_catalogo >= camada.intervalo_dias) devidas.push(item);
+    // Catálogo com data depois de hoje é data errada: a empresa conta como devida, e o examinar avisa.
+    else if (item.dias_desde_catalogo === null || item.dias_desde_catalogo < 0 || item.dias_desde_catalogo >= camada.intervalo_dias) devidas.push(item);
     else rodada.em_dia.push(item);
   }
   rodada.devidas = devidas.slice(0, LIMITE_POR_RODADA);
@@ -426,6 +429,7 @@ function examinar(pasta, hoje) {
     fichas_orfas: [],
     pesquisa_vencida: [],
     rodada: montarRodada([], hoje),
+    avisos: [],
     problemas: [],
     ok: false,
   };
@@ -481,6 +485,15 @@ function examinar(pasta, hoje) {
     const dias = e.pesquisa ? diasEntre(e.pesquisa, hoje) : null;
     const vencida = dias !== null && dias > 60;
     if (vencida) saida.pesquisa_vencida.push(e.slug);
+    if (e.catalogo && diasEntre(e.catalogo, hoje) < 0) {
+      saida.avisos.push({
+        tipo: 'catalogo_no_futuro',
+        linha: numero,
+        slug: e.slug,
+        catalogo: e.catalogo,
+        detalhe: `${e.nome} tem catálogo ${e.catalogo}, depois de hoje (${hoje}): a data está errada ou o relógio do computador está; ela entra na rodada como devida até a data ser corrigida`,
+      });
+    }
 
     saida.empresas.push({
       nome: e.nome,

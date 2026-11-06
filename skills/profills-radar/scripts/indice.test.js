@@ -86,6 +86,22 @@ caso('--procurar acha pelo campo grupo da ficha', () => {
   assert.deepStrictEqual(r.candidatos.map((c) => [c.slug, c.por]), [['kappa-caixas', 'grupo']]);
 });
 
+caso('catálogo com data no futuro vira aviso e a empresa entra na rodada', () => {
+  const saida = rodada(montar([['Media Futuro', 'Média', -30], ['Media 3', 'Média', 3]]));
+  assert.deepStrictEqual(nomes(saida.rodada.devidas), ['Media Futuro']);
+  assert.deepStrictEqual(nomes(saida.rodada.em_dia), ['Media 3']);
+  assert.deepStrictEqual((saida.avisos || []).map((a) => [a.tipo, a.slug, a.catalogo]), [['catalogo_no_futuro', 'media-futuro', antes(-30)]]);
+});
+
+caso('pasta refs/ ausente: --procurar e a validação não quebram', () => {
+  const refs = path.join(fs.mkdtempSync(path.join(os.tmpdir(), 'indice-test-')), 'refs');
+  const v = spawnSync(process.execPath, [INDICE, refs, '--hoje', HOJE], { encoding: 'utf8' });
+  assert.strictEqual(v.stderr, '');
+  assert.strictEqual(JSON.parse(v.stdout).pasta_existe, false);
+  const { candidatosParecidos } = require(INDICE);
+  assert.deepStrictEqual(candidatosParecidos(refs, 'Kappa'), []);
+});
+
 let falhas = 0;
 for (const { nome, fn } of casos) {
   try {
