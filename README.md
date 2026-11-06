@@ -43,7 +43,7 @@ Depois, dentro do Claude Code, digite `/profills-setup`. Ela confere o que falta
 
 1. Instale e rode `/profills-setup`, como em [Instalar](#instalar).
 2. Grave sua voz com `/profills-voz` antes do primeiro post. Sem ela a `profills-post` não escreve, porque o texto sairia com a cara de outra empresa.
-3. Pergunte ao Claude "o que os concorrentes fizeram?". A `profills-boletim` monta a rodada, pede a coleta quando falta e grava o boletim com as pautas.
+3. Pergunte ao Claude "o que os concorrentes fizeram?". A `profills-boletim` monta a rodada, pede a coleta quando falta e grava o boletim com as pautas. Se a rodada anterior ficou pela metade, ela oferece coletar só as empresas que faltam, sem abrir de novo as páginas já lidas.
 4. Peça "gera um post da pauta 2", com o número da pauta que você quiser. A `profills-post` pega essa pauta no boletim mais novo e escreve as versões.
 
 ### Abra o Claude dentro da pasta de dados
