@@ -52,8 +52,6 @@ Pergunte só o que o material não mostrou:
 - **Eixos de tom** (sério↔leve, formal↔casual, reverente↔irreverente, entusiasmado↔direto) — um `AskUserQuestion` por eixo, com **duas frases-exemplo concretas** como opções (uma de cada extremo, escritas com o vocabulário dele) e a recomendação que você inferiu do material, com o porquê. Voz reconhecível mora perto dos extremos; se ele ficar no meio nos quatro, mostre o par de frases de novo e pergunte qual delas ele mandaria hoje para um cliente.
 - **Tom por contexto e linguagem do cliente** — preencha do próprio material; o que ele não mostrar vira uma pergunta concreta ("como você comemora uma entrega no grupo do WhatsApp?"). A linguagem do cliente sai do mesmo áudio de venda: como o **cliente** chama o produto, a dor e o resultado.
 
-Se outra skill já colheu tom, público ou produto (a `profills-post` faz isso quando o usuário adia a voz), aproveite as respostas que já existem e pule essas partes.
-
 Concluído quando as oito seções do template têm resposta real ou um `[a confirmar]` declarado.
 
 ### 4. Escreva o arquivo

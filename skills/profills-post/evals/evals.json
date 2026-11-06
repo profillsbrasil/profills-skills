@@ -43,13 +43,13 @@
     },
     {
       "id": 3,
-      "prompt": "Preciso de ideias de post sobre automação industrial pro meu LinkedIn. (Contexto: perguntado sobre montar o arquivo de voz agora, o usuário responde \"hoje não dá, tenho reunião\"; ele também não tem nenhum número medido para dar.)",
-      "expected_output": "- Sem voz.md, invoca a profills-voz; com o \"hoje não dá\", pergunta o essencial (tom, público, o que vende) e oferece a skill para depois.\n- Sem catálogo, diz isso em uma frase, oferece rodar a profills-garimpo e segue com o tema.\n- Sem número real, usa `[número a confirmar]` nas variações e deixa o ângulo `dado` de fora; o arquivo final não fica com campo pendente nem ganha número inventado.\n- 3-5 variações, picker local e escolhido salvo em drafts/.",
+      "prompt": "Preciso de ideias de post sobre automação industrial pro meu LinkedIn. (Contexto: ele não tem nenhum número medido para dar, e as Provas do arquivo de voz dele estão todas como [a confirmar].)",
+      "expected_output": "- Lê o voz.md do disco, que não tem nenhuma prova com número, e escreve na voz dele sem invocar a profills-voz.\n- Sem catálogo, diz isso em uma frase, oferece rodar a profills-garimpo e segue com o tema.\n- Sem número real, usa `[número a confirmar]` nas variações e deixa o ângulo `dado` de fora; o arquivo final não fica com campo pendente nem ganha número inventado.\n- 3-5 variações, picker local e escolhido salvo em drafts/.",
       "files": [
         "evals/files/3"
       ],
       "expectations": [
-        "Trata a ausência de linkedin-data/voz.md invocando a skill profills-voz (lê o SKILL.md dela) e, diante do \"hoje não dá\", coleta tom, público e o que ele vende antes de escrever, oferecendo a skill para depois na resposta final.",
+        "Lê linkedin-data/voz.md do disco antes de gerar e não invoca a profills-voz (o arquivo existe); o texto salvo não contém nenhuma das palavras banidas do voz.md (\"solução robusta\", \"alavancar\", \"parceiro estratégico\", \"de forma assertiva\", \"estado da arte\").",
         "Diz na resposta final, em uma frase, que não existe catálogo nenhum (nenhum catalog/<slug>.md), oferece rodar a profills-garimpo e segue com o tema em vez de travar o pedido.",
         "NEGATIVA: nenhum número medido aparece no texto salvo sem o usuário ter dado — a rota de escape está visível em outputs/linkedin-data/drafts/<AAAA-MM-DD>-<tema-slug>/variacoes.md (marca `[número a confirmar]` onde caberia dado) e o arquivo final salvo não tem campo pendente nem número novo inventado para tapar o buraco.",
         "Nenhuma das variações do variacoes.md usa o ângulo `dado`, e a saída diz explicitamente que ele ficou de fora por falta de número real.",
@@ -117,6 +117,21 @@
         "Existe em outputs/linkedin-data/.picker/current/content/ um JSON de tela com uma opção por variação, e a escolha foi pedida no picker (Copiar A/B/C) ou no chat.",
         "Depois de rodar start-server.sh, não cola a `url` nem query com chave no chat. Lê `opened` do JSON: com `false`, diz em uma frase que a aba não abriu e oferece escolher pelo chat (A/B/C); com `true`, diz que a aba abriu.",
         "stop-server.sh não é chamado antes da escolha nem antes do preview final; é chamado uma vez no fim (passo 8 sem ajuste, ou passo 9 com ajuste)."
+      ]
+    },
+    {
+      "id": 7,
+      "prompt": "Gera uns posts sobre manutenção preventiva de envasadora. (Contexto: quando você propõe montar o arquivo de voz, o usuário responde \"agora não dá, tô saindo pra uma visita\".)",
+      "expected_output": "- Confere no disco que linkedin-data/voz.md não existe e invoca a profills-voz antes de qualquer rascunho.\n- Diante do \"agora não dá\", explica em uma frase que sem a voz o post sai genérico, com a cara da empresa de referência e não a dele, e para.\n- Não gera rascunho nem variação, não abre o picker e não troca a voz por perguntas rápidas de tom, público ou produto.\n- Fecha com uma única sugestão: rodar a profills-voz quando ele tiver os 10 minutos.",
+      "files": [
+        "evals/files/7"
+      ],
+      "expectations": [
+        "Confere a ausência de linkedin-data/voz.md (test -f ou equivalente) e invoca a skill profills-voz (lê o SKILL.md dela) antes de escrever qualquer texto de post.",
+        "A resposta final diz, em uma frase, por que o post sairia genérico sem a voz (soaria como a empresa de referência, não como ele).",
+        "NEGATIVA: outputs/ não contém nenhum arquivo em linkedin-data/drafts/ (nem <AAAA-MM-DD>-<tema-slug>.md nem <AAAA-MM-DD>-<tema-slug>/variacoes.md) e nenhum JSON de tela em linkedin-data/.picker/; start-server.sh não é chamado.",
+        "NEGATIVA: outputs/ não contém linkedin-data/voz.md e o transcript não registra nenhuma [PERGUNTA] de tom, público ou o que ele vende feita para substituir a voz; nenhuma voz é inventada nem gravada pela metade.",
+        "A resposta final termina com UMA única sugestão de próximo passo, rodar a profills-voz (/profills-voz) quando ele tiver os ~10 minutos, sem emendar outras."
       ]
     }
   ]

@@ -49,10 +49,10 @@ Concluído quando o tema cabe numa frase, a referência está definida — o nom
 ### 2. Reúna os três insumos
 
 1. **O catálogo** — leia `DADOS/catalog/<slug>.md` e o `DADOS/catalog/raw/<slug>/<AAAA-MM-DD>/posts.json` da empresa que inspira. De lá vêm os hooks, formatos e ângulos que engajaram e o % de hooks que cabem no corte. Sem o `<slug>.md`: abra o `meta.json` da coleta — o campo `status` (`sem_posts`, `pagina_nao_gerenciada`, `erro_navegacao`) diz por quê. Conte a razão ao usuário em uma frase, ofereça rodar a `profills-garimpo` e siga só com o tema.
-2. **A voz do usuário** — leia `DADOS/voz.md`: identidade, voz, provas, palavras banidas. É o que faz o rascunho soar como ele, não como a empresa de referência. Sem esse arquivo, **invoque a skill `profills-voz`** — ela monta o arquivo com o usuário em ~10 minutos a partir de material real dele. Se ele não puder agora, pergunte o essencial com `AskUserQuestion` (tom, público, o que ele vende) e ofereça a skill para depois.
+2. **A voz do usuário** — leia `DADOS/voz.md`: identidade, voz, provas, palavras banidas. É o que faz o rascunho soar como ele, não como a empresa de referência. Sem esse arquivo, **invoque a skill `profills-voz`** e espere ela gravar o `voz.md` antes de seguir — ela monta o arquivo com o usuário em ~10 minutos a partir de material real dele. Não existe rascunho sem voz: se ele disser que agora não tem tempo, explique em uma frase que sem a voz o post sai genérico, com a cara da empresa de referência e não a dele, e pare sem gerar rascunho, com a sugestão de rodar a `profills-voz` quando ele tiver os 10 minutos.
 3. **O que não copiar** — leia a seção `## Do Not Copy` do dossiê da empresa em `DADOS/refs/<slug>.md`. Seção vazia ou ainda com o comentário de placeholder significa "nunca perguntado": faça uma `AskUserQuestion` ("tem algo da <empresa> que você não quer imitar?") com opções concretas tiradas dos posts dela ("o tom institucional", "os posts de vaga", "o excesso de emoji", "nada a evitar") e grave a resposta no dossiê, no lugar do comentário, antes de gerar.
 
-Concluído quando os três estão em contexto — cada um lido do disco, ou com a ausência resolvida pelo caminho acima.
+Concluído quando os três estão em contexto — cada um lido do disco, ou com a ausência resolvida pelo caminho acima. A voz só se resolve com o `DADOS/voz.md` gravado pela `profills-voz`; sem ele, a run termina neste passo, sem nada em `DADOS/drafts/`.
 
 ### 3. Colete a matéria-prima
 
