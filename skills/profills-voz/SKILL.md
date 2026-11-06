@@ -40,7 +40,7 @@ Concluído quando você tem em mãos 2-3 amostras do material dele. Se ele não 
 
 ### 2. Extraia os marcadores de voz
 
-Percorra o material com a tabela de marcadores de `references/extracao-voz.md`. Cada achado carrega o **trecho-recibo** do material — traço sustentado por trecho é medida; traço sem trecho é palpite seu e entra com `[hipótese]` no lugar do recibo.
+Percorra o material com a tabela de marcadores de `references/extracao-voz.md`. Cada achado carrega o **trecho-recibo** do material — traço sustentado por trecho é medida; traço sem trecho é palpite seu e entra com `[hipótese]` no lugar do recibo. A marca `[hipótese]` serve só aos traços da seção Voz; Identidade, Tom por contexto e Linguagem do cliente que o material não mostra viram pergunta no passo 3.
 
 Concluído quando cada marcador da tabela tem achado com recibo, hipótese declarada, ou está explicitamente vazio.
 
@@ -48,12 +48,12 @@ Concluído quando cada marcador da tabela tem achado com recibo, hipótese decla
 
 Pergunte só o que o material não mostrou:
 
-- **Identidade** — o que vende, quem decide a compra, as dores desse comprador, o diferencial.
+- **Identidade** — o que vende, quem decide a compra, as dores desse comprador, o diferencial. O que vende e para quem viram `[PERGUNTA]` sempre que o material não diz isso com todas as letras.
 - **Provas** — pergunte "quantos?" e "desde quando?" até virar número. "40 clientes desde 2023" entra; sem número confirmado, o campo fica `[a confirmar]` e a `profills-post` pede depois.
 - **Eixos de tom** (sério↔leve, formal↔casual, reverente↔irreverente, entusiasmado↔direto) — um `AskUserQuestion` por eixo, com **duas frases-exemplo concretas** como opções (uma de cada extremo, escritas com o vocabulário dele) e a recomendação que você inferiu do material, com o porquê. Voz reconhecível mora perto dos extremos; se ele ficar no meio nos quatro, mostre o par de frases de novo e pergunte qual delas ele mandaria hoje para um cliente.
 - **Tom por contexto e linguagem do cliente** — preencha do próprio material; o que ele não mostrar vira uma pergunta concreta ("como você comemora uma entrega no grupo do WhatsApp?"). A linguagem do cliente sai do mesmo áudio de venda: como o **cliente** chama o produto, a dor e o resultado.
 
-Concluído quando Identidade, Voz, Tom por contexto, Linguagem do cliente e Provas têm resposta real ou um `[a confirmar]` declarado. Palavras banidas e Isso não sou eu se enchem no passo 5.
+Concluído quando Identidade, Voz, Tom por contexto, Linguagem do cliente e Provas têm resposta real ou um `[a confirmar]` declarado, e cada linha de Tom por contexto traz uma frase que ele disse ou escreveu (no material ou na resposta à sua pergunta). Palavras banidas e Isso não sou eu se enchem no passo 5.
 
 ### 4. Escreva o arquivo
 
