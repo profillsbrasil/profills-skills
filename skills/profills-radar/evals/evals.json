@@ -4,7 +4,7 @@
     {
       "id": 1,
       "prompt": "Quero começar a acompanhar o que meus concorrentes andam postando no LinkedIn pra tirar ideias de conteúdo. (Contexto: quando você perguntar o que a empresa dele vende e para quem, o usuário responde «vendo máquinas de embalagem para indústria de alimentos, meu cliente é fábrica de pequeno e médio porte»; ele aprova as 4 primeiras candidatas que você propuser, responde «são essas mesmas, pode seguir» quando você pedir para confirmar as páginas do LinkedIn, e não quer nenhuma similar por enquanto.)",
-      "expected_output": "Branch Primeira run, decidida pela saída do indice.js (pasta refs/ vazia: indice_existe false e fichas_orfas vazio). Pergunta em prosa o que ele vende e para quem, pesquisa 4-6 candidatas reais do setor via WebSearch/WebFetch nesta sessão — o disco não tem nenhuma empresa para reaproveitar — e oferece com AskUserQuestion (multiSelect), uma opção por empresa com a razão de uma frase, mais 'tenho outras em mente'. Cada aprovada passa inteira por Como entra uma empresa nova: --procurar, os três eixos de pesquisa, slug/id resolvidos, ficha em DADOS/refs/<slug>.md pelo template com Última pesquisa 2026-08-24 e Confirmação do usuário com a frase dele entre aspas, mais a linha no INDEX.md no formato de campos com chave — `setor`, `país`, `prioridade a definir` (o usuário não disse prioridade), `linkedin sim` — terminando em 'pesquisa 2026-08-24 · sem catálogo'. Oferece as similares, escreve DADOS/selection.md (máx. 5, com id em cada linha) e fecha nomeando quem entrou e sugerindo a profills-garimpo.",
+      "expected_output": "Branch Primeira run, decidida pela saída do indice.js (pasta refs/ vazia: indice_existe false e fichas_orfas vazio). Pergunta em prosa o que ele vende e para quem, pesquisa 4-6 candidatas reais do setor via WebSearch/WebFetch nesta sessão — o disco não tem nenhuma empresa para reaproveitar — e oferece com AskUserQuestion (multiSelect), uma opção por empresa com a razão de uma frase, mais 'tenho outras em mente'. Cada aprovada passa inteira por Como entra uma empresa nova: --procurar, os três eixos de pesquisa, slug/id resolvidos, ficha em DADOS/refs/<slug>.md pelo template com Última pesquisa 2026-08-24 e Confirmação do usuário com a frase dele entre aspas, mais a linha no INDEX.md no formato de campos com chave — `setor`, `país`, `prioridade a definir` (o usuário não disse prioridade), `linkedin sim` — terminando em 'pesquisa 2026-08-24 · sem catálogo'. Oferece as similares, escreve DADOS/selection.md (máx. 12, com id em cada linha) e fecha nomeando quem entrou e sugerindo a profills-garimpo.",
       "files": [
         "evals/files/1"
       ],
@@ -17,25 +17,25 @@
         "Rodar `node scripts/indice.js <DADOS>/refs --hoje 2026-08-24` sobre o resultado devolve `ok: true`, `n_empresas` igual ao número de fichas criadas e `fichas_orfas: []`; toda linha do INDEX.md traz, com chave, `id`, `setor`, `país`, `prioridade a definir` e `linkedin sim`, e termina em `pesquisa 2026-08-24 · sem catálogo` (ou nesse trecho seguido só de `· ⚠ <frase>`)",
         "NEGATIVA: nenhuma ficha nem linha de índice carrega data de pesquisa anterior a 2026-08-24, e nenhuma empresa aparece sem ter passado pela aprovação do usuário nesta sessão",
         "NEGATIVA: nada é escrito em linkedin-data/catalog/ — a Primeira run da radar não cataloga posts",
-        "linkedin-data/selection.md existe com no máximo 5 empresas, cada linha no formato completo com o campo id, e todo slug citado tem o refs/<slug>.md correspondente no disco; a resposta final nomeia quem entrou e sugere a profills-garimpo"
+        "linkedin-data/selection.md existe com no máximo 12 empresas, cada linha no formato completo com o campo id, e todo slug citado tem o refs/<slug>.md correspondente no disco; a resposta final nomeia quem entrou e sugere a profills-garimpo"
       ]
     },
     {
       "id": 2,
-      "prompt": "(A profills-garimpo invocou a profills-radar porque DADOS/selection.md não existe. Contexto: na pergunta da seleção o usuário marca TODAS as 6 empresas; depois de ouvir a razão do teto ele responde «tá bom, então prioriza Cetro Máquinas, Skymsen, Maqinox, Tecnox do Brasil e Tecnoenvase».)",
-      "expected_output": "Branch Seleção, montada com o empresas[] do indice.js — sem pedir link, URL ou nome novo. Apresenta as 6 com AskUserQuestion (multiSelect), cada opção com nome, setor e o campo catálogo, e o alerta da Sulpack. Como ele marca as 6, diz em texto que o usuário lê que o teto é 5 porque passar disso vira sessão longa de navegação no LinkedIn, aceita a ordem de prioridade dele, escreve as 5 primeiras e diz pelo nome quem ficou de fora (Sulpack). Usa dias_desde_pesquisa (84 dias, todas vencidas) para oferecer a re-pesquisa antes de seguir. Escreve DADOS/selection.md com o cabeçalho 'Seleção ativa — 2026-08-24' e uma linha por empresa copiando nome, slug, id, setor e país do índice. Devolve o controle à profills-garimpo sem inventar próximo passo.",
+      "prompt": "(A profills-garimpo invocou a profills-radar porque DADOS/selection.md não existe. Contexto: quando você perguntar a prioridade das empresas, o usuário responde Alta para Cetro Máquinas e Skymsen, Média para Maqinox e Tecnox do Brasil, Adjacente para Tecnoenvase e Validação para Sulpack; quando você oferecer a rodada, ele responde «pode seguir com essas».)",
+      "expected_output": "Branch Seleção, montada com a saída do indice.js — sem pedir link, URL ou nome novo. Como as 6 empresas vêm em rodada.a_definir, pergunta a prioridade de cada uma com AskUserQuestion (opções Alta, Média, Adjacente, Validação, cada uma com o intervalo que ela dá), grava a resposta no campo prioridade da linha do INDEX.md e no campo Prioridade de cada ficha, e roda o script de novo. A rodada calculada tem as 6 em rodada.devidas, na ordem Skymsen, Cetro Máquinas, Maqinox, Tecnox do Brasil, Tecnoenvase, Sulpack: mostra essa lista em texto, já marcada, com prioridade, catálogo (Cetro catalogada em 14/07/2026, as outras nunca) e o alerta da Sulpack, e pergunta se segue. Usa dias_desde_pesquisa (84 dias, todas vencidas) para oferecer a re-pesquisa. Escreve DADOS/selection.md com as 6, cabeçalho 'Seleção ativa — 2026-08-24', copiando nome, slug, id, setor e país do índice. Devolve o controle à profills-garimpo sem inventar próximo passo.",
       "files": [
         "evals/files/2"
       ],
       "expectations": [
-        "As opções vêm do `empresas[]` da saída do indice.js: apresenta as 6 empresas do índice numa AskUserQuestion multiSelect, cada opção com nome, setor e o campo catálogo (Cetro 'catalogada em 14/07/2026', as outras cinco 'nunca catalogada'), e repassa o alerta ⚠ de presença digital fraca da Sulpack",
-        "Não pede ao usuário link, URL ou nome de empresa nova em momento algum",
-        "Com as 6 marcadas, o teto de 5 aparece em texto que o usuário lê (na pergunta ou na resposta final) junto com a razão — passar de 5 vira sessão longa de navegação no LinkedIn",
-        "linkedin-data/selection.md tem exatamente 5 linhas de empresa e são exatamente as 5 que o usuário priorizou (Cetro Máquinas, Skymsen, Maqinox, Tecnox do Brasil, Tecnoenvase)",
-        "A resposta final diz pelo nome qual empresa ficou de fora (Sulpack) e que ela entra na próxima rodada",
-        "Cada linha de selection.md copia nome, slug, id, setor e país exatamente como estão em evals/files/2/linkedin-data/refs/INDEX.md, sem encurtar nem reescrever, e o cabeçalho é '# Seleção ativa — 2026-08-24'",
+        "ARTEFATO: o indice.js sobre a fixture inicial devolve as 6 empresas em `rodada.a_definir` e `rodada.devidas` vazio; RESPOSTA: antes de oferecer qualquer rodada, pergunta a prioridade das empresas com AskUserQuestion, com as opções Alta, Média, Adjacente e Validação",
+        "No linkedin-data/refs/INDEX.md de outputs/, a linha de cada empresa traz a prioridade que o usuário deu (Cetro e Skymsen `prioridade Alta`, Maqinox e Tecnox `prioridade Média`, Tecnoenvase `prioridade Adjacente`, Sulpack `prioridade Validação`), e o diff contra evals/files/2/linkedin-data/refs/INDEX.md muda só o campo prioridade: id, setor, país, linkedin, pesquisa, catálogo e o ⚠ da Sulpack ficam iguais",
+        "Cada uma das 6 fichas em outputs/ ganha o campo `**Prioridade**` com o mesmo valor da linha do índice, e o resto da ficha fica igual ao da fixture",
+        "ARTEFATO: `node scripts/indice.js <DADOS>/refs --hoje 2026-08-24` sobre o linkedin-data/refs de outputs/ devolve `ok: true`, `rodada.a_definir` vazio e `rodada.devidas` com as 6 na ordem Skymsen, Cetro Máquinas, Maqinox, Tecnox do Brasil, Tecnoenvase, Sulpack",
+        "Mostra a rodada em texto, já marcada, cada empresa com a prioridade e o campo catálogo (Cetro 'catalogada em 14/07/2026', as outras cinco 'nunca catalogada') e o alerta ⚠ de presença digital fraca da Sulpack, e pergunta se ele segue com ela em vez de pedir que escolha do zero",
+        "Não pede ao usuário link, URL ou nome de empresa nova em momento algum, e não corta a rodada em 5: as 6 entram, porque o teto é 12",
+        "linkedin-data/selection.md tem exatamente as 6 empresas, cada linha copiando nome, slug, id, setor e país exatamente como estão no INDEX.md, sob o cabeçalho '# Seleção ativa — 2026-08-24'",
         "A oferta de re-pesquisa cita o número de dias que veio do script (84 dias desde 2026-06-01, `pesquisa_vencida: true` nas 6) em vez de uma conta feita de cabeça",
-        "NEGATIVA: linkedin-data/refs/INDEX.md e as 6 fichas ficam byte-a-byte iguais aos de evals/files/2/linkedin-data/refs/ — a seleção não edita índice nem ficha",
         "NEGATIVA: fecha devolvendo o controle à profills-garimpo, sem sugerir um próximo passo por conta própria"
       ]
     },
@@ -95,8 +95,8 @@
     },
     {
       "id": 6,
-      "prompt": "Bora ver o que essas empresas andaram postando. (Contexto: quando você oferecer a lista, o usuário marca as três primeiras opções.)",
-      "expected_output": "O indice.js volta indice_existe false com fichas_orfas listando as 6 fichas: a memória existe e o mapa se perdeu. Roda `--reconstruir`, que reescreve o INDEX.md a partir das fichas (6 linhas no formato de campos com chave, com `prioridade a definir` e `linkedin sim` porque as fichas não trazem prioridade, a da Cetro com id 66792350 lido da ficha) e recupera o campo catálogo do disco: Cetro, Maqinox e Skymsen voltam com 'catálogo 2026-07-14', porque catalog/raw/<slug>/2026-07-14/posts.json tem post; Sulpack, Tecnoenvase e Tecnox ficam em 'sem catálogo', porque a coleta delas veio vazia ou não existe. Lê o aviso alertas_perdidos — sem índice anterior, nenhum ⚠ é recuperável — e diz ao usuário que os alertas precisam ser refeitos, além de quantas e quais empresas recuperou e que o índice foi remontado a partir das fichas que já estavam no disco. Segue para a Seleção, não para a Primeira run, e fecha escrevendo DADOS/selection.md com as escolhidas.",
+      "prompt": "Bora ver o que essas empresas andaram postando. (Contexto: quando você perguntar a prioridade das empresas, o usuário responde «deixa a definir por enquanto»; quando você oferecer a lista, ele escolhe as três primeiras.)",
+      "expected_output": "O indice.js volta indice_existe false com fichas_orfas listando as 6 fichas: a memória existe e o mapa se perdeu. Roda `--reconstruir`, que reescreve o INDEX.md a partir das fichas (6 linhas no formato de campos com chave, com `prioridade a definir` e `linkedin sim` porque as fichas não trazem prioridade, a da Cetro com id 66792350 lido da ficha) e recupera o campo catálogo do disco: Cetro, Maqinox e Skymsen voltam com 'catálogo 2026-07-14', porque catalog/raw/<slug>/2026-07-14/posts.json tem post; Sulpack, Tecnoenvase e Tecnox ficam em 'sem catálogo', porque a coleta delas veio vazia ou não existe. Lê o aviso alertas_perdidos — sem índice anterior, nenhum ⚠ é recuperável — e diz ao usuário que os alertas precisam ser refeitos, além de quantas e quais empresas recuperou e que o índice foi remontado a partir das fichas que já estavam no disco. Segue para a Seleção, não para a Primeira run: como as 6 vêm em rodada.a_definir, pergunta a prioridade; ele deixa a definir, então oferece as 6 como opções fora da rodada, sem gravar prioridade nenhuma, e fecha escrevendo DADOS/selection.md com as escolhidas.",
       "files": [
         "evals/files/6"
       ],
@@ -108,12 +108,13 @@
         "As linhas da Cetro, da Maqinox e da Skymsen trazem `catálogo 2026-07-14`, recuperado de catalog/raw/<slug>/2026-07-14/ pelo script; as da Sulpack, da Tecnoenvase e da Tecnox trazem `sem catálogo` — coleta vazia ou inexistente não vira catálogo",
         "NEGATIVA: nenhuma data de catálogo é datilografada por fora do que o script achou no disco — nenhuma linha inventa catálogo para Sulpack, Tecnoenvase ou Tecnox, e nenhum ⚠ do índice antigo reaparece como se tivesse sido preservado",
         "Diz ao usuário, pelos nomes, quantas e quais empresas recuperou, que o índice foi reconstruído a partir das fichas já existentes, e que os alertas ⚠ que existissem no índice perdido precisam ser refeitos (aviso alertas_perdidos), em vez de seguir em silêncio",
-        "Segue para a Seleção com as empresas recuperadas (AskUserQuestion multiSelect com nome, setor e campo catálogo) e escreve linkedin-data/selection.md com no máximo 5 linhas, cada uma no formato completo com o campo id"
+        "Segue para a Seleção com as empresas recuperadas (AskUserQuestion multiSelect com nome, setor e campo catálogo) e escreve linkedin-data/selection.md com no máximo 12 linhas, cada uma no formato completo com o campo id",
+        "Pergunta a prioridade das empresas antes de oferecer a lista e, com a resposta «deixa a definir por enquanto», não grava prioridade nenhuma: toda linha do INDEX.md de outputs/ continua com `prioridade a definir`"
       ]
     },
     {
       "id": 7,
-      "prompt": "Roda a coleta nas minhas empresas de referência. (Contexto: quando você oferecer a lista, o usuário marca Cetro Máquinas, Skymsen e Tecnoenvase.)",
+      "prompt": "Roda a coleta nas minhas empresas de referência. (Contexto: quando você perguntar a prioridade das empresas, o usuário responde «deixa a definir por enquanto»; quando você oferecer a lista, o usuário escolhe Cetro Máquinas, Skymsen e Tecnoenvase.)",
       "expected_output": "A validação do indice.js volta ok: false com três problemas: catalogo_fora_do_formato na linha da Cetro ('catálogo parcial 2026-07-14 (smoke test)'), link_nao_bate_com_slug e ficha_ausente na linha da Tecnoenvase (linka tecnoenvase.md) — e, fora dos problemas, fichas_orfas com tecnoenvase-maquinas-e-equipamentos-ltda.md, que é consequência da linha torta, não erro à parte. Conserta as duas linhas no INDEX.md — Cetro passa a 'catálogo 2026-07-14', Tecnoenvase volta a linkar tecnoenvase-maquinas-e-equipamentos-ltda.md — roda o script de novo até ok: true e só então escreve DADOS/selection.md com as três empresas escolhidas. Explica em uma frase de linguagem comum o que estava torto, sem despejar JSON.",
       "files": [
         "evals/files/7"
@@ -127,6 +128,25 @@
         "NEGATIVA: não cria refs/tecnoenvase.md nem renomeia/altera qualquer ficha <slug>.md para calar o script; as 6 fichas ficam byte-a-byte iguais às do estado inicial",
         "Conta ao usuário, em uma frase de linguagem comum, o que estava torto no índice e que foi corrigido, sem despejar o JSON do script na resposta",
         "linkedin-data/selection.md traz exatamente as 3 empresas escolhidas (Cetro Máquinas, Skymsen, Tecnoenvase), cada linha com o campo id, sob o cabeçalho '# Seleção ativa — 2026-08-24'"
+      ]
+    },
+    {
+      "id": 8,
+      "prompt": "Tenho uma planilha com os concorrentes que quero acompanhar, é a concorrentes-ficticios.xlsx aqui na pasta. Coloca elas na minha lista. (Contexto: quando você perguntar se a Gama Embalagens é a mesma Ômega Embalagens que já está na lista, o usuário responde «não, são empresas diferentes».)",
+      "expected_output": "Branch Gestão → Importar planilha. Roda o importar.js sem --aplicar e conta em linguagem simples, sem JSON nem slug: 7 empresas novas, a Eta Cartons já estava na lista e ganha a prioridade Média da planilha, Gama Embalagens e Teta Líquidos ficam sem coleta porque a planilha não traz a página delas no LinkedIn, Delta Máquinas só tem o perfil de uma pessoa, e a Zeta Papéis entra como 'a definir' porque a planilha dizia 'Urgente'. Pergunta se a Gama Embalagens é a mesma Ômega Embalagens (campo parecidas); como ele diz que não, aplica com --aplicar e roda o indice.js até ok: true, com 9 empresas. Diz quantas a próxima rodada já pega (5: Alfa Cartonagem, Épsilon Pack, Ômega Embalagens, Eta Cartons, Beta Envase). Não escreve selection.md e termina com uma sugestão só.",
+      "files": [
+        "evals/files/8"
+      ],
+      "expectations": [
+        "ARTEFATO: `node scripts/importar.js concorrentes-ficticios.xlsx <DADOS>/refs --hoje 2026-08-24` sobre a fixture inicial devolve `ok: true` com `resumo` novas 7, ja_existem 1, sem_linkedin 2, perfil_pessoal 1; RESPOSTA: os números que a resposta dá ao usuário batem com esse resumo",
+        "Simula antes de gravar: a contagem de novas, já existentes e sem LinkedIn aparece para o usuário antes da rodada com --aplicar, e o texto não traz JSON, slug cru nem nome de campo do script",
+        "Pergunta, nomeando as duas, se a Gama Embalagens é a mesma Ômega Embalagens antes de aplicar, e com a resposta 'são diferentes' cria a ficha da Gama sem tocar na da Ômega",
+        "ARTEFATO: o linkedin-data/refs/INDEX.md de outputs/ é byte-a-byte igual ao que `importar.js --aplicar --hoje 2026-08-24` produz sobre a fixture, e `node scripts/indice.js <DADOS>/refs --hoje 2026-08-24` sobre ele devolve `ok: true`, `n_empresas: 9` e `fichas_orfas: []`",
+        "A linha da Eta Cartons passa de `prioridade a definir` para `prioridade Média` e a ficha dela ganha `**Prioridade**: Média`; a linha e a ficha da Ômega Embalagens ficam byte-a-byte iguais às da fixture",
+        "As linhas de Alfa Cartonagem e Beta Envase trazem `grupo Alfa Cartonagem`; as de Gama Embalagens, Teta Líquidos e Delta Máquinas trazem `linkedin não`; a da Zeta Papéis traz `prioridade a definir`",
+        "Diz ao usuário que Gama Embalagens, Teta Líquidos e Delta Máquinas ficam na lista mas fora da coleta, e por quê (sem página da empresa no LinkedIn; na Delta, só o perfil de uma pessoa)",
+        "A resposta final diz quantas empresas a lista tem agora (9) e quantas a próxima rodada já pega, coerente com `rodada.devidas` do indice.js (5)",
+        "NEGATIVA: não escreve linkedin-data/selection.md, não navega nem pesquisa na web, e termina com uma sugestão só"
       ]
     }
   ]
