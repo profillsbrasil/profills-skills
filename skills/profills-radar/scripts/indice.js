@@ -1,15 +1,17 @@
 #!/usr/bin/env node
 // indice.js — a conta do índice de referências da profills-radar (Node >= 18, sem dependência).
 // Faz três coisas sobre DADOS/refs: valida o INDEX.md linha a linha (campos por chave, id, datas,
-// existência da ficha, fichas órfãs, pesquisa vencida em 60 dias); reconstrói o INDEX.md a partir
+// existência da ficha, fichas órfãs, pesquisa vencida em 60 dias) e monta a rodada por camadas de
+// prioridade (CAMADAS, até LIMITE_POR_RODADA empresas); reconstrói o INDEX.md a partir
 // das fichas quando ele sumiu (--reconstruir, recuperando o campo catálogo em catalog/raw/ e no
 // índice anterior — o alerta ⚠ não é recuperável do disco); e procura ficha parecida antes de criar
-// uma nova (--procurar, sem acento e por distância).
+// uma nova (--procurar, sem acento e por distância, também pelo grupo e pelos nomes relacionados).
 // Uso:     node scripts/indice.js <pasta refs> [--reconstruir] [--catalog <pasta>] [--procurar "<nome>"] [--hoje AAAA-MM-DD]
 // Exemplo: node scripts/indice.js linkedin-data/refs --procurar "Maquimox"
 //          → {"acao":"procurar","termo":"Maquimox","ha_parecido":true,"candidatos":[{"slug":"maqinox-...","semelhanca":0.75}],"ok":true}
 // Saída: JSON em stdout. Exit 0 = ok · 1 = alguma checagem falhou · 2 = erro de uso/arquivo.
-// Carregado com require() (a migração da profills-setup faz isso), só exporta o formato da linha.
+// Carregado com require() pela migração da profills-setup e pelo importar.js: exporta o formato da linha,
+// a validação sem saída (examinar) e a busca de parecidas.
 
 const fs = require('fs');
 const path = require('path');
@@ -118,6 +120,7 @@ function lerFicha(pasta, arquivo) {
     pesquisa: campo(['Última pesquisa', 'Ultima pesquisa']),
     prioridade: campo(['Prioridade']),
     grupo: campo(['Grupo']),
+    relacionados: campo(['Grupo e nomes relacionados']),
   };
 
   // Empresa sem página no LinkedIn tem `—` no endereço: o slug passa a ser o nome do arquivo da ficha.
@@ -143,7 +146,9 @@ function lerFicha(pasta, arquivo) {
   const dataMatch = bruto.pesquisa ? bruto.pesquisa.match(/(\d{4}-\d{2}-\d{2})/) : null;
   const pesquisa = dataMatch ? dataMatch[1] : null;
 
-  return { arquivo, nome, slug, id, setor, pais, pesquisa, prioridade, linkedin, grupo };
+  const relacionados = bruto.relacionados && !PADROES_VAZIOS.test(bruto.relacionados.trim()) ? bruto.relacionados.trim() : null;
+
+  return { arquivo, nome, slug, id, setor, pais, pesquisa, prioridade, linkedin, grupo, relacionados };
 }
 
 function listarFichas(pasta) {
@@ -368,40 +373,69 @@ function lerIndice(pasta) {
 
 // ---------- ações ----------
 
-function validar(pasta, hoje) {
-  if (!fs.existsSync(pasta)) {
-    // Pasta refs/ ausente é estado de fluxo (primeira run), não erro de uso.
-    const vazio = {
-      acao: 'validar',
-      pasta,
-      hoje,
-      pasta_existe: false,
-      indice_existe: false,
-      n_empresas: 0,
-      empresas: [],
-      fichas_orfas: [],
-      pesquisa_vencida: [],
-      problemas: [{ tipo: 'pasta_ausente', detalhe: `a pasta ${pasta} não existe — crie-a antes de escrever a primeira ficha; é primeira run` }],
-      ok: false,
-    };
-    process.stdout.write(JSON.stringify(vazio, null, 2) + '\n');
-    process.exit(1);
+// Quanto tempo cada prioridade espera entre duas coletas. `intervalo_dias` 0 = toda rodada;
+// null = o usuário ainda não disse a prioridade, e a radar pergunta antes de montar a rodada.
+const CAMADAS = [
+  { prioridade: 'Alta', intervalo_dias: 0 },
+  { prioridade: 'Média', intervalo_dias: 14 },
+  { prioridade: 'Adjacente', intervalo_dias: 28 },
+  { prioridade: 'Validação', intervalo_dias: 28 },
+  { prioridade: 'a definir', intervalo_dias: null },
+];
+// A profills-garimpo navega página por página no navegador logado: passar de uma dúzia de páginas
+// numa sessão é o volume que o compliance dela trata como uso fora do humano.
+const LIMITE_POR_RODADA = 12;
+
+// Cada empresa cai em exatamente um balde. Ordem: camada, depois o catálogo mais antigo (nunca primeiro).
+function montarRodada(empresas, hoje) {
+  const rodada = { limite_por_rodada: LIMITE_POR_RODADA, devidas: [], fora_do_limite: [], em_dia: [], sem_linkedin: [], a_definir: [] };
+  const ordem = (e) => CAMADAS.findIndex((c) => c.prioridade === (e.prioridade || 'a definir'));
+  const itens = empresas
+    .map((e) => ({
+      nome: e.nome,
+      slug: e.slug,
+      prioridade: e.prioridade || 'a definir',
+      catalogo: e.catalogo,
+      dias_desde_catalogo: e.catalogo ? diasEntre(e.catalogo, hoje) : null,
+      linkedin: e.linkedin,
+    }))
+    .sort((a, b) => ordem(a) - ordem(b) || (a.catalogo || '').localeCompare(b.catalogo || ''));
+  const devidas = [];
+  for (const { linkedin, ...item } of itens) {
+    const camada = CAMADAS[ordem(item)];
+    if (linkedin === false) rodada.sem_linkedin.push(item);
+    else if (camada.intervalo_dias === null) rodada.a_definir.push(item);
+    else if (item.dias_desde_catalogo === null || item.dias_desde_catalogo >= camada.intervalo_dias) devidas.push(item);
+    else rodada.em_dia.push(item);
   }
-  const indice = lerIndice(pasta);
+  rodada.devidas = devidas.slice(0, LIMITE_POR_RODADA);
+  rodada.fora_do_limite = devidas.slice(LIMITE_POR_RODADA);
+  return rodada;
+}
+
+// Lê o índice e devolve a saída da validação, sem imprimir: o importar.js chama isto direto.
+function examinar(pasta, hoje) {
   const saida = {
     acao: 'validar',
     pasta,
     hoje,
-    pasta_existe: true,
-    indice_existe: indice.existe,
+    pasta_existe: fs.existsSync(pasta),
+    indice_existe: false,
     n_empresas: 0,
     empresas: [],
     fichas_orfas: [],
     pesquisa_vencida: [],
+    rodada: montarRodada([], hoje),
     problemas: [],
     ok: false,
   };
-
+  if (!saida.pasta_existe) {
+    // Pasta refs/ ausente é estado de fluxo (primeira run), não erro de uso.
+    saida.problemas.push({ tipo: 'pasta_ausente', detalhe: `a pasta ${pasta} não existe — crie-a antes de escrever a primeira ficha; é primeira run` });
+    return saida;
+  }
+  const indice = lerIndice(pasta);
+  saida.indice_existe = indice.existe;
   const fichas = listarFichas(pasta);
 
   if (!indice.existe) {
@@ -412,8 +446,7 @@ function validar(pasta, hoje) {
         ? `INDEX.md não existe, mas há ${fichas.length} ficha(s) em refs/ — rode --reconstruir`
         : 'INDEX.md não existe e não há fichas em refs/ — é primeira run',
     });
-    process.stdout.write(JSON.stringify(saida, null, 2) + '\n');
-    process.exit(1);
+    return saida;
   }
 
   if (!/^##\s+Empresas\s*$/m.test(indice.texto)) {
@@ -477,8 +510,13 @@ function validar(pasta, hoje) {
   if (saida.n_empresas === 0 && !saida.problemas.some((p) => p.tipo === 'cabecalho_ausente')) {
     saida.problemas.push({ tipo: 'indice_vazio', detalhe: 'o INDEX.md existe mas não tem nenhuma linha de empresa' });
   }
-
+  saida.rodada = montarRodada(saida.empresas, hoje);
   saida.ok = saida.problemas.length === 0;
+  return saida;
+}
+
+function validar(pasta, hoje) {
+  const saida = examinar(pasta, hoje);
   process.stdout.write(JSON.stringify(saida, null, 2) + '\n');
   process.exit(saida.ok ? 0 : 1);
 }
@@ -675,12 +713,12 @@ function reconstruir(pasta, hoje, raizCatalogo) {
   process.exit(saida.ok ? 0 : 1);
 }
 
-function procurar(pasta, termo) {
+// `inteira` é a semelhança do nome ou do slug inteiro, sem o atalho por palavra: é ela que o
+// importar.js usa para decidir sozinho que é a mesma empresa. `semelhanca` vale para perguntar ao usuário.
+function candidatosParecidos(pasta, termo) {
   const alvo = normalizar(termo);
-  const saida = { acao: 'procurar', pasta, termo, ha_parecido: false, candidatos: [], ok: true };
-  if (!alvo) morrer('Uso: --procurar precisa de um nome, ex.: --procurar "Maquimox".');
-
   const pedacos = alvo.split(' ').filter(Boolean);
+  const candidatos = [];
   for (const arquivo of listarFichas(pasta)) {
     let ficha;
     try {
@@ -688,14 +726,17 @@ function procurar(pasta, termo) {
     } catch (e) {
       continue;
     }
-    const candidatos = [
+    const valores = [
       { valor: normalizar(ficha.nome || ''), por: 'nome' },
       { valor: normalizar(ficha.slug || arquivo.replace(/\.md$/, '')), por: 'slug' },
+      { valor: normalizar(ficha.grupo || ''), por: 'grupo' },
     ];
     let melhor = { semelhanca: 0, por: null };
-    for (const { valor, por } of candidatos) {
+    let inteira = 0;
+    for (const { valor, por } of valores) {
       if (!valor) continue;
       let s = semelhanca(alvo, valor);
+      if (por !== 'grupo') inteira = Math.max(inteira, s);
       if (valor.includes(alvo) || alvo.includes(valor)) s = Math.max(s, 0.85);
       for (const palavra of valor.split(' ').filter(Boolean)) {
         for (const pedaco of pedacos) {
@@ -704,19 +745,31 @@ function procurar(pasta, termo) {
       }
       if (s > melhor.semelhanca) melhor = { semelhanca: s, por };
     }
+    // Nos nomes relacionados só vale o nome procurado inteiro, entre fronteiras de palavra:
+    // a frase é longa, e o atalho por palavra acharia "grupo" ou "divisão" em toda ficha.
+    if (ficha.relacionados && melhor.semelhanca < 0.85 && ` ${normalizar(ficha.relacionados)} `.includes(` ${alvo} `)) {
+      melhor = { semelhanca: 0.85, por: 'nomes relacionados' };
+    }
     if (melhor.semelhanca >= 0.7) {
-      saida.candidatos.push({
+      candidatos.push({
         nome: ficha.nome,
         slug: ficha.slug,
         arquivo,
         pesquisa: ficha.pesquisa,
+        grupo: ficha.grupo,
         semelhanca: melhor.semelhanca,
+        inteira,
         por: melhor.por,
       });
     }
   }
-  saida.candidatos.sort((a, b) => b.semelhanca - a.semelhanca);
-  saida.ha_parecido = saida.candidatos.length > 0;
+  return candidatos.sort((a, b) => b.semelhanca - a.semelhanca);
+}
+
+function procurar(pasta, termo) {
+  if (!normalizar(termo)) morrer('Uso: --procurar precisa de um nome, ex.: --procurar "Maquimox".');
+  const candidatos = candidatosParecidos(pasta, termo).map(({ inteira, ...c }) => c);
+  const saida = { acao: 'procurar', pasta, termo, ha_parecido: candidatos.length > 0, candidatos, ok: true };
   process.stdout.write(JSON.stringify(saida, null, 2) + '\n');
   process.exit(0);
 }
@@ -769,6 +822,23 @@ function principal(argv) {
   return validar(pasta, hoje);
 }
 
-module.exports = { CAMPOS, FORMATO_DA_LINHA, SLUG_VALIDO, RE_ITEM, cabecaDaLinha, parsearLinha, parsearCaudaAntiga, formatarLinha };
+module.exports = {
+  CAMPOS,
+  CAMADAS,
+  LIMITE_POR_RODADA,
+  PRIORIDADES,
+  FORMATO_DA_LINHA,
+  SLUG_VALIDO,
+  RE_ITEM,
+  cabecaDaLinha,
+  parsearLinha,
+  parsearCaudaAntiga,
+  formatarLinha,
+  examinar,
+  candidatosParecidos,
+  normalizar,
+  lerTexto,
+  dataValida,
+};
 
 if (require.main === module) principal(process.argv);
