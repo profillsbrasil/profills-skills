@@ -131,7 +131,7 @@ claude plugin marketplace update profills-skills
 claude plugin update profills-skills@profills-skills
 ```
 
-Se a `humanize-pt-br` estiver instalada, rodar o mesmo comando do passo 3 de novo também atualiza (o `npx skills add` sempre busca a versão atual). Plugin novo pode trazer formato novo de pasta: termine rodando o passo 4, que sem nada a fazer devolve `acoes: []` e não muda nada. Concluído quando você refez o passo 2 e a tabela mostra o que de fato mudou.
+Se a `humanize-pt-br` estiver instalada, rodar o mesmo comando do passo 3 de novo também atualiza (o `npx skills add` sempre busca a versão atual). Plugin novo pode trazer formato novo de pasta: termine rodando o passo 4. Sem nada a migrar, o `migrar.js` devolve `acoes: []` e não toca nos arquivos do comercial; o `mapa.js` do fim do passo 4 ainda reescreve o `<DADOS>/CLAUDE.md` quando o estado da pasta mudou desde a última rodada (um `voz.md` novo, uma coleta nova). Não conte isso ao comercial como mudança na pasta. Concluído quando você refez o passo 2 e a tabela mostra o que de fato mudou.
 
 ### 6. Fecho
 
