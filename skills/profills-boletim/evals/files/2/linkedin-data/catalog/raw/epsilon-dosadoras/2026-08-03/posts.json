@@ -1,0 +1,30 @@
+[
+  {
+    "post_id": "urn:li:activity:790000000000000008",
+    "url": "https://www.linkedin.com/feed/update/urn:li:activity:790000000000000008/",
+    "data": "2026-08-01",
+    "idioma": "pt",
+    "resumo_pt": null,
+    "texto": "Dosadora de pó sem poeira.\n\nTexto fictício do post para o eval.",
+    "formato": "imagem",
+    "framework_carrossel": null,
+    "hook_categoria": "question",
+    "hook_cabe_no_corte": true,
+    "cta": null,
+    "hashtags": [],
+    "link_externo": null,
+    "artigo_titulo": null,
+    "angulo": "dado",
+    "gatilho_psicologico": null,
+    "tom": "institucional, formal, sem emoji",
+    "descricao_visual": "foto da máquina na fábrica",
+    "engajamento": {
+      "likes": 20,
+      "comentarios": 2,
+      "reposts": 1
+    },
+    "screenshot": null,
+    "destaque_semana": false,
+    "hook": "Dosadora de pó sem poeira."
+  }
+]
