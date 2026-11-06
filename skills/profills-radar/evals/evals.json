@@ -148,6 +148,22 @@
         "A resposta final diz quantas empresas a lista tem agora (9) e quantas a próxima rodada já pega, coerente com `rodada.devidas` do indice.js (5)",
         "NEGATIVA: não escreve linkedin-data/selection.md, não navega nem pesquisa na web, e termina com uma sugestão só"
       ]
+    },
+    {
+      "id": 9,
+      "prompt": "Importa a planilha concorrentes-conflito.xlsx daqui da pasta na minha lista. (Contexto: quando você perguntar qual página da Eta Cartons vale, o usuário responde «vale a que já está na minha lista».)",
+      "expected_output": "Branch Gestão → Importar planilha. Roda o importar.js sem --aplicar; a saída vem com ok: false e um conflito_de_endereco na linha da Eta Cartons (ID F101): a lista usa a página eta-cartons e a planilha traz eta-cartons-global. Não grava nada e pergunta ao comercial, em linguagem simples e sem slug cru, qual das duas páginas é a certa. Com a resposta «vale a da lista», roda a importação com --pular F101 e --aplicar, cria só a ficha da Kappa Caixas e roda o indice.js até ok: true, com 3 empresas. A ficha e a linha da Eta Cartons ficam como estavam. Não escreve selection.md e termina com uma sugestão só.",
+      "files": [
+        "evals/files/9"
+      ],
+      "expectations": [
+        "ARTEFATO: `node scripts/importar.js concorrentes-conflito.xlsx <DADOS>/refs --hoje 2026-08-24` sobre a fixture inicial sai com exit 1, `ok: false` e um único problema `conflito_de_endereco` com `id_planilha` F101, `na_lista` eta-cartons e `na_planilha` eta-cartons-global",
+        "Antes de qualquer --aplicar, pergunta ao usuário qual das duas páginas da Eta Cartons vale, nomeando a empresa; a pergunta não traz JSON nem nome de campo do script",
+        "ARTEFATO: o linkedin-data/refs/eta-cartons.md de outputs/ é byte-a-byte igual ao da fixture, e a linha da Eta Cartons no INDEX.md também",
+        "ARTEFATO: `node scripts/indice.js <DADOS>/refs --hoje 2026-08-24` sobre o linkedin-data/refs de outputs/ devolve `ok: true`, `n_empresas: 3` e uma linha da Kappa Caixas com `prioridade Média` e `linkedin sim`",
+        "A resposta diz que a Eta Cartons ficou de fora da importação por decisão do usuário e que a Kappa Caixas entrou na lista",
+        "NEGATIVA: não troca o endereço da Eta Cartons, não cria ficha eta-cartons-global.md, não escreve linkedin-data/selection.md e termina com uma sugestão só"
+      ]
     }
   ]
 }

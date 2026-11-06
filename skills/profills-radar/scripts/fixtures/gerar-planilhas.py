@@ -58,18 +58,30 @@ CANAIS = [
     ["F007", "Eta Cartons", "LinkedIn", "Global", "https://www.linkedin.com/company/eta-cartons", "Perfil corporativo localizado", "", D20, ""],
 ]
 
+# Eval 9: a Eta Cartons da planilha aponta outra página que a da lista; a Kappa Caixas é nova.
+MAPA_CONFLITO = [
+    ["F101", "Eta Cartons", "Índia", "Caixas", "Concorrente direto", "Alta",
+     "Caixas para água.", "Água.", "White label.", "Eta Cartons.", "", "https://eta.example/", D20],
+    ["F102", "Kappa Caixas", "Brasil", "Caixas", "Concorrente direto", "Média",
+     "Caixas para sucos.", "Sucos.", "Novos formatos.", "Kappa Caixas.", "", "https://kappa.example/", D20],
+]
+CANAIS_CONFLITO = [
+    ["F101", "Eta Cartons", "LinkedIn", "Global", "https://www.linkedin.com/company/eta-cartons-global", "Perfil corporativo localizado", "", D20, ""],
+    ["F102", "Kappa Caixas", "LinkedIn", "Global", "https://www.linkedin.com/company/kappa-caixas", "Perfil corporativo localizado", "", D20, ""],
+]
 
-def planilha(colunas_mapa):
+
+def planilha(colunas_mapa, linhas_mapa=MAPA, linhas_canais=CANAIS):
     wb = Workbook()
     mapa = wb.active
     mapa.title = "Mapa competitivo"
     mapa.append(["Concorrentes fictícios: mapa competitivo"])
     mapa.append(["Referência", D20])
-    mapa.append(["Entidades", len(MAPA)])
+    mapa.append(["Entidades", len(linhas_mapa)])
     mapa.append(["Escopo", "Empresas inventadas para teste."])
     indices = [COLUNAS_MAPA.index(c) for c in colunas_mapa]
     mapa.append(colunas_mapa)
-    for linha in MAPA:
+    for linha in linhas_mapa:
         mapa.append([linha[i] for i in indices])
     for celula in mapa["M"][5:]:
         celula.number_format = "yyyy-mm-dd hh:mm"
@@ -77,7 +89,7 @@ def planilha(colunas_mapa):
     canais.append(["Canais digitais para acompanhamento"])
     canais.append(["Regra", "URL cadastrada não equivale a acesso completo."])
     canais.append(COLUNAS_CANAIS)
-    for linha in CANAIS:
+    for linha in linhas_canais:
         canais.append(linha)
     return wb
 
@@ -124,3 +136,4 @@ def gravar(wb, caminho):
 
 gravar(planilha(COLUNAS_MAPA), RADAR / "evals" / "files" / "8" / "concorrentes-ficticios.xlsx")
 gravar(planilha([c for c in COLUNAS_MAPA if c != "Prioridade proposta"]), AQUI / "sem-coluna-prioridade.xlsx")
+gravar(planilha(COLUNAS_MAPA, MAPA_CONFLITO, CANAIS_CONFLITO), RADAR / "evals" / "files" / "9" / "concorrentes-conflito.xlsx")
