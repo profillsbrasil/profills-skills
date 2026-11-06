@@ -4,5 +4,5 @@ O índice é um mapa, não um armazém: cada linha aponta para o dossiê que gua
 
 ## Empresas
 
-- [Sulpack Indústria de Máquinas](sulpack-industria-de-maquinas-para-embalagens.md) — `sulpack-industria-de-maquinas-para-embalagens` · id — · seladoras/embaladoras · BR · pesquisa 2026-07-14 · sem catálogo · ⚠ presença digital fraca (~38 seguidores)
-- [Cetro Máquinas](cetromaquinas.md) — `cetromaquinas` · id — · máquinas de embalagem/processamento · BR · pesquisa 2026-07-14 · catálogo parcial 2026-07-14 (smoke test)
+- [Sulpack Indústria de Máquinas](sulpack-industria-de-maquinas-para-embalagens.md) — `sulpack-industria-de-maquinas-para-embalagens` · id — · setor seladoras/embaladoras · país BR · prioridade a definir · linkedin sim · pesquisa 2026-07-14 · sem catálogo · ⚠ presença digital fraca (~38 seguidores)
+- [Cetro Máquinas](cetromaquinas.md) — `cetromaquinas` · id — · setor máquinas de embalagem/processamento · país BR · prioridade a definir · linkedin sim · pesquisa 2026-07-14 · catálogo 2026-07-14 · ⚠ catálogo parcial (smoke test)
