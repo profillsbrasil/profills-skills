@@ -212,18 +212,31 @@ function bloco(nome, corpo) {
   return `${inicio}\n${corpo}${fim}`;
 }
 
+// Marcador só vale como linha inteira e antes de "## Notas da equipe": uma nota ou um texto do
+// comercial que cita o marcador é texto, e o script não pode travar nem apagar nada por causa dele.
+function linhasDoMarcador(texto, marca) {
+  const notas = texto.search(RE_NOTAS);
+  const limite = notas === -1 ? texto.length : notas;
+  const achadas = [];
+  for (let a = 0; a < limite; ) {
+    const quebra = texto.indexOf('\n', a);
+    const z = quebra === -1 ? texto.length : quebra;
+    if (texto.slice(a, z).trim() === marca) achadas.push({ a, z });
+    a = z + 1;
+  }
+  return achadas;
+}
+
 // Devolve onde o bloco está, null quando não tem nenhum marcador, ou o erro quando os marcadores não fecham um par.
 function localizar(texto, nome) {
   const [inicio, fim] = MARCAS[nome];
-  const ni = texto.split(inicio).length - 1;
-  const nf = texto.split(fim).length - 1;
-  if (ni === 0 && nf === 0) return null;
-  const a = texto.indexOf(inicio);
-  const z = texto.indexOf(fim);
-  if (ni !== 1 || nf !== 1 || z < a) {
-    return { erro: `os marcadores "${inicio}" e "${fim}" não formam um par (achei ${ni} de início e ${nf} de fim); deixe um de cada, nesta ordem, e rode de novo` };
+  const is = linhasDoMarcador(texto, inicio);
+  const fs_ = linhasDoMarcador(texto, fim);
+  if (!is.length && !fs_.length) return null;
+  if (is.length !== 1 || fs_.length !== 1 || fs_[0].a < is[0].z) {
+    return { erro: `os marcadores "${inicio}" e "${fim}", cada um sozinho na linha e antes de "## Notas da equipe", não formam um par (achei ${is.length} de início e ${fs_.length} de fim); deixe um de cada, nesta ordem, e rode de novo` };
   }
-  return { a, z: z + fim.length, corpo: texto.slice(a + inicio.length + 1, z) };
+  return { a: is[0].a, z: fs_[0].z, corpo: texto.slice(is[0].z + 1, fs_[0].a) };
 }
 
 function trocar(texto, lugar, novo) {
@@ -231,7 +244,8 @@ function trocar(texto, lugar, novo) {
 }
 
 function montar(atual, template, mapa, hoje) {
-  const fixoNovo = template.slice(template.indexOf(MARCAS.fixo[0]), localizar(template, 'fixo').z);
+  const noTemplate = localizar(template, 'fixo');
+  const fixoNovo = template.slice(noTemplate.a, noTemplate.z);
   const notasDoTemplate = template.slice(template.search(RE_NOTAS));
 
   let texto = atual;

@@ -187,6 +187,45 @@ const casos = [
     assert.strictEqual(lerClaude(dados), quebrado, 'arquivo intacto');
   }],
 
+  ['nota que cita um marcador no meio da frase não quebra o script', () => {
+    const dados = montar();
+    mapaOk(dados);
+    const notas = [
+      '- 2026-11-06: o resumo fica entre <!-- profills:mapa:inicio --> e o fim dele.',
+      '<!-- profills:mapa:fim -->',
+    ];
+    fs.appendFileSync(path.join(dados, 'CLAUDE.md'), `\n${notas.join('\n')}\n`);
+    const comNotas = lerClaude(dados);
+    const trechoNotas = comNotas.slice(comNotas.indexOf('## Notas da equipe'));
+    novoRascunho(dados, '2026-11-10-c.md');
+    const r = mapaOk(dados, '2026-11-10');
+    assert.strictEqual(r.mapa_atualizado, true, 'o mapa continua sendo atualizado');
+    const texto = lerClaude(dados);
+    assert.ok(blocoMapa(texto).includes('Estado em 2026-11-10.'), 'data nova no bloco do topo');
+    assert.ok(texto.endsWith(trechoNotas), 'Notas da equipe, com as duas notas, byte a byte iguais no fim');
+  }],
+
+  ['CLAUDE.md à mão que cita o par de marcadores no meio do texto fica inteiro', () => {
+    const dele = 'O mapa vai entre <!-- profills:mapa:inicio --> aqui\nTEXTO QUE NÃO PODE SUMIR\ne aqui <!-- profills:mapa:fim --> no fim.\n';
+    const dados = montar({ claude: dele });
+    mapaOk(dados);
+    const texto = lerClaude(dados);
+    assert.ok(texto.startsWith(FIXO), 'bloco fixo no topo');
+    assert.ok(texto.includes(`<!-- profills:mapa:fim -->\n\n${dele}`), 'texto do comercial intacto logo depois do mapa');
+    const antes = hashDaPasta(dados);
+    mapaOk(dados);
+    assert.strictEqual(hashDaPasta(dados), antes, 'rodar de novo não muda nada');
+  }],
+
+  ['marcador com espaço nas pontas da linha ainda vale', () => {
+    const dados = montar();
+    mapaOk(dados);
+    const original = lerClaude(dados);
+    fs.writeFileSync(path.join(dados, 'CLAUDE.md'), original.replace('<!-- profills:mapa:inicio -->', '  <!-- profills:mapa:inicio -->  '));
+    mapaOk(dados);
+    assert.strictEqual(lerClaude(dados), original, 'o bloco é reconhecido e volta ao formato do template, sem segundo mapa');
+  }],
+
   ['falha de escrita vira JSON com o motivo, sem stack trace', () => {
     if (process.getuid && process.getuid() === 0) return 'pulado: root ignora permissão';
     const dados = montar();
