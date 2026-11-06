@@ -6,7 +6,7 @@
 - **Setor**: Seladoras industriais para pouch e bandeja (empresa fictícia, para eval)
 - **Porte**: 51-200 funcionários · ~4,2 mil seguidores no LinkedIn
 - **País / idioma dos posts**: GB · EN
-- **Última pesquisa**: 2026-11-01
+- **Última pesquisa**: 2026-08-20
 
 ## Por que é referência
 

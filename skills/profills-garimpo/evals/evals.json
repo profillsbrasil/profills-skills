@@ -126,19 +126,19 @@
     },
     {
       "id": 8,
-      "prompt": "Cataloga a Zeta Sealing. (Contexto: o navegador está logado; a página tem 4.200 seguidores e 3 posts nos últimos 7 dias, todos em inglês. 04/11: \"We spent 3 years redesigning one sealing jaw. Here is what changed on the line.\" (carrossel, 85 likes, 9 comentários, 3 reposts). 05/11: \"Meet us at stand B12 next week. Live demo of the new pouch sealer every hour.\" (imagem, 40 likes, 2 comentários, 1 repost). 06/11: \"Most leaks start before the seal. Three checks your operators can do today.\" (texto, 120 likes, 15 comentários, 8 reposts). A captura de tela funciona.)",
-      "expected_output": "Lê a seleção da fixture (Zeta Sealing Systems, slug `zeta-sealing`, prioridade Alta), avisa o tamanho da rodada e o tempo como estimativa, confirma e invoca a profills-navegador. Grava raw/zeta-sealing/2026-11-06/posts.json com os 3 posts: `texto` e `hook` no inglês original, `idioma: \"en\"` em cada um e um `resumo_pt` de uma ou duas frases fiéis ao post. As classificações inferidas usam os valores fechados de taxonomias.md, sem valor novo por idioma. Roda o metricas.js, que devolve `idiomas: {\"en\": 3}` sem o aviso `resumo_pt_ausente`, e escreve catalog/zeta-sealing.md com a seção 'Posts em outro idioma' listando o resumo em pt-BR de cada post, copiado do posts.json.",
+      "prompt": "Cataloga a Zeta Sealing. (Contexto: o navegador está logado; a página tem 4.200 seguidores e 3 posts nos últimos 7 dias, todos em inglês. 22/08: \"We spent 3 years redesigning one sealing jaw. Here is what changed on the line.\" (carrossel, 85 likes, 9 comentários, 3 reposts). 23/08: \"Meet us at stand B12 next week. Live demo of the new pouch sealer every hour.\" (imagem, 40 likes, 2 comentários, 1 repost). 24/08: \"Most leaks start before the seal. Three checks your operators can do today.\" (texto, 120 likes, 15 comentários, 8 reposts). A captura de tela funciona.)",
+      "expected_output": "Lê a seleção da fixture (Zeta Sealing Systems, slug `zeta-sealing`, prioridade Alta), avisa o tamanho da rodada e o tempo como estimativa, confirma e invoca a profills-navegador. Grava raw/zeta-sealing/2026-08-24/posts.json com os 3 posts: `texto` e `hook` no inglês original, `idioma: \"en\"` em cada um e um `resumo_pt` de uma ou duas frases fiéis ao post. As classificações inferidas usam os valores fechados de taxonomias.md, sem valor novo por idioma. Roda o metricas.js, que devolve `idiomas: {\"en\": 3}` sem o aviso `resumo_pt_ausente`, e escreve catalog/zeta-sealing.md com a seção 'Posts em outro idioma' listando o resumo em pt-BR de cada post, copiado do posts.json.",
       "files": [
         "evals/files/8"
       ],
       "expectations": [
-        "Todo post de outputs/linkedin-data/catalog/raw/zeta-sealing/2026-11-06/posts.json tem `idioma` igual a \"en\" (minúsculo) e `resumo_pt` com uma ou duas frases em pt-BR",
-        "Cada `resumo_pt` é fiel ao post: o do dia 04/11 fala dos 3 anos de redesenho da mandíbula de selagem, o do 05/11 do estande B12 e da demonstração da seladora de pouch, o do 06/11 das três checagens contra vazamento; nenhum traz dado que o texto não tem",
+        "Todo post de outputs/linkedin-data/catalog/raw/zeta-sealing/2026-08-24/posts.json tem `idioma` igual a \"en\" (minúsculo) e `resumo_pt` com uma ou duas frases em pt-BR",
+        "Cada `resumo_pt` é fiel ao post: o do dia 22/08 fala dos 3 anos de redesenho da mandíbula de selagem, o do 23/08 do estande B12 e da demonstração da seladora de pouch, o do 24/08 das três checagens contra vazamento; nenhum traz dado que o texto não tem",
         "NEGATIVA: `texto` e `hook` ficam no inglês original no posts.json, sem tradução no lugar do texto medido",
         "NEGATIVA: `hook_categoria`, `angulo`, `formato` e `gatilho_psicologico` usam só valores de references/taxonomias.md (ou null), sem valor criado para post estrangeiro",
         "ARTEFATO: `node scripts/metricas.js` rodado na pasta da coleta devolve `idiomas` com {\"en\": 3} e nenhum aviso `resumo_pt_ausente`",
         "catalog/zeta-sealing.md tem a seção 'Posts em outro idioma' com um item por post (link, data, idioma, hook original e o resumo em pt-BR igual ao `resumo_pt` do posts.json), e nenhum comentário HTML `<!--` nem o bloco 'Como usar este template'",
-        "Os números do perfil (`posts_por_semana`, `formato_dominante`, `engajamento_medio`, `taxa_normalizada`) são os da saída do metricas.js, e refs/INDEX.md muda só no campo catálogo da Zeta ('sem catálogo' para 'catálogo 2026-11-06')"
+        "Os números do perfil (`posts_por_semana`, `formato_dominante`, `engajamento_medio`, `taxa_normalizada`) são os da saída do metricas.js, e refs/INDEX.md muda só no campo catálogo da Zeta ('sem catálogo' para 'catálogo 2026-08-24')"
       ]
     }
   ]
