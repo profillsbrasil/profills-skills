@@ -139,6 +139,20 @@ caso('--pular deixa a linha de fora e diz qual', () => {
   assert.ok(!fs.existsSync(path.join(refs, 'gama-embalagens.md')));
 });
 
+caso('--pular com ID que não está na planilha é problema com o ID, e nada é gravado', () => {
+  const refs = montar();
+  const antes = hashDaPasta(refs);
+  const r = importar(refs, '--pular', 'F003', '--pular', 'Z999', '--aplicar');
+  assert.strictEqual(r.status, 1);
+  assert.strictEqual(r.json.ok, false);
+  const [p] = problemaDo(r, 'pular_id_inexistente');
+  assert.ok(p, JSON.stringify(r.json.problemas));
+  assert.strictEqual(p.id_planilha, 'Z999');
+  assert.match(p.detalhe, /Z999/);
+  assert.strictEqual(problemaDo(r, 'pular_id_inexistente').length, 1, 'F003 está na planilha');
+  assert.strictEqual(hashDaPasta(refs), antes);
+});
+
 caso('aplicar duas vezes não muda nenhum byte', () => {
   const refs = montar();
   importar(refs, '--aplicar');
@@ -413,6 +427,18 @@ caso('mesmo nome, página diferente: conflito_de_endereco com os dois endereços
   assert.strictEqual(hashDaPasta(refs), antes);
   const pulando = rodar(IMPORTAR, [planilha, refs, '--pular', 'H1']);
   assert.strictEqual(pulando.json.ok, true, JSON.stringify(pulando.json.problemas));
+});
+
+caso('mesmo nome, a lista sem página e a planilha com página: o detalhe diz que a lista tem a empresa sem página', () => {
+  const refs = montar();
+  const primeira = rodar(IMPORTAR, [gravarPlanilha([['N1', 'Nu Caixas', 'Alta']], []), refs, '--aplicar']);
+  assert.strictEqual(primeira.json.ok, true, JSON.stringify(primeira.json.problemas));
+  assert.deepStrictEqual(nomes(primeira.json.sem_linkedin), ['Nu Caixas']);
+  const r = rodar(IMPORTAR, [gravarPlanilha([['N1', 'Nu Caixas', 'Alta']], [['N1', LI('nu-caixas-br')]]), refs]);
+  const [c] = problemaDo(r, 'conflito_de_endereco');
+  assert.ok(c, JSON.stringify(r.json && r.json.problemas));
+  assert.strictEqual(c.na_lista, null);
+  assert.match(c.detalhe, /a lista tem a empresa sem página no LinkedIn e a planilha traz linkedin\.com\/company\/nu-caixas-br/);
 });
 
 caso('primeira importação numa pasta refs/ que ainda não existe cria a pasta', () => {
