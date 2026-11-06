@@ -39,13 +39,14 @@ Comece pela porta de entrada:
 
 ### 1. Diagnóstico silencioso
 
-Rode as checagens de `references/shell.md` — cada comando de fato executado, com a saída dele registrada, porque é essa saída que sustenta cada ✅/❌ da tabela — e monte o quadro inteiro antes de falar com o usuário — ele recebe um quadro pronto, em vez de acompanhar sete comandos passando. Concluído quando você sabe o estado de cada uma das sete peças:
+Rode as checagens de `references/shell.md` — cada comando de fato executado, com a saída dele registrada, porque é essa saída que sustenta cada ✅/❌ da tabela — e monte o quadro inteiro antes de falar com o usuário — ele recebe um quadro pronto, em vez de acompanhar oito comandos passando. Concluído quando você sabe o estado de cada uma das oito peças:
 
 - **Plugin `profills-skills`** — `claude plugin list` mostra `profills-skills`. **Exceção "via repo"**: se o toplevel git do diretório atual tem `skills/profills-setup/SKILL.md`, você está dentro do repo-fonte, as skills já vêm dos symlinks de `.claude/skills` e o plugin não é necessário — marque ✅ com a nota "via repo" e não instale nada. Esse mesmo sinal decide onde criar a pasta de dados, no passo 3.
 - **humanize-pt-br** — `~/.claude/skills/humanize-pt-br/SKILL.md` ou `~/.agents/skills/humanize-pt-br/SKILL.md` existe.
 - **Node/npx** — `command -v npx` (Bash) ou `Get-Command npx` (PowerShell).
 - **Pasta `DADOS`** — resolvida pela regra acima, com `refs/`, `catalog/raw/`, `drafts/` e `boletins/` dentro.
 - **Versão da pasta** — `versao_dados` lido de `DADOS/.profills.json`: 2 é ✅; arquivo ausente ou número menor é ❌. Sem pasta `DADOS`, fica ❌ e se resolve junto com ela.
+- **Lista de empresas** — `node "<pasta desta skill>/../profills-radar/scripts/indice.js" "<DADOS>/refs"`: o `n_empresas` da saída diz quantas empresas o índice tem. Índice ausente ou sem linha conta como 0. Lista vazia não é falta, é o começo. Sem Node ou sem pasta `DADOS`, fica `—` e se resolve junto com eles.
 - **`DADOS/voz.md`** — existe ou não.
 - **unslop** — opcional, entra como `—` até o usuário pedir por nome.
 
@@ -53,7 +54,7 @@ A extensão do Chrome fica de fora do diagnóstico: quem a confere é a `profill
 
 ### 2. Uma tabela só
 
-Mostre exatamente uma tabela, com **estas oito linhas, nesta ordem e com este texto** — só a coluna Status muda entre máquinas. Status: ✅ presente · ❌ falta · `—` opcional ou conferido depois.
+Mostre exatamente uma tabela, com **estas nove linhas, nesta ordem e com este texto** — só a coluna Status muda entre máquinas. Status: ✅ presente · ❌ falta · `—` opcional ou conferido depois.
 
 | Peça | O que faz | Status |
 |---|---|---|
@@ -62,11 +63,12 @@ Mostre exatamente uma tabela, com **estas oito linhas, nesta ordem e com este te
 | Node/npx | Roda as contas das skills (radar, garimpo, post) e instala a humanize-pt-br | ✅/❌ |
 | Pasta de dados | Guarda empresas, catálogos e rascunhos | ✅/❌ |
 | Versão da pasta | Deixa a pasta no formato que estas skills leem | ✅/❌ |
+| Lista de empresas | As empresas que você acompanha no LinkedIn | N empresas / vazia / — |
 | Arquivo de voz | O que você vende, para quem e como você fala | ✅/❌ |
 | Extensão do Chrome | Deixa o Claude ler o LinkedIn no seu navegador | conferida na hora de coletar |
 | unslop (opcional) | Corta clichês de IA — redundante com a humanize-pt-br | ✅/— |
 
-Concluído quando as sete linhas diagnosticadas estão preenchidas (a da extensão fica com a nota fixa). Tudo ✅: diga isso em uma frase e vá para o passo 6, sem rodar comando de instalação. Só a versão da pasta em ❌: vá direto ao passo 4.
+Concluído quando as oito linhas diagnosticadas estão preenchidas (a da extensão fica com a nota fixa). A lista de empresas não entra no "tudo ✅": vazia não é falta. Com 0 empresas, diga na mesma resposta, em uma frase, que dá para começar a lista por uma planilha de concorrentes, se ele tiver uma, pedindo à `profills-radar` "importa minha planilha de concorrentes". Tudo ✅: diga isso em uma frase e vá para o passo 6, sem rodar comando de instalação. Só a versão da pasta em ❌: vá direto ao passo 4.
 
 ### 3. Instalar o que falta
 
@@ -115,6 +117,7 @@ A pasta de dados guarda o trabalho do comercial: empresas, catálogos, rascunhos
    - `linha_ambigua` ou `slug_invalido`: não dá para saber o que é setor e o que é país, ou o endereço do LinkedIn tem caractere estranho. Diga ao comercial o nome da empresa daquela linha e pergunte o setor e o país dela (ou o endereço certo).
    - `linha_fora_do_formato`: o começo da linha está quebrado, em geral um colchete dentro do nome (`[Foo [BR]]`). Mostre o nome como está e proponha a versão sem o colchete extra.
    - Outro tipo (`campo_desconhecido`, `prioridade_invalida`, `campo_ausente`…): o `detalhe` diz o campo e o valor esperado. Mostre a empresa e o valor que veio, e pergunte o certo.
+   - `campo_ausente` de `prioridade` e `linkedin` numa linha que já tem `setor …` e `país …` costuma ser linha antiga cujo setor começa pela palavra "setor" ou o país pela palavra "país": pergunte o setor e o país ao comercial em vez de só acrescentar os dois campos.
 
    Corrija só aquela linha, no formato em que ela já está, e volte ao item 1.
 

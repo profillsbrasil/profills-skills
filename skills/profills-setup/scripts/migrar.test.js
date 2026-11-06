@@ -257,6 +257,16 @@ const casos = [
     assert.strictEqual(hashDaPasta(dados), antes, 'sha256 da pasta igual');
   }],
 
+  ['slug duplicado trava a migração sem gravar', () => {
+    const dados = montar({
+      index: indexCom([
+        '- [Foo](foo.md) — `foo` · id — · s · BR · pesquisa 2026-07-14 · sem catálogo',
+        '- [Foo de novo](foo.md) — `foo` · id — · t · BR · pesquisa 2026-07-14 · sem catálogo',
+      ]),
+    });
+    recusaSemGravar(dados, 'slug_duplicado');
+  }],
+
   ['pasta na versão 3 é recusada sem mudar nada', () => {
     const dados = montar({ index: indexCom(LINHAS_REAIS), marcador: 3 });
     const antes = hashDaPasta(dados);
