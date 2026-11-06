@@ -1,7 +1,6 @@
 <!--
 Andaime do boletim. Ao gravar DADOS/boletins/AAAA-MM-DD.md: troque cada <campo> pelo valor do JSON do
 boletim.js, apague as seções de exemplo que não se aplicam e não deixe nenhum comentário HTML no arquivo.
-Medido = copiado do JSON. Inferido = leitura sua, sempre com o rótulo "(inferido)".
 -->
 # Boletim dos concorrentes — <DD/MM/AAAA>
 

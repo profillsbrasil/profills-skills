@@ -1,7 +1,7 @@
 export const meta = {
   name: 'evals-profills',
   description: 'Roda os evals das skills profills (versão atual × baseline git) em sandbox, nota por asserção e agrega o benchmark',
-  whenToUse: 'Depois de mudar uma skill profills-*: Workflow({name: "evals-profills", args: {skills: ["profills-post"], baseline: "main", iteration: 2}}). Sem args roda as 6 contra main.',
+  whenToUse: 'Depois de mudar uma skill profills-*: Workflow({name: "evals-profills", args: {skills: ["profills-post"], baseline: "main", iteration: 2}}). Sem args roda as 7 contra main.',
   phases: [
     { title: 'Preparar', detail: 'plano a partir dos evals.json, snapshot do baseline, sandbox por run' },
     { title: 'Rodar', detail: 'skill atual × baseline, Sonnet, sandbox isolado' },
@@ -12,12 +12,12 @@ export const meta = {
 
 // ---- parâmetros -----------------------------------------------------------
 const REPO = '/home/othavio/Work/profills-skills'
-const TODAS = ['profills-radar', 'profills-garimpo', 'profills-post', 'profills-voz', 'profills-navegador', 'profills-setup']
+const TODAS = ['profills-radar', 'profills-garimpo', 'profills-post', 'profills-voz', 'profills-navegador', 'profills-setup', 'profills-boletim']
 const skills = (args && args.skills && args.skills.length) ? args.skills : TODAS
 const baseline = (args && args.baseline) || 'main'
 const iteration = (args && args.iteration) || 1
 const WS = (args && args.ws) || (REPO + '/../profills-evals-workspace')
-const SC = '/home/othavio/.claude/plugins/cache/claude-plugins-official/skill-creator/unknown/skills/skill-creator'
+const SC = (args && args.sc) || '/home/othavio/.claude/plugins/marketplaces/claude-plugins-official/plugins/skill-creator/skills/skill-creator'
 const IT = 'iteration-' + iteration
 const HOJE = (args && args.hoje) || '2026-08-24' // data congelada: fixtures e expectations usam datas literais
 

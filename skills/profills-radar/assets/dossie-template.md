@@ -19,7 +19,7 @@
 
 ## Do Not Copy
 
-<!-- vazio = ainda não perguntado. A profills-garimpo pergunta ao fim de cada catálogo. Critério: mesmo TEMA pode; mesma estrutura, ordem de argumentos ou estilo de frase não. -->
+<!-- vazio = ainda não perguntado. A profills-garimpo pergunta ao fim de cada catálogo, e a profills-post pergunta quando acha esta seção vazia. Formato: uma linha por resposta, `AAAA-MM-DD — <resposta do usuário>`, no lugar deste comentário. Critério: mesmo TEMA pode; mesma estrutura, ordem de argumentos ou estilo de frase não. -->
 
 ## Contexto
 

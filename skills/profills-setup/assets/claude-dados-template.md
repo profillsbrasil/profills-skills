@@ -19,10 +19,10 @@ O caminho comum é voz, radar, garimpo e post. O boletim chama a radar e a garim
 
 ## Regras
 
-- O LinkedIn é só leitura: abrir páginas e ler posts no navegador logado do comercial, com pausas de segundos entre uma rolagem e outra, como uma pessoa faz. Nada de curtir, comentar, conectar, publicar nem mandar mensagem. Por sessão, dezenas de páginas, não centenas.
+- O LinkedIn é só leitura: abrir páginas e ler posts no navegador logado do comercial, com pausas de segundos entre uma rolagem e outra, como uma pessoa faz. Curtir, comentar, conectar, publicar e mandar mensagem ficam fora: a sessão só lê. Por sessão, dezenas de páginas, não centenas.
 - Login pedido, captcha ou aviso de "atividade incomum" encerram a coleta na hora: pare e avise o comercial, sem tentar contornar. Um catálogo parcial é melhor que uma conta sinalizada.
 - Não proponha scraper, API nem serviço de raspagem (Firecrawl, Apify e parecidos) para ler o LinkedIn. Ler pelo navegador logado é decisão da Profills, explicada no `references/compliance.md` da skill `profills-garimpo`, não uma limitação a resolver.
-- O bloco "Estado da pasta" abaixo é gerado pelo script `scripts/mapa.js` da skill `profills-setup`. As skills atualizam esse bloco ao terminar; não edite à mão nem ele nem este bloco de regras.
+- O bloco "Estado da pasta" abaixo é gerado pelo script `scripts/mapa.js` da skill `profills-setup`. As skills rodam o script ao terminar, e os dois blocos, o "Estado da pasta" e este de regras, só mudam por ele; o que o comercial quiser registrar vai em "Notas da equipe".
 - Quando o comercial pedir para lembrar uma decisão da equipe, acrescente uma linha em "Notas da equipe", no fim deste arquivo, no formato `- AAAA-MM-DD: <decisão>`. Nunca apague nem reescreva uma nota; se uma decisão nova substitui outra, escreva a nova dizendo que substitui. Nunca escreva nas notas as linhas de marcação `<!-- profills:... -->` que delimitam os blocos acima.
 - Número que vai para um post sai de um arquivo desta pasta ou de uma resposta do comercial. Número sem origem não entra.
 
