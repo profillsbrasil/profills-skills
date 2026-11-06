@@ -1,11 +1,12 @@
 ---
 name: profills-garimpo
 description: >-
-  Cataloga posts recentes de empresas no LinkedIn pelo navegador logado:
-  perfil, comparativo e dashboard. Use para "analisa os posts
-  da X", "o que as empresas andam postando", "leitura de tendência"
-  (janela ampliada) ou re-catalogar. Não use para a lista (profills-radar),
-  o boletim (profills-boletim) nem posts (profills-post).
+  Cataloga os posts recentes de empresas no LinkedIn pelo navegador
+  logado e gera perfil por empresa, comparativo e dashboard. Use para
+  "o que as empresas andam postando", "analisa os posts da X", "monitorar
+  concorrentes", "leitura de tendência" (janela ampliada) ou re-catalogar.
+  Não use para escolher a lista (profills-radar) nem escrever posts
+  (profills-post).
 metadata:
   version: 0.1.0
   author: othavio
@@ -38,7 +39,7 @@ O **slug é a chave de todos os paths** que você escreve (`catalog/raw/<slug>/�
 
 Arquivo ausente ou vazio → **invoque a `profills-radar`**: é ela que decide as empresas, monta a rodada de até 12 e escreve a seleção.
 
-**Rodada em mais de uma sessão.** A data do cabeçalho (`# Seleção ativa — AAAA-MM-DD`) marca a rodada. Empresa que já tem `catalog/raw/<slug>/<data>/meta.json` com data entre a do cabeçalho e hoje, as duas inclusive, já foi coletada nesta rodada: tire-a da lista desta sessão e diga ao usuário, pelo nome, quais já estavam feitas. Só colete de novo se ele pedir. É essa regra que deixa coletar as de prioridade Alta numa sessão e o resto na seguinte sem repetir página. Pasta com data depois de hoje não conta (relógio ou fuso adiantado): ela não marca a empresa como coletada.
+**Rodada em mais de uma sessão.** A data do cabeçalho (`# Seleção ativa — AAAA-MM-DD`) marca a rodada. Empresa que já tem `catalog/raw/<slug>/<data>/meta.json` com data entre a do cabeçalho e hoje, as duas inclusive, já foi coletada nesta rodada: tire-a da lista desta sessão e diga ao usuário, pelo nome, quais já estavam feitas. Só colete de novo se ele pedir. É essa regra que deixa coletar as de prioridade Alta numa sessão e o resto na seguinte sem repetir página. Pasta com data depois de hoje não conta: ela vem de relógio ou fuso adiantado, e a `profills-boletim` para e avisa o comercial antes de chamar esta skill.
 
 Concluído quando você tem nome, slug e id de cada empresa que falta coletar nesta rodada.
 
@@ -90,7 +91,7 @@ DADOS/catalog/raw/<slug>/<AAAA-MM-DD>/
 
 Cada execução cria a pasta do dia; pasta de data anterior fica intacta — é isso que permite comparar cadência semana a semana. Segunda rodada no mesmo dia sobrescreve só a pasta de hoje.
 
-**Screenshot só existe quando a captura aconteceu**: sem PNG devolvido pela tool, grave `screenshot: null` e descreva a imagem em `descricao_visual` (regras em `references/schema-post.md`, seção Screenshot).
+**Screenshot só existe quando a captura aconteceu.** Se a tool não devolveu o PNG (save indisponível, falha, post que não abriu), grave `screenshot: null` e descreva a imagem em `descricao_visual` — a descrição é o fallback documentado. **Arquivo placeholder é proibido**: PNG de 1×1, arquivo vazio ou imagem que você gerou não é captura, é dado falso. O `metricas.js` do passo 6 acusa (aviso de screenshot inexistente ou com menos de 1 KB).
 
 **5a. Extraia o medido.** Rode o JS de `references/navegacao.md` e preencha, a partir do retorno dele e do texto literal do post, os campos da tabela **Medido** de `references/schema-post.md`. Para `formato`, quando o JS devolve só `texto`/`imagem`, confira a coluna "Como reconhecer" de `references/taxonomias.md` com `read_page` (ou o screenshot do post) — enquete, newsletter, evento, documento e reshare só aparecem assim. Concluído quando cada post da janela tem todo campo medido preenchido ou `null` explícito.
 
@@ -110,11 +111,13 @@ node "<pasta desta skill>/scripts/metricas.js" "<DADOS>/catalog/raw/<slug>/<AAAA
 
 "Pasta desta skill" é o diretório onde este `SKILL.md` está. Janela ampliada é detectada pelo `janela_dias` do `meta.json`; se precisar forçar, `--janela padrao|ampliada`.
 
-Ele devolve em JSON todo número do perfil, do `_summary.md` e do dashboard, com os nomes de campo que o `perfil-template.md` e o `dashboard.md` citam; o que ele não conseguiu ler vem `null` com o motivo em `avisos`.
+Ele lê `posts.json` + `meta.json` e devolve, em JSON: `n_posts`, `n_posts_com_engajamento_legivel`, `periodo`, `posts_por_semana`, `engajamento_medio`, `taxa_normalizada` (a fórmula de `references/benchmark-mercado.md`; `null` sem seguidores), `formato_dominante` + `formatos`, `hooks`, `hook_cabe_no_corte_pct`, `idiomas` (posts por código de idioma) e — conforme a janela do passo 3 — `destaque_semana` ou `outliers` (com `media`, `desvio_padrao`, `limiar`; `amostra_insuficiente: true` quando a janela ampliada tem 5 posts ou menos).
+
+Contador pode chegar como número (`12`), string numérica (`"1.200"`) ou o abreviado da UI (`"1,2 mil"`) — o script lê os três. O que ele não consegue ler vira aviso `engajamento_nao_numerico` (com `post_id` e o valor bruto) e **o post sai da média, do destaque e dos outliers** em vez de virar zero silencioso. **Nenhuma estatística sai como `NaN`**: quando a entrada não dá conta, o campo vem `null` e o aviso diz por quê.
 
 **A conta é do script; sua parte é a leitura.** Todo número que entra no perfil, no `_summary.md`, no dashboard e na sua resposta ao usuário é copiado desse JSON — você não recalcula média, taxa, cadência nem destaque em prosa.
 
-Exit `0` = coleta utilizável — mas leia o campo `avisos` sempre: `ok: false` significa que há checagem falhando (sem `seguidores`, `seguidores: 0` com taxa impossível, engajamento ilegível, amostra insuficiente, post fora da janela, screenshot inexistente, com prosa no lugar do caminho ou suspeito de placeholder, `destaque_semana` gravado no post errado, `resumo_pt_ausente` em post fora do português); conserte o que for erro seu e leve para o texto o que for limitação do dado ("sem seguidores: esta empresa não entra na comparação"). Exit `1` = `status` ≠ `ok`, sem perfil para esta empresa. Exit `2` = pasta ou arquivo errado (corrija o caminho) ou `posts.json` malformado — não é um array, ou tem item que não é objeto de post: regrave o bruto conforme `references/schema-post.md`.
+Exit `0` = coleta utilizável — mas leia o campo `avisos` sempre: `ok: false` significa que há checagem falhando (sem `seguidores`, `seguidores: 0` — taxa impossível —, engajamento ilegível, amostra insuficiente, post fora da janela, screenshot inexistente, com prosa no lugar do caminho ou suspeito de placeholder, `destaque_semana` gravado no post errado, `resumo_pt_ausente` em post fora do português); conserte o que for erro seu e leve para o texto o que for limitação do dado ("sem seguidores: esta empresa não entra na comparação"). Exit `1` = `status` ≠ `ok`, sem perfil para esta empresa. Exit `2` = pasta ou arquivo errado (corrija o caminho) ou `posts.json` malformado — não é um array, ou tem item que não é objeto de post: regrave o bruto conforme `references/schema-post.md`.
 
 Com o JSON na mão, gere `DADOS/catalog/<slug>.md` seguindo `assets/perfil-template.md` — uma empresa com `status` diferente de `ok` fica de fora. O relatório em prosa nasce **do JSON**, assim a `profills-post` lê o dado estruturado direto, sem interpretar prosa.
 
@@ -143,7 +146,7 @@ Concluído quando o `_summary.md` cobre todas as empresas coletadas nesta sessã
 
 ### 8. Monte o dashboard visual
 
-Renderize o catálogo como um artefato visual seguindo `references/dashboard.md`. Todo valor plotado vem do JSON do `metricas.js` de cada empresa.
+Renderize o catálogo como um artefato visual seguindo `references/dashboard.md`. O dado estruturado fica em disco para rastreabilidade; o dashboard é a camada visual para o humano digerir cadência, formatos, hooks e destaques de relance. Todo valor plotado vem do JSON do `metricas.js` de cada empresa — o painel é vitrine da conta, não uma segunda conta.
 
 Concluído quando as 7 seções de `dashboard.md` existem no artefato publicado, cada número bate com o JSON do `metricas.js` e o link está na conversa.
 
@@ -152,14 +155,10 @@ Concluído quando as 7 seções de `dashboard.md` existem no artefato publicado,
 Depois do dashboard, guie — com `AskUserQuestion`, opções concretas e a recomendada com o porquê:
 
 1. **Aponte o que salta**: quem lidera, o formato que engaja, o espaço aberto.
-2. **Pergunte o que não copiar**, uma empresa por vez: "tem algo do jeito da <Empresa> que você não quer imitar?", com opções tiradas dos posts que você acabou de ler ("o tom institucional", "os posts de vaga", "o excesso de emoji", "nada a evitar"). Grave a resposta em `DADOS/refs/<slug>.md`, na seção `## Do Not Copy`, no lugar do comentário que estiver lá, no formato que o comentário de `<pasta desta skill>/../profills-radar/assets/dossie-template.md` fixa (uma linha datada por resposta). Critério: mesmo **tema** pode; mesma estrutura, ordem de argumentos ou estilo de frase, não. A `profills-post` lê essa seção antes de escrever, e seção vazia significa "ninguém perguntou ainda".
+2. **Pergunte o que não copiar**, uma empresa por vez: "tem algo do jeito da <Empresa> que você não quer imitar?", com opções tiradas dos posts que você acabou de ler ("o tom institucional", "os posts de vaga", "o excesso de emoji", "nada a evitar"). Grave a resposta em `DADOS/refs/<slug>.md`, na seção `## Do Not Copy`, no lugar do comentário que estiver lá. Critério: mesmo **tema** pode; mesma estrutura, ordem de argumentos ou estilo de frase, não. A `profills-post` lê essa seção antes de escrever, e seção vazia significa "ninguém perguntou ainda".
 3. **Ofereça o próximo passo**: um rascunho com a `profills-post`, a partir de um ângulo que você recomenda.
 
-Invocada pela `profills-boletim`, faça os itens 1 e 2 e devolva o controle sem o item 3: o boletim segue sozinho e dá a sugestão dele.
-
 Na conversa, chame as empresas pelo nome. Slug, dossiê e taxonomia são vocabulário seu, não dele.
-
-Concluído quando cada empresa com `status: ok` coletada nesta sessão teve a pergunta, a resposta datada substituiu o placeholder no dossiê dela e, se o usuário chamou a skill direto, a resposta final traz uma sugestão de próximo passo.
 
 ## Compliance
 

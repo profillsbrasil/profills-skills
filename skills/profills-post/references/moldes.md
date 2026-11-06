@@ -11,6 +11,7 @@ Os valores de hook e ângulo são a taxonomia fechada da `profills-garimpo` (`..
 - [Ângulos (7)](#ângulos-7)
 - [Blocos de credibilidade](#blocos-de-credibilidade)
 - [CTAs (4)](#ctas-4)
+- [Formato visual](#formato-visual) → `formato-visual.md`
 
 ## Templates de post
 
@@ -100,3 +101,7 @@ Todo rascunho fecha com um CTA de uma destas categorias — escolhida pelo que o
 | `salvamento` | "Salva pra quando for [situação]" | carrossel, checklist, referência |
 
 **Regra do verbo nomeado**: CTA diz o que a pessoa ganha ou faz de específico. "Saiba mais" / "clique aqui" / "comente aí" não nomeiam nada — "me chama que eu te mando a planilha de cálculo" nomeia. E o CTA pede **uma** ação, não três.
+
+## Formato visual
+
+Formato carrossel/documento ou imagem → ver `formato-visual.md` (frameworks de carrossel slide a slide, documento vs. galeria nativa, especificações de imagem).
