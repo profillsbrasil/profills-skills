@@ -4,11 +4,14 @@
 - **ID numérico**: `<id>` — estável mesmo em rebranding; `—` quando a página não mostrou
 - **Prioridade**: <Alta | Média | Adjacente | Validação | a definir> — a que o usuário disse; `a definir` enquanto ele não disse
 - **Grupo**: <o recorte em que o usuário agrupa a empresa> — `—` quando não há
+- **Grupo e nomes relacionados**: <marcas, divisões, empresa-mãe e nomes antigos, como a fonte escreveu> — `—` quando não há; o `--procurar` também lê esta linha
+- **Outras páginas no LinkedIn**: <outros endereços `linkedin.com/company/…` da mesma empresa, com o motivo> — `—` quando não há
 - **Setor**: <setor>
 - **Porte**: <nº de seguidores / funcionários, se souber>
 - **País / idioma dos posts**: <BR / global · PT / EN>
 - **Última pesquisa**: <AAAA-MM-DD>
 - **Confirmação do usuário**: <a frase dele entre aspas + a data em que ele disse> — `[a confirmar]` enquanto ele não tiver respondido nesta sessão; nunca escreva "o usuário confirmou" sem a frase
+- **Fonte**: <de onde vieram os fatos desta ficha: as buscas desta sessão, ou a planilha importada com a data em que ela foi conferida>
 
 ## Por que é referência
 
