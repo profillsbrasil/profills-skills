@@ -87,14 +87,21 @@ function converterLinhaAntiga(texto, numero) {
 // recusa trava a migração, em vez de passar calada e aparecer depois na radar.
 function problemasDaVersao2(linhas) {
   const problemas = [];
+  const vistos = new Map();
   linhas.forEach((texto, i) => {
     if (!indice.RE_ITEM.test(texto)) return;
     const r = indice.parsearLinha(texto, i + 1);
     const onde = { linha: i + 1, trecho: texto.slice(0, 120) };
     if (r.erro) {
       problemas.push({ ...onde, tipo: r.erro, detalhe: 'o começo da linha não segue "- [Nome](<slug>.md) — `<slug>` · …": confira se o nome tem colchete, se o arquivo está entre parênteses e se o slug está entre crases' });
+      return;
+    }
+    problemas.push(...r.problemas.map((p) => ({ ...onde, ...p })));
+    const slug = r.empresa.slug;
+    if (vistos.has(slug)) {
+      problemas.push({ ...onde, tipo: 'slug_duplicado', detalhe: `o endereço "${slug}" já aparece na linha ${vistos.get(slug)}: duas linhas para a mesma empresa` });
     } else {
-      problemas.push(...r.problemas.map((p) => ({ ...onde, ...p })));
+      vistos.set(slug, i + 1);
     }
   });
   return problemas;
