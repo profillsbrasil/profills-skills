@@ -1,11 +1,11 @@
 ---
 name: profills-setup
 description: >-
-  Instala, confere e atualiza o ambiente profills: plugin de skills,
-  humanize-pt-br, Node/npx e a pasta de dados DADOS. Use para "instalar
-  as skills da Profills", "configurar o profills", "atualizar as skills",
-  "o que está faltando", numa máquina nova, ou quando outra skill do
-  pipeline não encontra DADOS.
+  Instala, atualiza e confere o ambiente profills: plugin de skills,
+  humanize-pt-br, Node e a pasta de dados DADOS. Use para instalar ou
+  configurar as skills da Profills numa máquina nova, "atualizar as
+  skills", "o que está faltando", ou quando outra skill não encontra
+  DADOS ou a encontra numa versão antiga.
 metadata:
   version: 0.1.0
   author: othavio
@@ -14,15 +14,13 @@ metadata:
 
 # profills-setup
 
-Deixa o ambiente pronto antes de qualquer skill do pipeline rodar. O usuário final é o comercial, não dev: **conduza pela mão, um comando por vez** — explique em uma frase o que o comando faz, rode, confirme pelo critério, só então passe para o próximo.
+Deixa o ambiente pronto antes de qualquer skill do pipeline rodar. O usuário final é o comercial, não dev: **conduza pela mão, uma instalação por vez**: explique em uma frase o que o comando faz, rode, confirme pelo critério e só então passe para a próxima. As checagens do passo 1 rodam em silêncio.
 
 ## Pasta de dados (`DADOS`)
 
-Esta skill é a dona da regra; as outras quatro (radar, garimpo, post, voz) carregam o texto abaixo, literal, na linha que começa por `**Pasta de dados (`DADOS`)**`:
+Esta skill é a dona da regra; as outras cinco (radar, garimpo, post, voz, boletim) carregam o texto abaixo, literal, na linha que começa por `**Pasta de dados (`DADOS`)**`:
 
 > se o diretório atual está num repo git com `linkedin-data/` na raiz (`git rev-parse --show-toplevel`), `DADOS` é essa pasta; senão é `~/Profills LinkedIn/`. Se nenhuma das duas existe, ou se `DADOS/.profills.json` falta ou traz `versao_dados` menor que 2, invoque a skill `profills-setup` — ela cria ou atualiza a pasta e confere o resto da instalação.
-
-Quando nenhuma das duas existe, é por isso que você foi invocada — quem decide onde criar é o item `DADOS` do passo 3.
 
 **Versão da pasta.** `DADOS/.profills.json` guarda `{"versao_dados": 2, "atualizado_em": "AAAA-MM-DD"}`. Pasta sem esse arquivo é da versão 1: foi criada antes de as skills mudarem o formato da lista de empresas. Quem leva uma pasta antiga até a versão atual, sem perder nada, é o passo 4.
 
@@ -32,9 +30,9 @@ Quando nenhuma das duas existe, é por isso que você foi invocada — quem deci
 
 Comece pela porta de entrada:
 
-- **Outra skill invocou você** (radar, garimpo, post ou voz). O diagnóstico completo fica para quando o usuário chamar a skill por nome; aqui você resolve só a pasta:
+- **Outra skill invocou você** (radar, garimpo, post, voz ou boletim). O diagnóstico completo fica para quando o usuário chamar a skill por nome; aqui você resolve só a pasta:
   - **`DADOS` não existia**: vá direto ao item **`DADOS` ❌** do passo 3, crie a pasta já com `boletins/` e o marcador da versão 2, anuncie o caminho e siga para o passo 6.
-  - **`DADOS` existe, mas é antiga** (sem `.profills.json`, ou com `versao_dados` menor que 2): faça o passo 4 inteiro e siga para o passo 6. Sem Node, conduza o item **Node/npx ❌** do passo 3 antes do passo 4. Se o Node ficou para depois ou o `migrar.js` não chegou a `ok: true`, o passo 6 manda ficar com o usuário, não devolver o controle.
+  - **`DADOS` existe, mas é antiga** (sem `.profills.json`, ou com `versao_dados` menor que 2): faça o passo 4 inteiro e siga para o passo 6. Sem Node, conduza o item **Node/npx ❌** do passo 3 antes do passo 4. Com **Node pendente** ou o `migrar.js` sem `ok: true`, o passo 6 manda ficar com o usuário, não devolver o controle.
 - **O usuário chamou você** ("instala", "configura", "atualiza", "o que está faltando"): passo 1.
 
 ### 1. Diagnóstico silencioso
@@ -80,21 +78,22 @@ Nesta ordem, um item por vez:
   claude plugin install profills-skills@profills-skills
   ```
   Instalado quando `claude plugin list` volta a mostrar `profills-skills`. Se um dos comandos falhar, a causa está na tabela de sintomas no fim deste arquivo. Depois de instalar, avise: "pode ser preciso reabrir o Claude Code para as skills novas aparecerem" (não dá para confirmar isso ao vivo nesta sessão).
-- **Node/npx ❌**: o Node.js é o motor dos scripts que a radar, a garimpo e a post rodam (índice, métricas, checagem de formato) e do `npx` que instala a `humanize-pt-br` — sem ele o pipeline não anda. Pergunte com `AskUserQuestion`, duas opções — **"Instalar o Node agora"** (recomendada: passo a passo por sistema em `references/instalacao.md`, ~3 min) ou **"Deixar para depois"**. Instalou: peça para abrir um terminal novo, refaça a checagem de `npx` e siga para o item seguinte. Deixou para depois: pule a `humanize-pt-br`, marque Node como pendente e diga em uma frase que radar, garimpo e post só vão funcionar depois de instalar. Pendência aberta no fim da rodada muda o fecho do passo 6: a única ação sugerida é a que destrava o pendente (instalar o Node, instalar o Git), nunca `/profills-voz`, `/profills-radar` ou `/profills-post`.
+- **Node/npx ❌**: o Node.js é o motor dos scripts que a radar, a garimpo e a post rodam (índice, métricas, checagem de formato) e do `npx` que instala a `humanize-pt-br` — sem ele o pipeline não anda. Pergunte com `AskUserQuestion`, duas opções — **"Instalar o Node agora"** (recomendada: passo a passo por sistema em `references/instalacao.md`, ~3 min) ou **"Deixar para depois"**. Instalou: peça para abrir um terminal novo, refaça a checagem de `npx` e siga para o item seguinte. Deixou para depois: o Node fica pendente, e você diz em uma frase que radar, garimpo e post só vão funcionar depois de instalar.
+  **Node pendente** quer dizer: a `humanize-pt-br` fica de fora, a versão da pasta fica pendente (o passo 4 não roda), o `CLAUDE.md` da pasta não é criado, e o fecho segue a **Pendência aberta** do passo 6.
 - **humanize-pt-br ❌** (com npx disponível): explique que isso traz a skill que tira as marcas de IA dos rascunhos.
   ```
   npx skills add othavi0/skills --skill humanize-pt-br -g -y -a claude-code
   ```
   Instalada quando `~/.claude/skills/humanize-pt-br/SKILL.md` existe.
-- **`DADOS` ❌**: crie onde o sinal do passo 1 mandar — dentro do repo-fonte (`skills/profills-setup/SKILL.md` no toplevel), a pasta é `linkedin-data/` na raiz do repo; fora dele, é `~/Profills LinkedIn/` (no Windows, `C:\Users\NOME\Profills LinkedIn`). O comando por shell, o marcador da versão e o `.gitignore` do caso repo-fonte estão em `references/shell.md`; pasta nova nasce já na versão 2, sem passar pelo passo 4. Com o Node presente, rode em seguida `node "<pasta desta skill>/scripts/mapa.js" "<DADOS>"`: ele cria `<DADOS>/CLAUDE.md`, o arquivo que o Claude lê quando é aberto dentro da pasta, com as regras, o papel de cada skill e o estado da pasta; com o Node pendente, o `CLAUDE.md` espera o Node. Pronta quando o `ls` (ou `Get-ChildItem`) da pasta, rodado depois de criar, mostra `refs/`, `catalog/raw/`, `drafts/`, `boletins/`, `.profills.json` e, com Node, `CLAUDE.md` — "já resolvi" só depois de ver essa saída —, o usuário ouviu o caminho no formato do sistema dele e — no repo-fonte — `git check-ignore linkedin-data/selection.md` responde o caminho.
+- **`DADOS` ❌**: crie onde o sinal do passo 1 mandar — dentro do repo-fonte (`skills/profills-setup/SKILL.md` no toplevel), a pasta é `linkedin-data/` na raiz do repo; fora dele, é `~/Profills LinkedIn/` (no Windows, `C:\Users\NOME\Profills LinkedIn`). O comando por shell, o marcador da versão e o `.gitignore` do caso repo-fonte estão em `references/shell.md`; pasta nova nasce já na versão 2, sem passar pelo passo 4. Com o Node presente, rode em seguida `node "<pasta desta skill>/scripts/mapa.js" "<DADOS>"`: ele cria `<DADOS>/CLAUDE.md`, o arquivo que o Claude lê quando é aberto dentro da pasta, com as regras, o papel de cada skill e o estado da pasta. Pronta quando o `ls` (ou `Get-ChildItem`) da pasta, rodado depois de criar, mostra `refs/`, `catalog/raw/`, `drafts/`, `boletins/`, `.profills.json` e, com Node, `CLAUDE.md` — "já resolvi" só depois de ver essa saída —, o usuário ouviu o caminho no formato do sistema dele e — no repo-fonte — `git check-ignore linkedin-data/selection.md` responde o caminho.
 - **Versão da pasta ❌** com a pasta já existente: é o passo 4, logo a seguir.
 - **unslop**: só entra quando o usuário pedir por nome. Aí `AskUserQuestion` com o conflito na mesa — **"Seguir só com a humanize-pt-br"** (recomendada: as duas brigam na regra de travessão) ou **"Instalar a unslop mesmo assim"** (comandos e o aviso em `references/instalacao.md`).
 
-Concluído quando cada linha ❌ da tabela virou ✅ ou virou uma decisão que o usuário tomou ("deixar o Node para depois").
+Concluído quando cada linha ❌ da tabela virou ✅, virou uma decisão do usuário ("deixar o Node para depois") ou ficou **pendente** com a causa da tabela de sintomas dita ao usuário e o comando que ele repete depois de resolver (instalar o Git e rodar de novo os dois comandos do plugin).
 
 ### 4. Atualizar a pasta
 
-A pasta de dados guarda o trabalho do comercial: empresas, catálogos, rascunhos, voz. Quando as skills mudam o formato de um desses arquivos, `scripts/migrar.js` (nesta skill) leva a pasta até a versão atual e guarda uma cópia de tudo que reescreve. Ele precisa do Node: com o Node pendente, a versão da pasta fica pendente junto, e o fecho pede o Node.
+A pasta de dados guarda o trabalho do comercial: empresas, catálogos, rascunhos, voz. Quando as skills mudam o formato de um desses arquivos, `scripts/migrar.js` (nesta skill) leva a pasta até a versão atual e guarda uma cópia de tudo que reescreve. Ele precisa do Node (sem ele, vale o **Node pendente** do passo 3).
 
 1. **Veja o que vai mudar, sem mudar nada.** Rode `node "<pasta desta skill>/scripts/migrar.js" "<DADOS>"`. A saída é JSON: `versao_atual`, `acoes[]` (cada uma com `tipo`, `alvo` e `detalhe`), `problemas[]` e `ok`. Concluído quando você tem a lista de ações.
 
@@ -140,12 +139,13 @@ Se a `humanize-pt-br` estiver instalada, atualize-a também:
 npx skills update humanize-pt-br -g -y
 ```
 
-O `npx skills` não tem um comando que só confere a versão, então atualizar é rodar o `update`: com a versão em dia ele só responde que está tudo atualizado e não mexe em nada. Se a saída disser `No installed skills found matching`, a skill foi instalada por outro caminho e o `update` não a enxerga; rode o comando de instalação do passo 3, que traz a versão atual e deixa o próximo `update` funcionar (detalhe em `references/instalacao.md`). Plugin novo pode trazer formato novo de pasta: termine rodando o passo 4. Sem nada a migrar, o `migrar.js` devolve `acoes: []` e não toca nos arquivos do comercial; o `mapa.js` do fim do passo 4 ainda reescreve o `<DADOS>/CLAUDE.md` quando o estado da pasta mudou desde a última rodada (um `voz.md` novo, uma coleta nova). Não conte isso ao comercial como mudança na pasta. Concluído quando você refez o passo 2 e a tabela mostra o que de fato mudou.
+Se a saída disser `No installed skills found matching`, a skill foi instalada por outro caminho e o `update` não a enxerga; rode o comando de instalação do passo 3, que traz a versão atual e deixa o próximo `update` funcionar (detalhe em `references/instalacao.md`). Plugin novo pode trazer formato novo de pasta: termine rodando o passo 4. Sem nada a migrar, o `migrar.js` devolve `acoes: []` e não toca nos arquivos do comercial; o `mapa.js` do fim do passo 4 ainda reescreve o `<DADOS>/CLAUDE.md` quando o estado da pasta mudou desde a última rodada (um `voz.md` novo, uma coleta nova). Não conte isso ao comercial como mudança na pasta. Concluído quando você refez o passo 2 e a tabela mostra o que de fato mudou.
 
 ### 6. Fecho
 
-- **Outra skill invocou você**: assim que a pasta existe e está na versão atual, devolva o controle a ela — o pedido original do usuário continua de onde parou. Com a versão da pasta pendente (Node que ficou para depois, ou `migrar.js` sem `ok: true`), não devolva: a skill que chamou leria a lista antiga, daria `formato_antigo` e chamaria você de novo, em laço. Fique com o usuário, diga em uma frase que o pedido original espera a pasta ficar pronta e conduza o que falta: a instalação do Node (passo 3) ou o conserto da linha (passo 4, item 5).
+- **Outra skill invocou você**: assim que a pasta existe e está na versão atual, devolva o controle a ela — o pedido original do usuário continua de onde parou. Com a versão da pasta pendente (**Node pendente**, ou `migrar.js` sem `ok: true`), não devolva: a skill que chamou leria a lista antiga, daria `formato_antigo` e chamaria você de novo, em laço. Fique com o usuário, diga em uma frase que o pedido original espera a pasta ficar pronta e conduza o que falta: a instalação do Node (passo 3) ou o conserto da linha (passo 4, item 5).
 - **O usuário chamou você**: termine com exatamente **uma** sugestão.
+  - **Pendência aberta** (Node pendente, Git ausente, plugin que não instalou) → a única sugestão é a ação que destrava o pendente, com o comando a repetir depois. Com mais de uma pendência, vale a primeira desta ordem: Git ausente (bloqueia o plugin; instalar o Git e repetir os dois comandos do plugin), plugin que não instalou, Node pendente. Não diga que o setup está pronto nem sugira `/profills-voz`, `/profills-radar` ou `/profills-post`.
   - Antes dela, quando `DADOS` é `~/Profills LinkedIn/` e o `<DADOS>/CLAUDE.md` existe, diga em uma frase que, daqui em diante, ele deve abrir o Claude dentro dessa pasta, para o Claude já começar sabendo o fluxo das skills e o estado da pasta. Mostre o caminho e o comando no formato do sistema dele: `cd "<caminho da pasta>"` e depois `claude`, com o caminho como `/home/nome/Profills LinkedIn` no Linux, `/Users/nome/Profills LinkedIn` no Mac e `C:\Users\NOME\Profills LinkedIn` no Windows. Isso é orientação, não segunda sugestão. Quando `DADOS` é a `linkedin-data/` de um repo, como no repo-fonte, não diga nada disso.
   - `DADOS/voz.md` não existe → `/profills-voz`. Uma frase: é a conversa da voz dele neste PC.
   - `DADOS/voz.md` existe → `/profills-post`. Uma frase: o setup deste PC está pronto, agora a gente faz um post pra ele ver como funciona. Sem catálogo a post segue só com o tema.

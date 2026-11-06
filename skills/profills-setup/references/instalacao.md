@@ -30,19 +30,7 @@ Passo a passo para quando o usuário escolher instalar o Node:
 - Linux: o instalador do site ou o gerenciador do sistema (`apt`, `pacman`, `dnf`) — o site é o caminho que não exige saber qual gerenciador a máquina usa.
 - Depois de instalar, **abrir um terminal novo** (o `PATH` não atualiza no terminal já aberto) e repetir a checagem de `npx`.
 
-## humanize-pt-br: instalar e atualizar
-
-Instalar (passo 3 do `SKILL.md`):
-
-```
-npx skills add othavi0/skills --skill humanize-pt-br -g -y -a claude-code
-```
-
-Atualizar (passo 5):
-
-```
-npx skills update humanize-pt-br -g -y
-```
+## humanize-pt-br: quando o `update` não acha a skill
 
 O `npx skills` não tem um comando que só confere a versão: o `update` compara a versão instalada com a do GitHub e só baixa quando mudou, então rodá-lo com tudo em dia não altera nada. Ele encontra só o que o `npx skills add -g` registrou no arquivo de controle dele (`~/.agents/.skill-lock.json`, ou `$XDG_STATE_HOME/skills/.skill-lock.json` quando essa variável existe). Skill copiada à mão ou instalada por outra ferramenta não está nesse arquivo: o `update` responde `No installed skills found matching: humanize-pt-br` e termina sem erro, sem atualizar. Nesse caso rode o comando de instalação de novo; ele sobrescreve a cópia com a versão atual e registra a skill, e daí em diante o `update` funciona.
 

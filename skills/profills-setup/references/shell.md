@@ -16,7 +16,7 @@ A ferramenta de shell do Claude Code depende do sistema: Linux e Mac usam Bash; 
 | Criar `DADOS` | `mkdir -p "<DADOS>/refs" "<DADOS>/catalog/raw" "<DADOS>/drafts" "<DADOS>/boletins"` | `New-Item -ItemType Directory -Force "<DADOS>\refs","<DADOS>\catalog\raw","<DADOS>\drafts","<DADOS>\boletins"` |
 | Marcar pasta nova como versão 2 | `printf '{"versao_dados": 2, "atualizado_em": "%s"}\n' "$(date +%F)" > "<DADOS>/.profills.json"` | `Set-Content -Path "<DADOS>\.profills.json" -Value ('{"versao_dados": 2, "atualizado_em": "' + (Get-Date -Format yyyy-MM-dd) + '"}')` |
 
-O marcador vale só para pasta **criada agora**, vazia. Pasta que já existia passa pelo `scripts/migrar.js` (passo 4 do `SKILL.md`), que converte o que precisa e grava o marcador por último. Com o Node instalado, `node "<pasta desta skill>/scripts/migrar.js" "<DADOS>" --aplicar` faz as duas últimas linhas da tabela de uma vez, nos dois shells.
+O marcador vale só para pasta **criada agora**, vazia. Pasta que já existia passa pelo `scripts/migrar.js` (passo 4 do `SKILL.md`), que converte o que precisa e grava o marcador por último.
 
 ## `.gitignore`, só no caso repo-fonte
 
