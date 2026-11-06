@@ -23,7 +23,7 @@ O princípio que rege todo o catálogo: **separe o que foi medido do que foi inf
 
 ### 0. Localize a pasta de dados
 
-**Pasta de dados (`DADOS`)**: se o diretório atual está num repo git com `linkedin-data/` na raiz (`git rev-parse --show-toplevel`), `DADOS` é essa pasta; senão é `~/Profills LinkedIn/`. Se nenhuma das duas existe, invoque a skill `profills-setup` — ela cria a pasta e confere o resto da instalação.
+**Pasta de dados (`DADOS`)**: se o diretório atual está num repo git com `linkedin-data/` na raiz (`git rev-parse --show-toplevel`), `DADOS` é essa pasta; senão é `~/Profills LinkedIn/`. Se nenhuma das duas existe, ou se `DADOS/.profills.json` falta ou traz `versao_dados` menor que 2, invoque a skill `profills-setup` — ela cria ou atualiza a pasta e confere o resto da instalação.
 
 Concluído quando você tem o caminho de `DADOS` e ele existe em disco.
 
@@ -128,7 +128,7 @@ Depois de todas as empresas, dois arquivos:
 1. `DADOS/catalog/_summary.md` — tabela comparativa (cadência, formato dominante, taxa de engajamento por empresa) + o eixo de mercado de `references/benchmark-mercado.md`: "esta empresa posta 1×/semana vs. o padrão B2B de 3-5×". Cada célula numérica é `posts_por_semana`, `formato_dominante` e `taxa_normalizada` do JSON do `metricas.js` — entre empresas só a taxa normalizada compara, porque audiências diferentes não se comparam em bruto. Empresa sem dados entra numa linha `sem dados: <nota do meta.json>`; empresa sem `seguidores` entra com a taxa em branco e a razão ("sem seguidores no meta.json"), nunca com likes brutos na coluna da taxa.
 
    **Rodada com parte das empresas**: se o `_summary.md` já existe, **edite-o** — atualize a data do cabeçalho e só as linhas das empresas desta rodada, preservando as demais como estão (elas são o retrato da coleta delas, com a data delas). Criar do zero só quando o arquivo não existe. Se a tabela antiga não tiver uma coluna de data por empresa, acrescente-a ao migrar: sem ela, linhas de rodadas diferentes viram um comparativo falso.
-2. `DADOS/refs/INDEX.md` — na linha de cada empresa com `status: ok`, troque o campo `catálogo …` pela data desta rodada (`catálogo AAAA-MM-DD`); empresa com outro status mantém o campo como estava — sem perfil, sem carimbo. É esse campo que a `profills-radar` lê para não mandar re-catalogar quem acabou de sair.
+2. `DADOS/refs/INDEX.md` — na linha de cada empresa com `status: ok`, troque o campo `sem catálogo` ou `catálogo …` pela data desta rodada (`catálogo AAAA-MM-DD`), no mesmo lugar e sem mexer nos outros campos da linha (o formato é da `profills-radar`); empresa com outro status mantém o campo como estava — sem perfil, sem carimbo. É esse campo que a `profills-radar` lê para não mandar re-catalogar quem acabou de sair.
 
 Concluído quando o `_summary.md` cobre todas as empresas da seleção (as com dados e as sem) com os números do `metricas.js`, as linhas de empresas fora desta rodada continuam como estavam, e, no `INDEX.md`, só as linhas das empresas com `status: ok` mostram a data de hoje.
 

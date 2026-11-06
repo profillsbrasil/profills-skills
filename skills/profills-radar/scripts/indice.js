@@ -1,6 +1,6 @@
 #!/usr/bin/env node
 // indice.js — a conta do índice de referências da profills-radar (Node >= 18, sem dependência).
-// Faz três coisas sobre DADOS/refs: valida o INDEX.md linha a linha (campos, ordem, id, datas,
+// Faz três coisas sobre DADOS/refs: valida o INDEX.md linha a linha (campos por chave, id, datas,
 // existência da ficha, fichas órfãs, pesquisa vencida em 60 dias); reconstrói o INDEX.md a partir
 // das fichas quando ele sumiu (--reconstruir, recuperando o campo catálogo em catalog/raw/ e no
 // índice anterior — o alerta ⚠ não é recuperável do disco); e procura ficha parecida antes de criar
@@ -9,6 +9,7 @@
 // Exemplo: node scripts/indice.js linkedin-data/refs --procurar "Maquimox"
 //          → {"acao":"procurar","termo":"Maquimox","ha_parecido":true,"candidatos":[{"slug":"maqinox-...","semelhanca":0.75}],"ok":true}
 // Saída: JSON em stdout. Exit 0 = ok · 1 = alguma checagem falhou · 2 = erro de uso/arquivo.
+// Carregado com require() (a migração da profills-setup faz isso), só exporta o formato da linha.
 
 const fs = require('fs');
 const path = require('path');
@@ -114,10 +115,19 @@ function lerFicha(pasta, arquivo) {
     setor: campo(['Setor']),
     pais: campo(['País / idioma dos posts', 'Pais / idioma dos posts', 'País']),
     pesquisa: campo(['Última pesquisa', 'Ultima pesquisa']),
+    prioridade: campo(['Prioridade']),
+    grupo: campo(['Grupo']),
   };
 
+  // Empresa sem página no LinkedIn tem `—` no endereço: o slug passa a ser o nome do arquivo da ficha.
   const slugMatch = bruto.slug ? bruto.slug.match(/`([^`]+)`/) : null;
-  const slug = slugMatch ? slugMatch[1].trim() : null;
+  const slugLinkedin = slugMatch && !PADROES_VAZIOS.test(slugMatch[1].trim()) ? slugMatch[1].trim() : null;
+  const linkedin = slugLinkedin !== null;
+  const slug = bruto.slug === null ? null : slugLinkedin || arquivo.replace(/\.md$/, '');
+
+  const prioridadeBruta = bruto.prioridade ? bruto.prioridade.replace(/`/g, '').trim() : null;
+  const prioridade = PRIORIDADES.includes(prioridadeBruta) ? prioridadeBruta : null;
+  const grupo = bruto.grupo && !PADROES_VAZIOS.test(bruto.grupo.trim()) ? bruto.grupo.replace(/·/g, '-').trim() : null;
 
   let id = '—';
   if (bruto.id) {
@@ -132,7 +142,7 @@ function lerFicha(pasta, arquivo) {
   const dataMatch = bruto.pesquisa ? bruto.pesquisa.match(/(\d{4}-\d{2}-\d{2})/) : null;
   const pesquisa = dataMatch ? dataMatch[1] : null;
 
-  return { arquivo, nome, slug, id, setor, pais, pesquisa };
+  return { arquivo, nome, slug, id, setor, pais, pesquisa, prioridade, linkedin, grupo };
 }
 
 function listarFichas(pasta) {
@@ -142,49 +152,203 @@ function listarFichas(pasta) {
     .sort();
 }
 
-// ---------- leitura do índice ----------
+// ---------- a linha do índice ----------
 
-const RE_LINHA = /^-\s+\[([^\]]+)\]\(([^)]+)\)\s+—\s+`([^`]+)`\s+·\s+(.+)$/;
+// Versão 2 da linha, campos ` · ` com chave nomeada:
+// - [Nome](<slug>.md) — `<slug>` · id <número|—> · setor <texto> · país <texto> · prioridade <…> · linkedin <sim|não>
+//   · pesquisa AAAA-MM-DD · <sem catálogo|catálogo AAAA-MM-DD> [· grupo <texto>] [· ⚠ <frase>]
+const RE_LINHA = /^-\s+\[([^\]]+)\]\(([^)]+)\)\s+—\s+`([^`]*)`\s+·\s+(.+)$/;
 // Toda linha de lista do INDEX.md é candidata a linha de empresa: linha solta vira problema, não sumiço.
 const RE_ITEM = /^-\s+/;
+const SLUG_VALIDO = /^[A-Za-z0-9_-]+$/;
+const PRIORIDADES = ['Alta', 'Média', 'Adjacente', 'Validação', 'a definir'];
+const FORMATO_DA_LINHA =
+  '- [Nome](<slug>.md) — `<slug>` · id <número|—> · setor <texto> · país <texto> · prioridade <Alta|Média|Adjacente|Validação|a definir> · linkedin <sim|não> · pesquisa AAAA-MM-DD · <sem catálogo|catálogo AAAA-MM-DD> [· grupo <texto>] [· ⚠ <frase>]';
 
-function parsearLinha(texto, numero) {
+const falha = (tipo, detalhe) => ({ problema: { tipo, detalhe } });
+
+function lerTextoLivre(chave) {
+  return (v) => (v ? { valor: v } : falha('campo_vazio', `o campo "${chave}" está sem texto`));
+}
+
+function lerData(tipo, chave) {
+  return (v) => (dataValida(v) ? { valor: v } : falha(tipo, `esperado "${chave} AAAA-MM-DD", veio "${chave} ${v}"`));
+}
+
+// Ordem da tabela = ordem em que --reconstruir e a migração escrevem a linha.
+// O "sem catálogo" chega aqui como catálogo com valor null; o ⚠ é sempre o último e leva o resto da linha.
+const CAMPOS = [
+  {
+    chave: 'id',
+    propriedade: 'id',
+    obrigatorio: true,
+    ler: (v) => (/^(\d+|—)$/.test(v) ? { valor: v } : falha('id_invalido', `esperado "id <número>" ou "id —", veio "id ${v}"`)),
+    escrever: (v) => `id ${v || '—'}`,
+  },
+  { chave: 'setor', propriedade: 'setor', obrigatorio: true, ler: lerTextoLivre('setor'), escrever: (v) => `setor ${v}` },
+  { chave: 'país', propriedade: 'pais', obrigatorio: true, ler: lerTextoLivre('país'), escrever: (v) => `país ${v}` },
+  {
+    chave: 'prioridade',
+    propriedade: 'prioridade',
+    obrigatorio: true,
+    ler: (v) => (PRIORIDADES.includes(v) ? { valor: v } : falha('prioridade_invalida', `esperado um de ${PRIORIDADES.join(', ')}; veio "${v}"`)),
+    escrever: (v) => `prioridade ${v || 'a definir'}`,
+  },
+  {
+    chave: 'linkedin',
+    propriedade: 'linkedin',
+    obrigatorio: true,
+    ler: (v) => (v === 'sim' || v === 'não' ? { valor: v === 'sim' } : falha('linkedin_invalido', `esperado "linkedin sim" ou "linkedin não", veio "linkedin ${v}"`)),
+    escrever: (v) => `linkedin ${v ? 'sim' : 'não'}`,
+  },
+  { chave: 'pesquisa', propriedade: 'pesquisa', obrigatorio: true, ler: lerData('data_pesquisa_invalida', 'pesquisa'), escrever: (v) => `pesquisa ${v}` },
+  {
+    chave: 'catálogo',
+    propriedade: 'catalogo',
+    obrigatorio: true,
+    ler: (v) => {
+      if (v === null) return { valor: null };
+      if (/^\d{4}-\d{2}-\d{2}$/.test(v)) {
+        return dataValida(v) ? { valor: v } : falha('data_catalogo_invalida', `"${v}" não é uma data AAAA-MM-DD real`);
+      }
+      return falha('catalogo_fora_do_formato', `esperado "sem catálogo" ou "catálogo AAAA-MM-DD", veio "catálogo ${v}"`);
+    },
+    escrever: (v) => (v ? `catálogo ${v}` : 'sem catálogo'),
+  },
+  { chave: 'grupo', propriedade: 'grupo', obrigatorio: false, ler: lerTextoLivre('grupo'), escrever: (v) => `grupo ${v}` },
+  { chave: '⚠', propriedade: 'alerta', obrigatorio: false, ler: lerTextoLivre('⚠'), escrever: (v) => `⚠ ${v}` },
+];
+const CAMPO_POR_CHAVE = new Map(CAMPOS.map((c) => [c.chave, c]));
+
+// Divide a cauda da linha em campos { chave, valor }; o ⚠ engole o resto, com · e tudo.
+function separarCampos(resto) {
+  const pedacos = resto.split(/\s+·\s+/).map((c) => c.trim()).filter(Boolean);
+  const campos = [];
+  for (let i = 0; i < pedacos.length; i++) {
+    const p = pedacos[i];
+    if (p.startsWith('⚠')) {
+      campos.push({ chave: '⚠', valor: [p.slice(1).trim(), ...pedacos.slice(i + 1)].filter(Boolean).join(' · ') });
+      break;
+    }
+    if (p === 'sem catálogo') {
+      campos.push({ chave: 'catálogo', valor: null });
+      continue;
+    }
+    const m = p.match(/^(\S+)(?:\s+(.*))?$/);
+    campos.push({ chave: m[1], valor: (m[2] || '').trim(), texto: p });
+  }
+  return campos;
+}
+
+function cabecaDaLinha(texto) {
   const m = texto.match(RE_LINHA);
-  if (!m) return { erro: 'linha_fora_do_formato', linha: numero, trecho: texto };
-
+  if (!m) return null;
   const [, nome, arquivo, slug, resto] = m;
-  const campos = resto.split('·').map((c) => c.trim()).filter(Boolean);
-  const empresa = { nome, arquivo, slug, id: null, setor: null, pais: null, pesquisa: null, catalogo: null, alerta: null, linha: numero, trecho: texto };
+  return { nome, arquivo, slug: slug.trim(), resto };
+}
+
+// Versão 1: `· id X · <setor> · <país> · pesquisa … · catálogo …[· ⚠ …]`, setor e país sem chave.
+// Fica aqui, ao lado do formato novo, porque a migração da profills-setup converte por ela.
+function parsearCaudaAntiga(resto) {
+  const campos = resto.split(/\s+·\s+/).map((c) => c.trim()).filter(Boolean);
+  const i = campos.findIndex((c) => c.startsWith('⚠'));
+  const alerta = i >= 0 ? [campos[i].slice(1).trim(), ...campos.slice(i + 1)].filter(Boolean).join(' · ') : null;
+  if (i >= 0) campos.length = i;
   const problemas = [];
 
-  if (campos.length && /^⚠/.test(campos[campos.length - 1])) {
-    empresa.alerta = campos.pop().replace(/^⚠\s*/, '');
-  }
-  const idCampo = campos.shift();
-  const mid = idCampo ? idCampo.match(/^id\s+(\d+|—)$/) : null;
-  if (mid) empresa.id = mid[1];
-  else problemas.push({ tipo: 'id_invalido', detalhe: `esperado "id <número>" ou "id —", veio "${idCampo || ''}"` });
-
-  const catalogoCampo = campos.pop();
-  if (catalogoCampo === 'sem catálogo') empresa.catalogo = null;
-  else if (catalogoCampo && /^catálogo\s+\d{4}-\d{2}-\d{2}$/.test(catalogoCampo)) {
-    empresa.catalogo = catalogoCampo.replace(/^catálogo\s+/, '');
-    if (!dataValida(empresa.catalogo)) problemas.push({ tipo: 'data_catalogo_invalida', detalhe: `"${empresa.catalogo}" não é uma data AAAA-MM-DD real` });
-  } else {
-    problemas.push({ tipo: 'catalogo_fora_do_formato', detalhe: `esperado "sem catálogo" ou "catálogo AAAA-MM-DD", veio "${catalogoCampo || ''}"` });
+  let id = '—';
+  if (campos.length && /^id\s+/.test(campos[0])) {
+    const bruto = campos.shift().replace(/^id\s+/, '');
+    if (/^(\d+|—)$/.test(bruto)) id = bruto;
+    else problemas.push({ tipo: 'id_invalido', detalhe: `esperado "id <número>" ou "id —", veio "id ${bruto}"` });
   }
 
-  const pesquisaCampo = campos.pop();
-  const mp = pesquisaCampo ? pesquisaCampo.match(/^pesquisa\s+(\S+)$/) : null;
-  if (mp && dataValida(mp[1])) empresa.pesquisa = mp[1];
-  else problemas.push({ tipo: 'data_pesquisa_invalida', detalhe: `esperado "pesquisa AAAA-MM-DD", veio "${pesquisaCampo || ''}"` });
+  let catalogo = null;
+  const catalogoCampo = campos.pop() || '';
+  const mc = catalogoCampo.match(/^catálogo\s+(\d{4}-\d{2}-\d{2})$/);
+  if (mc && dataValida(mc[1])) catalogo = mc[1];
+  else if (catalogoCampo !== 'sem catálogo') {
+    problemas.push({ tipo: 'catalogo_fora_do_formato', detalhe: `esperado "sem catálogo" ou "catálogo AAAA-MM-DD", veio "${catalogoCampo}"` });
+  }
 
-  empresa.pais = campos.length ? campos.pop() : null;
-  empresa.setor = campos.length ? campos.join(' · ') : null;
-  if (!empresa.pais) problemas.push({ tipo: 'pais_ausente', detalhe: 'a linha não tem o campo país' });
-  if (!empresa.setor) problemas.push({ tipo: 'setor_ausente', detalhe: 'a linha não tem o campo setor' });
+  let pesquisa = null;
+  const pesquisaCampo = campos.pop() || '';
+  const mp = pesquisaCampo.match(/^pesquisa\s+(\S+)$/);
+  if (mp && dataValida(mp[1])) pesquisa = mp[1];
+  else problemas.push({ tipo: 'data_pesquisa_invalida', detalhe: `esperado "pesquisa AAAA-MM-DD", veio "${pesquisaCampo}"` });
 
+  // Entre o id e a pesquisa a versão 1 tinha exatamente setor e país; qualquer outra contagem é
+  // a ambiguidade que fazia o parser antigo gravar setor e país trocados.
+  let setor = null;
+  let pais = null;
+  if (campos.length === 2) [setor, pais] = campos;
+  else problemas.push({ tipo: 'linha_ambigua', detalhe: `esperados 2 campos sem chave (setor e país) entre o id e a pesquisa, vieram ${campos.length}: "${campos.join(' · ')}"` });
+
+  return { id, setor, pais, pesquisa, catalogo, alerta, problemas };
+}
+
+// A versão 1 só tinha id, pesquisa, catálogo e ⚠ com chave: qualquer outra chave conhecida é versão 2.
+const CHAVES_DA_VERSAO_2 = ['setor', 'país', 'prioridade', 'linkedin', 'grupo'];
+function ehCaudaAntiga(resto) {
+  return !separarCampos(resto).some((c) => CHAVES_DA_VERSAO_2.includes(c.chave));
+}
+
+function parsearLinha(texto, numero) {
+  const cabeca = cabecaDaLinha(texto);
+  if (!cabeca) return { erro: 'linha_fora_do_formato', linha: numero, trecho: texto };
+
+  const empresa = { nome: cabeca.nome, arquivo: cabeca.arquivo, slug: cabeca.slug, linha: numero, trecho: texto, formato: 2 };
+  for (const c of CAMPOS) empresa[c.propriedade] = null;
+  const problemas = [];
+
+  if (!SLUG_VALIDO.test(cabeca.slug)) {
+    problemas.push({ tipo: 'slug_invalido', detalhe: `o slug "${cabeca.slug}" tem caractere fora de letras, números, "-" e "_"` });
+  }
+
+  if (ehCaudaAntiga(cabeca.resto)) {
+    const antiga = parsearCaudaAntiga(cabeca.resto);
+    Object.assign(empresa, { id: antiga.id, setor: antiga.setor, pais: antiga.pais, pesquisa: antiga.pesquisa, catalogo: antiga.catalogo, alerta: antiga.alerta, formato: 1 });
+    problemas.push({
+      tipo: 'formato_antigo',
+      detalhe: 'a linha está no formato antigo (setor e país sem chave): a pasta de dados é de uma versão anterior — rode a profills-setup para atualizar a pasta',
+    });
+    return { empresa, problemas };
+  }
+
+  const vistos = new Set();
+  for (const { chave, valor, texto: trecho } of separarCampos(cabeca.resto)) {
+    const campo = CAMPO_POR_CHAVE.get(chave);
+    if (!campo) {
+      problemas.push({ tipo: 'campo_desconhecido', detalhe: `"${trecho}" não começa por nenhuma chave conhecida (${CAMPOS.map((c) => c.chave).join(', ')})` });
+      continue;
+    }
+    if (vistos.has(chave)) {
+      problemas.push({ tipo: 'campo_repetido', campo: chave, detalhe: `o campo "${chave}" aparece mais de uma vez` });
+      continue;
+    }
+    vistos.add(chave);
+    const lido = campo.ler(valor);
+    if (lido.problema) problemas.push({ campo: chave, ...lido.problema });
+    else empresa[campo.propriedade] = lido.valor;
+  }
+  for (const c of CAMPOS) {
+    if (c.obrigatorio && !vistos.has(c.chave)) {
+      problemas.push({ tipo: 'campo_ausente', campo: c.chave, detalhe: `a linha não tem o campo "${c.chave}"` });
+    }
+  }
   return { empresa, problemas };
+}
+
+// Texto livre não pode carregar o separador: um · dentro do setor viraria campo sem chave.
+function semSeparador(v) {
+  return typeof v === 'string' ? v.replace(/\s*·\s*/g, ' - ').trim() : v;
+}
+
+function formatarLinha(e) {
+  const campos = CAMPOS.filter((c) => c.obrigatorio || e[c.propriedade]).map((c) =>
+    c.escrever(c.propriedade === 'alerta' ? e.alerta : semSeparador(e[c.propriedade])),
+  );
+  return `- [${e.nome}](${e.slug}.md) — \`${e.slug}\` · ${campos.join(' · ')}`;
 }
 
 function lerIndice(pasta) {
@@ -254,7 +418,7 @@ function validar(pasta, hoje) {
     const numero = i + 1;
     const r = parsearLinha(texto, numero);
     if (r.erro) {
-      saida.problemas.push({ linha: numero, trecho: texto.slice(0, 120), tipo: r.erro, detalhe: 'esperado "- [Nome](<slug>.md) — `<slug>` · id <id ou —> · <setor> · <país> · pesquisa AAAA-MM-DD · <catálogo>"' });
+      saida.problemas.push({ linha: numero, trecho: texto.slice(0, 120), tipo: r.erro, detalhe: `esperado "${FORMATO_DA_LINHA}"` });
       return;
     }
     const e = r.empresa;
@@ -284,10 +448,13 @@ function validar(pasta, hoje) {
       id: e.id,
       setor: e.setor,
       pais: e.pais,
+      prioridade: e.prioridade,
+      linkedin: e.linkedin,
       pesquisa: e.pesquisa,
       dias_desde_pesquisa: dias,
       pesquisa_vencida: vencida,
       catalogo: e.catalogo,
+      grupo: e.grupo,
       alerta: e.alerta,
       ficha_existe: fichaExiste,
       linha: numero,
@@ -353,7 +520,10 @@ function reconstruir(pasta, hoje, raizCatalogo) {
       if (!RE_ITEM.test(texto)) return;
       const r = parsearLinha(texto, i + 1);
       if (r.erro) linhasIlegiveis.push({ linha: i + 1, trecho: texto.slice(0, 120) });
-      else anteriores.set(r.empresa.slug, { catalogo: r.empresa.catalogo, alerta: r.empresa.alerta });
+      else {
+        const e = r.empresa;
+        anteriores.set(e.slug, { catalogo: e.catalogo, alerta: e.alerta, prioridade: e.prioridade, grupo: e.grupo });
+      }
     });
   }
 
@@ -393,6 +563,10 @@ function reconstruir(pasta, hoje, raizCatalogo) {
       saida.fichas_ignoradas.push({ arquivo, motivo: !ficha.nome ? 'sem título "# Nome" no topo' : 'sem o campo de endereço no LinkedIn com o slug entre crases' });
       continue;
     }
+    if (!SLUG_VALIDO.test(ficha.slug)) {
+      saida.fichas_ignoradas.push({ arquivo, motivo: `o endereço "${ficha.slug}" tem caractere fora de letras, números, "-" e "_"` });
+      continue;
+    }
     const anterior = anteriores.get(ficha.slug) || {};
     const doDisco = catalogoNoDisco(raizCatalogo, ficha.slug);
     // Entre a data do disco e a do índice anterior vale a mais recente: nenhuma das duas mente,
@@ -407,21 +581,32 @@ function reconstruir(pasta, hoje, raizCatalogo) {
       origem = 'índice anterior';
     }
     const setor = resumirSetor(ficha.setor);
-    const campos = [
-      `id ${ficha.id || '—'}`,
-      setor || '[a confirmar]',
-      ficha.pais || '[a confirmar]',
-      `pesquisa ${ficha.pesquisa || '[a confirmar]'}`,
-      dataCatalogo ? `catálogo ${dataCatalogo}` : 'sem catálogo',
-    ];
-    if (anterior.alerta) campos.push(`⚠ ${anterior.alerta}`);
-    linhas.push(`- [${ficha.nome}](${ficha.slug}.md) — \`${ficha.slug}\` · ${campos.join(' · ')}`);
+    const prioridade = ficha.prioridade || anterior.prioridade || 'a definir';
+    const grupo = ficha.grupo || anterior.grupo || null;
+    linhas.push(
+      formatarLinha({
+        nome: ficha.nome,
+        slug: ficha.slug,
+        id: ficha.id || '—',
+        setor: setor || '[a confirmar]',
+        pais: ficha.pais || '[a confirmar]',
+        prioridade,
+        linkedin: ficha.linkedin,
+        pesquisa: ficha.pesquisa || '[a confirmar]',
+        catalogo: dataCatalogo,
+        grupo,
+        alerta: anterior.alerta || null,
+      }),
+    );
     saida.escritas.push({
       slug: ficha.slug,
       nome: ficha.nome,
       arquivo,
       id: ficha.id || '—',
       setor,
+      prioridade,
+      linkedin: ficha.linkedin,
+      grupo,
       pesquisa: ficha.pesquisa,
       catalogo: dataCatalogo,
       origem_catalogo: origem,
@@ -576,4 +761,6 @@ function principal(argv) {
   return validar(pasta, hoje);
 }
 
-principal(process.argv);
+module.exports = { CAMPOS, FORMATO_DA_LINHA, SLUG_VALIDO, RE_ITEM, cabecaDaLinha, parsearLinha, parsearCaudaAntiga, formatarLinha };
+
+if (require.main === module) principal(process.argv);

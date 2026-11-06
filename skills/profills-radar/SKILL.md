@@ -31,13 +31,24 @@ Cabeçalho do `INDEX.md`, com o qual você cria o arquivo quando ele não existe
 ## Empresas
 ```
 
-E uma linha por empresa, nesta ordem de campos:
+E uma linha por empresa. Cada campo vem depois de ` · ` e começa pela chave dele, nesta ordem:
 
 ```markdown
-- [Nome](<slug>.md) — `<slug>` · id <id numérico ou —> · <setor> · <país> · pesquisa AAAA-MM-DD · catálogo AAAA-MM-DD
+- [Nome](<slug>.md) — `<slug>` · id <número|—> · setor <texto> · país <texto> · prioridade <Alta|Média|Adjacente|Validação|a definir> · linkedin <sim|não> · pesquisa AAAA-MM-DD · <sem catálogo|catálogo AAAA-MM-DD> [· grupo <texto>] [· ⚠ <frase>]
 ```
 
-O campo `catálogo` nasce como `sem catálogo` e quem o troca pela data é a `profills-garimpo`, ao fim de cada coleta — você lê esse campo, ela escreve. Quando a pesquisa mostrar presença digital fraca (audiência de dezenas de seguidores, meses sem publicar), feche a linha com `· ⚠ <uma frase>`: é essa empresa que produz catálogo vazio depois.
+| Campo | Obrigatório | O que vai |
+|---|---|---|
+| `id` | sim | o id numérico da página, ou `—` quando ela não mostrou |
+| `setor`, `país` | sim | rótulo curto; texto livre sem o caractere `·` |
+| `prioridade` | sim | `Alta`, `Média`, `Adjacente`, `Validação` ou `a definir` — a que o usuário disse; `a definir` enquanto ele não disse |
+| `linkedin` | sim | `sim` quando a empresa tem página; `não` quando não tem, e aí a `profills-garimpo` não a coleta |
+| `pesquisa` | sim | data da última pesquisa |
+| `catálogo` | sim | nasce `sem catálogo`; quem troca pela data é a `profills-garimpo`, ao fim de cada coleta — você lê, ela escreve |
+| `grupo` | não | o recorte em que o usuário agrupa a empresa, quando ele der um |
+| `⚠` | não | sempre o último; leva o resto da linha. Use quando a pesquisa mostrar presença digital fraca (audiência de dezenas de seguidores, meses sem publicar): é essa empresa que produz catálogo vazio depois |
+
+O slug só tem letras sem acento, números, `-` e `_`: é o nome da ficha e o endereço da página. Empresa sem página no LinkedIn ganha um slug feito do nome (`gama-embalagens`) e `linkedin não`.
 
 ## O script é quem lê o índice
 
@@ -55,11 +66,11 @@ Sai JSON em stdout; exit 0 = ok, 1 = alguma checagem falhou (leia `problemas`), 
 |---|---|
 | `indice_existe`, `n_empresas` | escolher a branch no passo 0 |
 | `fichas_orfas` | fichas fora da lista — **não são problema de índice**: não derrubam `ok` e você as oferece ao usuário, não conserta sozinho |
-| `empresas[]` (`nome`, `slug`, `id`, `setor`, `pais`, `pesquisa`, `catalogo`, `alerta`) | montar as opções da Seleção e a lista da Gestão, sem reabrir o arquivo |
+| `empresas[]` (`nome`, `slug`, `id`, `setor`, `pais`, `prioridade`, `linkedin` true/false, `pesquisa`, `catalogo`, `grupo`, `alerta`) | montar as opções da Seleção e a lista da Gestão, sem reabrir o arquivo |
 | `dias_desde_pesquisa` e `pesquisa_vencida` (mais de 60 dias) | oferecer a re-pesquisa — a conta dos 60 dias é do script |
 | `problemas[]` (`tipo`, `linha`, `detalhe`) | o que corrigir no `INDEX.md` antes de seguir — só formato e consistência do índice |
 
-`--reconstruir` reescreve o `INDEX.md` a partir das fichas de `refs/` e **recupera o campo `catálogo` do disco**: para cada ficha ele procura `<DADOS>/catalog/raw/<slug>/<AAAA-MM-DD>/` (irmã de `refs/`; `--catalog "<pasta>"` sobrescreve o caminho) e usa a data mais recente que trouxe post — `meta.json` com `status: ok` ou `posts.json` não vazio. Coleta vazia não vira catálogo, e cada empresa sai em `escritas[]` com `catalogo`, `origem_catalogo` (`catalog/raw`, `índice anterior` ou `sem catálogo`) e `prova_catalogo`.
+`--reconstruir` reescreve o `INDEX.md` a partir das fichas de `refs/`, sempre na ordem de campos acima. `prioridade` e `grupo` saem dos campos da ficha (ou da linha anterior do índice, quando a ficha não os tem; sem nenhum dos dois, `prioridade a definir`), e `linkedin` sai do endereço: `—` no endereço é `linkedin não`. Ele **recupera o campo `catálogo` do disco**: para cada ficha ele procura `<DADOS>/catalog/raw/<slug>/<AAAA-MM-DD>/` (irmã de `refs/`; `--catalog "<pasta>"` sobrescreve o caminho) e usa a data mais recente que trouxe post — `meta.json` com `status: ok` ou `posts.json` não vazio. Coleta vazia não vira catálogo, e cada empresa sai em `escritas[]` com `catalogo`, `origem_catalogo` (`catalog/raw`, `índice anterior` ou `sem catálogo`) e `prova_catalogo`.
 
 O `⚠`, ao contrário, **não é recuperável**: é frase sua, não dado de coleta, e nenhum arquivo do disco a guarda. Por isso a saída traz `avisos[]` com `alertas_perdidos` — com um índice anterior legível, ele lista as empresas cujo texto não existe mais; sem índice anterior nenhum, diz que os alertas ⚠ que existiam precisam ser refeitos. Leia esse aviso ao usuário e refaça os alertas com ele, empresa por empresa, em vez de seguir como se não houvesse nenhum.
 
@@ -71,7 +82,7 @@ Na conversa, chame cada empresa **pelo nome**. O slug e o id numérico são ende
 
 ### 0. Resolva os dados e escolha a branch
 
-**Pasta de dados (`DADOS`)**: se o diretório atual está num repo git com `linkedin-data/` na raiz (`git rev-parse --show-toplevel`), `DADOS` é essa pasta; senão é `~/Profills LinkedIn/`. Se nenhuma das duas existe, invoque a skill `profills-setup` — ela cria a pasta e confere o resto da instalação.
+**Pasta de dados (`DADOS`)**: se o diretório atual está num repo git com `linkedin-data/` na raiz (`git rev-parse --show-toplevel`), `DADOS` é essa pasta; senão é `~/Profills LinkedIn/`. Se nenhuma das duas existe, ou se `DADOS/.profills.json` falta ou traz `versao_dados` menor que 2, invoque a skill `profills-setup` — ela cria ou atualiza a pasta e confere o resto da instalação.
 
 Depois rode `node "<pasta desta skill>/scripts/indice.js" "<DADOS>/refs"` e decida pela saída:
 
@@ -80,7 +91,9 @@ Depois rode `node "<pasta desta skill>/scripts/indice.js" "<DADOS>/refs"` e deci
 - **Índice com empresas**, e o pedido é catalogar (do usuário ou da `profills-garimpo`) → [Seleção](#seleção).
 - **Pedido sobre a lista** — "adiciona", "remove", "atualiza", "quais eu acompanho" → [Gestão](#gestão).
 
-Se a saída trouxer `problemas` de formato (`id_invalido`, `data_pesquisa_invalida`, `linha_fora_do_formato`, `ficha_ausente`…), conserte as linhas apontadas antes de seguir e rode o script de novo até `ok: true` — cada `detalhe` diz o que era esperado. `problemas` é só do índice: linha torta, campo faltando, ficha que a linha promete e não existe.
+Se a saída trouxer `problemas` de formato (`id_invalido`, `campo_ausente`, `campo_desconhecido`, `prioridade_invalida`, `slug_invalido`, `data_pesquisa_invalida`, `linha_fora_do_formato`, `ficha_ausente`…), conserte as linhas apontadas antes de seguir e rode o script de novo até `ok: true` — cada `detalhe` diz o que era esperado. `problemas` é só do índice: linha torta, campo faltando, ficha que a linha promete e não existe.
+
+**`formato_antigo` não se conserta à mão.** Ele diz que a pasta de dados é de uma versão anterior das skills: invoque a `profills-setup`, que atualiza a pasta inteira com cópia de segurança, e volte quando ela devolver o controle.
 
 **`fichas_orfas` não é problema seu para consertar.** São fichas fora da lista — removidas de propósito ou nunca indexadas — e o script já não derruba o `ok` por causa delas. Diga ao usuário, pelos nomes: "tenho estas fichas fora da lista (removidas ou nunca indexadas) — quer que eu volte alguma para o índice?". Reindexe só as que ele aprovar, com uma linha nova a partir da ficha; as outras ficam no disco como histórico.
 
@@ -121,11 +134,11 @@ Vale para a primeira run, para as similares aprovadas e para o "adiciona a empre
 
 3. **Resolva o endereço no LinkedIn**: o slug (`linkedin.com/company/<slug>`) e, quando a página mostrar, o id numérico — o slug muda em rebranding, o id não.
    - Duas ou mais páginas plausíveis (homônimos, matriz e filial): mostre 2-3 candidatas com nome, seguidores e cidade, e peça ao usuário para confirmar qual é. **Espere a resposta dele.** Enquanto ela não vier, a ficha fica com `[a confirmar]` no campo de confirmação e você não segue como se ele tivesse escolhido.
-   - Nenhuma candidata: diga que não achou a página dessa empresa no LinkedIn, escreva a ficha com `—` no lugar do slug e ofereça seguir sem ela na seleção, porque a `profills-garimpo` só coleta quem tem página.
+   - Nenhuma candidata: diga que não achou a página dessa empresa no LinkedIn, escreva a ficha com `—` no endereço, dê a ela um slug feito do nome para o arquivo e a linha, marque `linkedin não` e ofereça seguir sem ela na seleção, porque a `profills-garimpo` só coleta quem tem página.
 
    Concluído quando a ficha tem o slug ou o motivo pelo qual não tem.
 
-4. **Escreva a ficha** em `DADOS/refs/<slug>.md` seguindo `assets/dossie-template.md` e acrescente a linha da empresa no `INDEX.md`, com o id resolvido no passo 3 (ou `—`), `pesquisa <data de hoje>` e `sem catálogo`. Depois rode a validação do script; ela tem de voltar `ok: true` (ou só com problemas de outras linhas, já conhecidos).
+4. **Escreva a ficha** em `DADOS/refs/<slug>.md` seguindo `assets/dossie-template.md` e acrescente a linha da empresa no `INDEX.md`, no formato acima: o id resolvido no passo 3 (ou `—`), a `prioridade` que o usuário disse (`a definir` se ele não disse), `linkedin sim` ou `não` conforme o passo 3, `pesquisa <data de hoje>` e `sem catálogo`. A ficha repete `Prioridade` e `Grupo` nos campos do topo, porque é de lá que o `--reconstruir` os recupera. Depois rode a validação do script; ela tem de voltar `ok: true` (ou só com problemas de outras linhas, já conhecidos).
 
    **Confirmação do usuário é citação, não paráfrase**: o campo `Confirmação do usuário` guarda a frase dele entre aspas e a data em que ele disse. Sem resposta real nesta sessão, o campo fica `[a confirmar]` — nunca escreva "o usuário confirmou" por conta própria.
 
@@ -163,7 +176,7 @@ O handoff para a `profills-garimpo` é `DADOS/selection.md`. Sobrescreva-o a cad
 - [Anthropic](refs/anthropic.md) — `anthropic` · id — · IA · global
 ```
 
-**Valide o índice antes de escrever**: rode `node "<pasta desta skill>/scripts/indice.js" "<DADOS>/refs"` e só escreva o `selection.md` com `ok: true` — `fichas_orfas` cheio não impede nada, ele não entra no `ok`. Índice inválido é corrigido primeiro — a `profills-garimpo` navega pelo que estiver aqui, e linha torta vira coleta na página errada. `problemas` do tipo `id_invalido` numa linha antiga: acrescente `id —` e resolva o id na próxima re-pesquisa.
+**Valide o índice antes de escrever**: rode `node "<pasta desta skill>/scripts/indice.js" "<DADOS>/refs"` e só escreva o `selection.md` com `ok: true` — `fichas_orfas` cheio não impede nada, ele não entra no `ok`. Índice inválido é corrigido primeiro — a `profills-garimpo` navega pelo que estiver aqui, e linha torta vira coleta na página errada. Empresa com `linkedin: false` não entra na seleção: não há página para coletar.
 
 Cada campo da linha sai do `empresas[]` da saída do script — `nome`, `slug`, `id`, `setor`, `pais` — sem reescrever nem encurtar nada. O `id` é obrigatório; `—` quando o índice também não tem. É por ele que a `profills-garimpo` reencontra a página quando o slug mudou.
 

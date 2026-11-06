@@ -9,6 +9,10 @@ selection.md
 # Picker local (pid, log, telas da sessão)
 .picker/
 
+# Cópias de segurança da migração da pasta (profills-setup/scripts/migrar.js)
+.backup/
+
 # Versionar: refs/ (dossiês + índice), catalog/*.md (relatórios sintetizados),
 # catalog/raw/**/*.json (dado estruturado leve), drafts/ (rascunhos aprovados),
-# voz.md (arquivo de voz do usuário — dado vivo, mesma categoria de refs/ e catalog/*.md)
+# voz.md (arquivo de voz do usuário — dado vivo, mesma categoria de refs/ e catalog/*.md),
+# .profills.json (versão da pasta, lida por todas as skills)
