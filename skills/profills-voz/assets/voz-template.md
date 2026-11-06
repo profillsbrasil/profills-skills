@@ -12,7 +12,7 @@
 
 ## Voz
 
-Traços no formato **"X, mas nunca Y"** — cada um com o trecho do material que mostra o traço (sem material, `[hipótese]` no lugar do trecho):
+Traços no formato **"X, mas nunca Y"** — cada um com o trecho do material que mostra o traço:
 
 - <ex.: **Direto, mas nunca seco** — "manda o vídeo aí que eu te falo na hora se resolve" (áudio 12/07)>
 - <traço 2>
