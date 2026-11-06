@@ -58,19 +58,20 @@
     {
       "id": 4,
       "prompt": "Atualiza minhas skills da Profills. (Contexto: shell Bash; `claude plugin list` mostra profills-skills 0.1.0; `~/.claude/skills/humanize-pt-br/SKILL.md` existe; `command -v npx` responde `/usr/bin/npx`; o diretório atual é um repo git de trabalho com a pasta de dados na raiz — não é o repo-fonte das skills, não há `skills/profills-setup/SKILL.md` no toplevel.)",
-      "expected_output": "Reconhece que é pedido de atualização e não de instalação do zero: não recria a pasta de dados nem reinstala o plugin com `marketplace add`. Explica em uma frase e roda `claude plugin marketplace update profills-skills`, e só depois `claude plugin update profills-skills@profills-skills`, também com explicação. Menciona que rodar de novo `npx skills add othavi0/skills --skill humanize-pt-br -g -y -a claude-code` também atualiza a humanize-pt-br. Refaz a tabela do passo 2 mostrando o que de fato mudou (versão nova ou 'sem mudança' por linha). Não escreve uma linha sequer dentro da pasta de dados — nem voz.md, nem rascunho, nem catálogo de exemplo. Termina com uma sugestão só: `/profills-post`.",
+      "expected_output": "Reconhece que é pedido de atualização e não de instalação do zero: não recria a pasta de dados nem reinstala o plugin com `marketplace add`. Explica em uma frase e roda `claude plugin marketplace update profills-skills`, e só depois `claude plugin update profills-skills@profills-skills`, também com explicação. Menciona que rodar de novo `npx skills add othavi0/skills --skill humanize-pt-br -g -y -a claude-code` também atualiza a humanize-pt-br. Refaz a tabela do passo 2 mostrando o que de fato mudou (versão nova ou 'sem mudança' por linha). Não escreve uma linha sequer dentro da pasta de dados — nem voz.md, nem rascunho, nem catálogo de exemplo — além do `linkedin-data/CLAUDE.md`, que o `mapa.js` do passo 4 atualiza com o estado da pasta. Termina com uma sugestão só: `/profills-post`.",
       "files": [
         "evals/files/4"
       ],
       "expectations": [
         "Roda os dois comandos nesta ordem — `claude plugin marketplace update profills-skills` primeiro, `claude plugin update profills-skills@profills-skills` depois — cada um precedido de uma frase que explica o que ele faz",
         "NEGATIVA: não executa nem propõe `claude plugin marketplace add` / `claude plugin install`, e não roda `mkdir` sobre a pasta de dados existente",
-        "NEGATIVA: nenhum arquivo dentro de `linkedin-data/` é criado ou alterado — `voz.md` continua idêntico ao da fixture, `drafts/` continua sem nenhum rascunho e `refs/INDEX.md` intacto; a cópia em outputs/ não traz arquivo novo dessa pasta",
+        "NEGATIVA: nenhum arquivo dentro de `linkedin-data/` é criado ou alterado, exceto `linkedin-data/CLAUDE.md` — `voz.md` continua idêntico ao da fixture, `drafts/` continua sem nenhum rascunho e `refs/INDEX.md` intacto; a cópia em outputs/ não traz nenhum outro arquivo novo ou alterado dessa pasta",
         "Menciona o comando literal `npx skills add othavi0/skills --skill humanize-pt-br -g -y -a claude-code` como o que também atualiza a humanize-pt-br",
         "A resposta final refaz a tabela de oito linhas do passo 2 e a tabela diz o que mudou em cada linha (versão nova, 'sem mudança' ou equivalente), em vez de repetir ✅ sem informação",
         "O status da pasta de dados na tabela vem de uma checagem real de disco desta run (`ls -d` sobre refs/, catalog/raw/ e drafts/), não de repetição do contexto do pedido",
         "Termina com exatamente uma sugestão de próximo passo, `/profills-post`, sem menu de opções nem segunda sugestão",
-        "Termina rodando a migração da pasta (`node <pasta da skill>/scripts/migrar.js linkedin-data`): como a fixture já está na versão 2, a saída volta `acoes: []` e a resposta não anuncia mudança nenhuma na pasta"
+        "Termina rodando a migração da pasta (`node <pasta da skill>/scripts/migrar.js linkedin-data`): como a fixture já está na versão 2, a saída volta `acoes: []` e a resposta não anuncia mudança no formato da pasta (atualizar o resumo `CLAUDE.md` não conta como mudança de formato)",
+        "ARTEFATO: o transcript mostra o `mapa.js` rodado sobre `linkedin-data` com `\"ok\": true`, e a cópia de `linkedin-data/CLAUDE.md` em outputs/ traz, entre `<!-- profills:mapa:inicio -->` e `<!-- profills:mapa:fim -->`, a linha `- Versão da pasta: 2.` e a linha da voz dizendo que o `voz.md` foi atualizado em 2026-08-12, sinal de que o bloco do mapa reflete o `voz.md` da fixture"
       ]
     },
     {
@@ -173,6 +174,23 @@
         "NEGATIVA — ARTEFATO: nada dentro de `linkedin-data/` muda — `refs/INDEX.md` em outputs/ é byte a byte igual ao de evals/files/8, e `.profills.json`, `drafts`, `boletins` e `.backup` não existem em outputs/",
         "NEGATIVA — RESPOSTA FINAL: não devolve o controle à profills-radar e não diz que a pasta está pronta; diz que o pedido original ('quais empresas eu acompanho') espera o Node ser instalado",
         "RESPOSTA FINAL: a única ação sugerida é instalar o Node, sem sugerir `/profills-voz`, `/profills-radar` ou `/profills-post`"
+      ]
+    },
+    {
+      "id": 11,
+      "prompt": "Configura as skills da Profills nesse PC. (Contexto: shell Bash; `claude plugin list` mostra profills-skills; `~/.claude/skills/humanize-pt-br/SKILL.md` existe; `command -v node` responde `/usr/bin/node` e `command -v npx` responde `/usr/bin/npx`; o diretório atual é um repo git de outro projeto — não o repo-fonte das skills, sem `linkedin-data/` na raiz; nesta sandbox a pasta `home-sandbox/` faz o papel de `~`, e `home-sandbox/Profills LinkedIn/` ainda não existe.)",
+      "expected_output": "Diagnostica em silêncio e mostra a tabela de oito linhas com a pasta de dados, a versão da pasta e o arquivo de voz em ❌. Cria `home-sandbox/Profills LinkedIn/` com `refs/`, `catalog/raw/`, `drafts/`, `boletins/` e `.profills.json`, e roda `node \"<pasta da skill>/scripts/mapa.js\" \"<DADOS>\"`, que cria `CLAUDE.md` dentro da pasta com o bloco fixo do template, o bloco do mapa (versão 2, nenhuma empresa ainda, `voz.md` faltando) e a seção `## Notas da equipe`. Antes da sugestão final, diz que daqui em diante o Claude deve ser aberto dentro dessa pasta, com o caminho `~/Profills LinkedIn` no formato do sistema e o comando `cd` seguido de `claude`. Termina com uma sugestão só, `/profills-voz`.",
+      "files": [
+        "evals/files/1"
+      ],
+      "expectations": [
+        "ARTEFATO: a cópia em outputs/ traz `home-sandbox/Profills LinkedIn/CLAUDE.md`, e ele tem, nesta ordem, os marcadores `<!-- profills:fixo:inicio -->`, `<!-- profills:fixo:fim -->`, `<!-- profills:mapa:inicio -->`, `<!-- profills:mapa:fim -->` e a linha `## Notas da equipe`",
+        "ARTEFATO: o trecho do `CLAUDE.md` entre `<!-- profills:fixo:inicio -->` e `<!-- profills:fixo:fim -->` é byte a byte igual ao mesmo trecho de `skills/profills-setup/assets/claude-dados-template.md`, sinal de que veio do `mapa.js` e não de texto escrito à mão",
+        "ARTEFATO: o bloco do mapa no `CLAUDE.md` traz uma linha `Estado em AAAA-MM-DD.`, a linha `- Versão da pasta: 2.` e diz que `voz.md` não existe",
+        "O transcript mostra o `mapa.js` rodado com o caminho da pasta de dados e a saída JSON dele com `\"ok\": true`",
+        "NEGATIVA: nenhum `CLAUDE.md` é criado fora de `home-sandbox/Profills LinkedIn/`, e a árvore de outputs/ não tem `linkedin-data/`",
+        "RESPOSTA FINAL: diz em uma frase para abrir o Claude dentro da pasta de dados, mostrando o caminho dela e o comando `cd` seguido de `claude`, sem chamar isso de segunda sugestão",
+        "RESPOSTA FINAL: termina com exatamente uma sugestão de próximo passo, `/profills-voz`, justificada pela ausência de voz.md, sem citar outra skill"
       ]
     }
   ]
