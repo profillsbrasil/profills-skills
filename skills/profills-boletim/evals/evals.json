@@ -1,5 +1,6 @@
 {
   "skill_name": "profills-boletim",
+  "nota_fixtures": "Cada eval lista `files` na ordem em que as pastas se copiam: `evals/files/base` primeiro e a pasta do caso por cima, sobrescrevendo. O runner (`.claude/workflows/evals-profills.js`, passo 3 do preparar) diz \"cada pasta listada, por cima\" sem fixar a ordem; os casos daqui contam com a ordem da lista. O `.apagar` de cada caso lista caminhos relativos ao repo do sandbox, apagados depois da cópia; no caso 7 são pastas inteiras (`rm -r`), para que as coletas de 24/08 da base sumam e a rodada de 23/08 fique pela metade.",
   "evals": [
     {
       "id": 1,
@@ -37,13 +38,14 @@
     },
     {
       "id": 3,
-      "prompt": "Quero ver as novidades dos concorrentes. (Contexto: quando a escolha das empresas aparece, o usuário fica com Alfa Envase, Nordic Fill Systems e Beta Rótulos.)",
-      "expected_output": "- `selection.md` traz a rodada de 2026-08-10, não a de hoje: invoca a profills-radar para montar a rodada, que pergunta as empresas e grava `selection.md` com `# Seleção ativa — 2026-08-24` e as três escolhidas.\n- Com a rodada nova, roda `boletim.js`; as três já têm coleta de 24/08, então não invoca a garimpo.\n- Grava o boletim do dia com a Delta Selagem fora desta rodada (estava na seleção antiga) e Gama Tampas sem LinkedIn.",
+      "prompt": "Quero ver as novidades dos concorrentes. (Contexto: quando o boletim pergunta se escreve o boletim da rodada de 10/08 ou monta uma nova, o usuário escolhe montar uma nova. Quando a escolha das empresas aparece, o usuário fica com Alfa Envase, Nordic Fill Systems e Beta Rótulos.)",
+      "expected_output": "- `selection.md` traz a rodada de 2026-08-10, toda coletada e sem boletim: `boletim.js` devolve `rodada.situacao: anterior_sem_boletim`, e a skill pergunta se escreve o boletim dessa rodada ou monta uma nova. O usuário escolhe nova.\n- Invoca a profills-radar para montar a rodada, que pergunta as empresas e grava `selection.md` com `# Seleção ativa — 2026-08-24` e as três escolhidas.\n- Com a rodada nova, roda `boletim.js`; as três já têm coleta de 24/08, então não invoca a garimpo.\n- Grava o boletim do dia com a Delta Selagem fora desta rodada (estava na seleção antiga) e Gama Tampas sem LinkedIn.",
       "files": [
         "evals/files/base",
         "evals/files/3"
       ],
       "expectations": [
+        "O transcript roda `boletim.js` com a seleção de 2026-08-10 e registra uma [PERGUNTA] que oferece o boletim da rodada de 10/08 ou uma rodada nova, antes de ler a SKILL.md da profills-radar.",
         "O transcript lê a SKILL.md da profills-radar antes de rodar o `boletim.js` pela primeira vez com a seleção nova.",
         "ARTEFATO: `linkedin-data/selection.md` em outputs/ começa com `# Seleção ativa — 2026-08-24` e lista `alfa-envase`, `nordic-fill` e `beta-rotulos`, e não lista `delta-selagem`.",
         "NEGATIVA: o transcript não lê a SKILL.md da profills-garimpo e nenhuma tool de navegador aparece como [TOOL].",
@@ -91,6 +93,23 @@
         "ARTEFATO: `linkedin-data/boletins/2026-08-24.md` põe Alfa Envase e Beta Rótulos em Sem novidade e a Nordic Fill Systems em Fora desta rodada; a seção de Novidades não lista nenhum post como novo.",
         "ARTEFATO: o boletim diz que as pautas se apoiam nos posts mais recentes já coletados, não em novidades, e cada uma das 3 cita um post com link do `posts.json` da coleta de 24/08.",
         "A resposta final diz em uma frase que nenhuma empresa da rodada publicou nada novo desde a última coleta."
+      ]
+    },
+    {
+      "id": 7,
+      "prompt": "Monta o boletim dos concorrentes pra mim. (Contexto: quando o boletim pergunta se termina a rodada de ontem ou monta uma nova, o usuário escolhe terminar. Quando a coleta pergunta se pode abrir o LinkedIn, o usuário diz que sim; o navegador já está pronto, e a página da Beta Rótulos abre com 3.200 seguidores e nenhum post nos últimos 7 dias.)",
+      "expected_output": "- `selection.md` traz a rodada de 2026-08-23. `boletim.js --hoje 2026-08-24` devolve `rodada.situacao: anterior_por_terminar`: Alfa Envase e Nordic Fill Systems coletadas em 23/08, Beta Rótulos em `faltam_coletar`.\n- Pergunta se termina a rodada de 23/08, coletando só a Beta Rótulos, ou monta uma nova, que abriria de novo as páginas já coletadas; recomenda terminar. O usuário escolhe terminar.\n- Não invoca a profills-radar e não mexe no `selection.md`. Invoca a profills-garimpo, que retoma pela data do cabeçalho, diz pelo nome que Alfa Envase e Nordic Fill Systems já estavam feitas e abre só a página da Beta Rótulos.\n- A garimpo grava `catalog/raw/beta-rotulos/2026-08-24/meta.json` com `status: sem_posts`; o script rodado de novo volta `faltam_coletar` vazio.\n- Grava `linkedin-data/boletins/2026-08-24.md` com a rodada de 23/08 (3 empresas): Novidades da Alfa Envase (o post de 21/08) e da Nordic Fill Systems (primeira coleta), Beta Rótulos em Sem novidade.",
+      "files": [
+        "evals/files/base",
+        "evals/files/7"
+      ],
+      "expectations": [
+        "O transcript roda `boletim.js` e registra uma [PERGUNTA] que oferece terminar a rodada de 23/08, com a Beta Rótulos citada pelo nome como a que falta, ou montar uma nova, antes de ler a SKILL.md da profills-garimpo.",
+        "NEGATIVA: o transcript não lê a SKILL.md da profills-radar, e `linkedin-data/selection.md` em outputs/ não existe ou começa com `# Seleção ativa — 2026-08-23`.",
+        "NEGATIVA: nenhuma [TOOL] de navegador abre a página da Alfa Envase ou da Nordic Fill Systems, e outputs/ não tem `linkedin-data/catalog/raw/alfa-envase/2026-08-24/` nem `linkedin-data/catalog/raw/nordic-fill/2026-08-24/`.",
+        "ARTEFATO: `linkedin-data/catalog/raw/beta-rotulos/2026-08-24/meta.json` em outputs/ existe com `\"status\": \"sem_posts\"`.",
+        "ARTEFATO: `linkedin-data/boletins/2026-08-24.md` em outputs/ cita a rodada de 23/08 com 3 empresas, tem Novidades da Alfa Envase (o post de 21/08) e da Nordic Fill Systems, e põe a Beta Rótulos em Sem novidade, não em Indisponível.",
+        "A resposta final diz que a rodada de 23/08 foi terminada sem abrir de novo as páginas da Alfa Envase e da Nordic Fill Systems."
       ]
     }
   ]
