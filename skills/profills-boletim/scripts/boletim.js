@@ -7,6 +7,7 @@
 // Uso:     node scripts/boletim.js <DADOS> [--hoje AAAA-MM-DD]
 // Exemplo: node scripts/boletim.js "$HOME/Profills LinkedIn" --hoje 2026-08-24
 //          → {"acao":"boletim","rodada":{"data":"2026-08-24","faltam_coletar":[]},"empresas":[...],"cobertura":{...},"ok":true}
+//          rodada.situacao diz o que fazer com a seleção: de_hoje, anterior_por_terminar, anterior_sem_boletim, anterior_com_boletim.
 // Saída: JSON em stdout. Exit 0 = ok · 1 = índice ou seleção impedem o boletim (campo problemas) · 2 = erro de uso.
 
 const fs = require('fs');
@@ -142,6 +143,23 @@ function postNovo(p, destaque) {
   };
 }
 
+// O mesmo post pode aparecer duas vezes na mesma coleta (rolagem do feed): vale a primeira vez.
+function semRepetidos(coleta, avisos, nome) {
+  const ids = new Set();
+  const urls = new Set();
+  return coleta.posts.filter((p) => {
+    const id = idDe(p);
+    const url = normalizarUrl(p.url);
+    if ((id && ids.has(id)) || (url && urls.has(url))) {
+      avisos.push({ tipo: 'post_repetido', empresa: nome, detalhe: `o post ${id || url} aparece mais de uma vez na coleta ${coleta.data}: conta uma vez só` });
+      return false;
+    }
+    if (id) ids.add(id);
+    if (url) urls.add(url);
+    return true;
+  });
+}
+
 function postsNovos(atual, anterior, avisos, nome) {
   const ids = new Set();
   const urls = new Set();
@@ -162,10 +180,17 @@ function examinarEmpresa(e, rodada, raiz, hoje, avisos) {
   if (e.linkedin === false) return { ...base, cobertura: 'sem_linkedin', motivo: null };
   if (!rodada.slugs.includes(e.slug)) return { ...base, cobertura: 'fora_desta_rodada', motivo: null, ultimo_catalogo: e.catalogo || null };
 
+  // A regra da profills-garimpo: coletada nesta rodada é quem tem meta.json numa pasta com data igual ou
+  // posterior à do cabeçalho. Pasta da rodada sem meta.json é coleta interrompida e a garimpo a refaz.
   const datas = datasDeColeta(raiz, e.slug, hoje);
-  const ultima = datas[datas.length - 1];
-  if (!ultima || ultima < rodada.data) {
-    return { ...base, cobertura: 'indisponivel', motivo: 'nao_coletada_nesta_rodada', nota: ultima ? `última coleta em ${ultima}, antes desta rodada` : 'nunca coletada', coleta_atual: null };
+  const daRodada = datas.filter((d) => d >= rodada.data);
+  const completas = daRodada.filter((d) => fs.existsSync(path.join(raiz, e.slug, d, 'meta.json')));
+  const ultima = completas[completas.length - 1];
+  if (!ultima) {
+    const anteriores = datas.filter((d) => d < rodada.data);
+    let nota = anteriores.length ? `última coleta em ${anteriores[anteriores.length - 1]}, antes desta rodada` : 'nunca coletada';
+    if (daRodada.length) nota = `coleta interrompida em ${daRodada[daRodada.length - 1]}: a pasta não tem meta.json`;
+    return { ...base, cobertura: 'indisponivel', motivo: 'nao_coletada_nesta_rodada', nota, coleta_atual: null };
   }
   const atual = lerColeta(raiz, e.slug, ultima);
   if (atual.erro) return { ...base, cobertura: 'indisponivel', motivo: 'coleta_com_erro', nota: atual.erro, coleta_atual: { data: atual.data } };
@@ -173,9 +198,12 @@ function examinarEmpresa(e, rodada, raiz, hoje, avisos) {
     return { ...base, cobertura: 'indisponivel', motivo: atual.status, nota: atual.nota, coleta_atual: { data: atual.data, status: atual.status } };
   }
 
+  atual.posts = semRepetidos(atual, avisos, e.nome);
+  // Pasta da rodada sem meta.json é coleta interrompida: posts parciais não servem de base de comparação.
   let anterior = null;
-  for (let i = datas.length - 2; i >= 0 && !anterior; i--) {
-    const c = lerColeta(raiz, e.slug, datas[i]);
+  const antes = datas.filter((d) => d < ultima && (d < rodada.data || completas.includes(d)));
+  for (let i = antes.length - 1; i >= 0 && !anterior; i--) {
+    const c = lerColeta(raiz, e.slug, antes[i]);
     if (c.comparavel) anterior = c;
   }
   const cadAtual = cadenciaDe(atual);
@@ -211,6 +239,18 @@ function examinarEmpresa(e, rodada, raiz, hoje, avisos) {
     novos,
     cadencia,
   };
+}
+
+// Boletins gravados desde o dia da rodada até hoje: um deles é o boletim desta rodada.
+function boletinsEntre(dados, de, ate) {
+  const pasta = path.join(dados, 'boletins');
+  if (!fs.existsSync(pasta)) return [];
+  return fs
+    .readdirSync(pasta)
+    .map((n) => n.replace(/\.md$/, ''))
+    .filter((d) => dataValida(d) && d >= de && d <= ate)
+    .sort()
+    .map((d) => path.join('boletins', `${d}.md`));
 }
 
 function principal(argv) {
@@ -272,6 +312,10 @@ function principal(argv) {
     saida.problemas.push({ tipo: 'selecao_sem_data', detalhe: 'o cabeçalho do selection.md não traz "# Seleção ativa — AAAA-MM-DD": a profills-radar reescreve a seleção' });
     return terminar();
   }
+  if (selecao.data > hoje) {
+    saida.problemas.push({ tipo: 'selecao_no_futuro', detalhe: `o cabeçalho do selection.md traz ${selecao.data}, depois de hoje (${hoje}): o relógio da máquina ou uma edição à mão; a profills-radar remonta a rodada com a data de hoje` });
+    return terminar();
+  }
   const slugsDoIndice = new Set(indice.empresas.map((e) => e.slug));
   for (const slug of selecao.slugs) {
     if (!slugsDoIndice.has(slug)) saida.avisos.push({ tipo: 'selecao_fora_do_indice', detalhe: `\`${slug}\` está na seleção e não está no índice: fica fora do boletim` });
@@ -284,11 +328,18 @@ function principal(argv) {
     saida.cobertura[r.cobertura].push({ nome: r.nome, slug: r.slug, motivo: r.motivo || null, nota: r.nota || null });
   }
   const daRodada = saida.empresas.filter((e) => selecao.slugs.includes(e.slug) && e.cobertura !== 'sem_linkedin');
+  const faltam = daRodada.filter((e) => e.motivo === 'nao_coletada_nesta_rodada');
+  const boletimDaRodada = boletinsEntre(dados, selecao.data, hoje).pop() || null;
+  let situacao = 'de_hoje';
+  if (selecao.data < hoje) situacao = faltam.length ? 'anterior_por_terminar' : boletimDaRodada ? 'anterior_com_boletim' : 'anterior_sem_boletim';
   saida.rodada = {
     data: selecao.data,
+    situacao,
     n_empresas: daRodada.length,
     coletadas: daRodada.filter((e) => e.motivo !== 'nao_coletada_nesta_rodada').map((e) => e.nome),
-    faltam_coletar: daRodada.filter((e) => e.motivo === 'nao_coletada_nesta_rodada').map((e) => ({ nome: e.nome, slug: e.slug })),
+    faltam_coletar: faltam.map((e) => ({ nome: e.nome, slug: e.slug, nota: e.nota })),
+    boletim_da_rodada_existe: boletimDaRodada !== null,
+    boletim_da_rodada: boletimDaRodada,
   };
   saida.totais = { empresas: saida.empresas.length, posts_novos: saida.empresas.reduce((s, e) => s + (e.n_novos || 0), 0) };
   return terminar();

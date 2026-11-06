@@ -31,17 +31,26 @@ Concluído quando você tem o caminho absoluto de `DADOS` e ele existe no disco.
 
 ### 1. Monte a rodada
 
-Invoque a `profills-radar` para a seleção desta rodada. Ela monta a lista pelas camadas de prioridade, pergunta o que faltar (prioridade de empresa nova, troca de empresa) e grava `DADOS/selection.md` com a data no cabeçalho. Lista vazia é com ela também: a radar conduz a primeira run.
+Rode o script (passo 3) e decida pela `rodada.situacao`. A rodada pode durar mais de uma sessão: a `profills-garimpo` coleta as de prioridade Alta num dia e o resto no outro sem mudar o `selection.md`, e retoma pela data do cabeçalho. Montar uma rodada nova põe a data de hoje no cabeçalho e faz a garimpo abrir de novo, na conta do comercial, as páginas já coletadas na rodada anterior. Por isso a radar só entra quando não há rodada a aproveitar ou quando o comercial escolhe uma nova.
 
-Se o `selection.md` já existe com a data de hoje no cabeçalho, a rodada de hoje já foi montada: diga isso e siga sem reabrir a seleção, a não ser que o comercial peça outra.
+| Saída do script | O que fazer |
+|---|---|
+| `selecao_ausente`, `selecao_sem_data`, `indice_ausente` ou `indice_com_problemas` em `problemas` | Invoque a `profills-radar`. Ela monta a lista pelas camadas de prioridade, pergunta o que faltar (prioridade de empresa nova, troca de empresa) e grava `DADOS/selection.md` com a data de hoje no cabeçalho. Lista vazia é com ela também: a radar conduz a primeira run. |
+| `selecao_no_futuro` em `problemas` | A seleção traz uma data depois de hoje, por relógio da máquina adiantado ou edição à mão. Diga isso ao comercial em uma frase, com a data, e invoque a `profills-radar` para remontar a rodada com a data de hoje. |
+| `situacao: de_hoje` | A rodada de hoje já está montada: diga isso e siga sem reabrir a seleção, a não ser que o comercial peça outra. |
+| `situacao: anterior_por_terminar` | A rodada de `rodada.data` ficou pela metade. Pergunte se ele quer terminar essa rodada, coletando só as empresas de `faltam_coletar` (diga os nomes), ou montar uma nova pela radar, que abre de novo as páginas já coletadas. Recomende terminar. Terminar segue para o passo 2 sem tocar no `selection.md`. |
+| `situacao: anterior_sem_boletim` | A rodada de `rodada.data` está toda coletada e ainda não virou boletim. Pergunte se ele quer o boletim dessa rodada, sem abrir o LinkedIn, ou uma rodada nova pela radar. Recomende o boletim dessa rodada. |
+| `situacao: anterior_com_boletim` | A rodada de `rodada.data` já virou o boletim em `rodada.boletim_da_rodada`. Diga isso e ofereça montar uma rodada nova pela radar; se ele não quiser, aponte o boletim que já existe e pare. |
 
-Concluído quando o `selection.md` tem a data de hoje no cabeçalho.
+Depois que a radar gravar a seleção, rode o script de novo.
+
+Concluído quando o script voltou sem `problemas` e o comercial sabe qual rodada o boletim cobre: a de hoje ou a anterior que ele escolheu terminar ou fechar.
 
 ### 2. Garanta a coleta
 
 Rode o script (passo 3) e leia `rodada.faltam_coletar`. Lista vazia: todas as empresas da rodada já têm coleta desta rodada, siga.
 
-Lista com empresas: invoque a `profills-garimpo`. Ela conduz o navegador logado do comercial, conta o tamanho da rodada e o tempo, e oferece as saídas (rodada inteira, só as de prioridade Alta, deixar para depois). Quando ela devolver o controle, rode o script de novo. Se o comercial deixou parte para depois, siga com o que foi coletado: as que faltam entram no boletim como indisponíveis, com o motivo "ainda não coletada nesta rodada".
+Lista com empresas: invoque a `profills-garimpo`. Numa rodada anterior que o comercial escolheu terminar, ela retoma pela data do cabeçalho e coleta só as que faltam. Ela conduz o navegador logado do comercial, conta o tamanho da rodada e o tempo, e oferece as saídas (rodada inteira, só as de prioridade Alta, deixar para depois). Quando ela devolver o controle, rode o script de novo. Se o comercial deixou parte para depois, siga com o que foi coletado: as que faltam entram no boletim como indisponíveis, com o motivo "ainda não coletada nesta rodada".
 
 Concluído quando `faltam_coletar` está vazio ou o comercial escolheu deixar as restantes para depois.
 
@@ -51,18 +60,19 @@ Concluído quando `faltam_coletar` está vazio ou o comercial escolheu deixar as
 node "<pasta desta skill>/scripts/boletim.js" "<DADOS>"
 ```
 
-"Pasta desta skill" é o diretório onde este `SKILL.md` está. Sai JSON em stdout. Exit 0 = ok; 1 = o índice ou a seleção impedem o boletim (leia `problemas`: `indice_ausente`, `indice_com_problemas` e `selecao_ausente` voltam à `profills-radar`); 2 = pasta errada.
+"Pasta desta skill" é o diretório onde este `SKILL.md` está. Sai JSON em stdout. Exit 0 = ok; 1 = o índice ou a seleção impedem o boletim (leia `problemas` e siga a tabela do passo 1); 2 = pasta errada.
 
 | Campo | Para que serve |
 |---|---|
 | `empresas[].cobertura` | o balde de cada empresa, um só: `com_novidade`, `sem_novidade`, `indisponivel`, `sem_linkedin`, `fora_desta_rodada` |
 | `empresas[].motivo`, `nota` | por que a empresa está no balde (`erro_navegacao`, `coleta_com_erro`, `nao_coletada_nesta_rodada`, `sem_posts`…), e a frase da coleta |
-| `empresas[].novos[]` | os posts da coleta mais recente que não estavam na anterior: `data`, `url`, `formato`, `hook`, `angulo`, `idioma`, `estrangeiro`, `resumo_pt`, `engajamento`, `destaque_da_coleta` |
+| `empresas[].novos[]` | os posts da coleta desta rodada que não estavam na coleta anterior: `data`, `url`, `formato`, `hook`, `angulo`, `idioma`, `estrangeiro`, `resumo_pt`, `engajamento`, `destaque_da_coleta` |
 | `empresas[].primeira_coleta` | `true` quando não há coleta anterior: todos os posts da janela contam como novos |
 | `empresas[].cadencia` | `posts_por_semana` da coleta anterior e da atual e a `diferenca`; `mesma_janela: false` quer dizer que não se compara |
-| `cobertura`, `rodada`, `totais` | a matriz, a data e o tamanho da rodada, o total de posts novos |
+| `rodada` | `data` do cabeçalho, `situacao` (passo 1), `coletadas`, `faltam_coletar` (nome, slug e a `nota`: antes da rodada, nunca coletada ou coleta interrompida sem `meta.json`), `boletim_da_rodada_existe` e o caminho em `boletim_da_rodada` |
+| `cobertura`, `totais` | a matriz e o total de posts novos, cada post contado uma vez |
 | `voz_existe`, `boletim_do_dia_existe` | se há `voz.md` para ler; se o arquivo de hoje vai ser sobrescrito |
-| `avisos[]` | `resumo_pt_ausente` (leia o texto no `posts.json` da pasta indicada e resuma você, com o rótulo "(inferido)"), `janelas_diferentes`, `post_sem_chave`, `selecao_fora_do_indice` |
+| `avisos[]` | `resumo_pt_ausente` (leia o texto no `posts.json` da pasta indicada e resuma você, com o rótulo "(inferido)"), `janelas_diferentes`, `post_sem_chave`, `post_repetido` (o mesmo post duas vezes na coleta: o script já o conta uma vez), `selecao_fora_do_indice` |
 
 Concluído quando o script voltou exit 0 e você tem o JSON.
 
