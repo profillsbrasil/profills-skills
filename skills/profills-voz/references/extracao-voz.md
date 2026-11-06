@@ -18,7 +18,7 @@ Para cada categoria, anote o achado **com o trecho-recibo** do material:
 | Marcador | O que observar |
 |---|---|
 | **Vocabulário próprio** | Palavras/expressões que ele repete; jargão do setor que ele usa com naturalidade; gíria ou interjeição característica |
-| **Vocabulário ausente** | O que ele *nunca* diz — anglicismo corporativo, formalidade de ofício, diminutivo. A ausência define a voz tanto quanto a presença |
+| **Vocabulário ausente** | O que ele *nunca* diz — anglicismo corporativo, formalidade de ofício, diminutivo. A ausência define a voz tanto quanto a presença (alimenta o "mas nunca" dos traços; entra em Palavras banidas só quando ele confirma) |
 | **Frase** | Curta e cortada ou longa e encadeada? Pergunta retórica? Reticência? |
 | **Abertura e fechamento** | Como ele começa uma explicação (direto no assunto? contexto antes?) e como termina (convite? resumo? piada?) |
 | **Emoji e pontuação** | Usa? Quais? Exclamação dupla? Tudo minúsculo? |
@@ -29,5 +29,5 @@ Para cada categoria, anote o achado **com o trecho-recibo** do material:
 
 Tão importante quanto capturar o que ele é: registrar o que ele **não** é. Duas listas no arquivo final, ambas alimentadas por rejeição — a validação do passo 5 e cada rascunho recusado depois:
 
-- **Palavras banidas** — termos que ele nunca usa (ausência no material + rejeições). É a lista que o quality gate da `profills-post` checa em todo rascunho: uma vez listada, a palavra não volta.
+- **Palavras banidas** — só palavra que ele rejeitou ou confirmou que não usa (passo 5 ou rascunho recusado), cada uma com a data. O vocabulário ausente no material vira o "mas nunca Y" de um traço da seção Voz, como hipótese até ele confirmar. É a lista que o quality gate da `profills-post` checa em todo rascunho: uma vez listada, a palavra não volta.
 - **Isso não sou eu** — construções, tons e clichês que ele rejeitou ("frase de coach", "muito formal", "parece vendedor de curso"). Cada entrada com o exemplo concreto que foi rejeitado e a data.

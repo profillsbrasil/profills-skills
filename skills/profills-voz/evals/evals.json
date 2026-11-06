@@ -74,7 +74,7 @@
     {
       "id": 5,
       "prompt": "atualiza lá no meu arquivo de voz que a gente já deve ter uns 50 clientes agora, acho que é por aí. (Contexto: quando você perguntar o número exato, ele responde 'ah cara, não tenho isso na mão agora, depois eu vejo no sistema'.)",
-      "expected_output": "Branch Atualizar, mas o número é ambíguo ('uns 50', 'acho que é por aí'): volta como pergunta antes de entrar. Como o usuário não confirma o número, a prova não é substituída — a linha '40 clientes ativos desde 2023' fica como está, e a pendência, se registrada, entra como [a confirmar]. Diz ao usuário, em uma frase, que o número não entrou ainda e o que falta para entrar (o número do sistema).",
+      "expected_output": "Branch Atualizar, mas o número é ambíguo ('uns 50', 'acho que é por aí'): volta como pergunta antes de entrar. Como o usuário não confirma o número, a prova não é substituída — a linha '40 clientes ativos desde 2023' fica como está, e a pendência entra como linha [a confirmar] na seção Provas, com a data no cabeçalho. Diz ao usuário, em uma frase, que o número não entrou ainda e o que falta para entrar (o número do sistema).",
       "files": [
         "evals/files/5"
       ],
