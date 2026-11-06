@@ -52,7 +52,7 @@ A primeira linha decide se alguém lê o resto. As oito aberturas:
 
 ## Ângulo retórico (7)
 
-O ângulo do post, além do tema. Da "angle library" do PR:
+O ângulo do post, além do tema:
 
 | Valor | Fórmula |
 |---|---|

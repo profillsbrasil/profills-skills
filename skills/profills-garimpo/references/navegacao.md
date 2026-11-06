@@ -75,7 +75,7 @@ Fonte única do pipeline: `dataRel` vem relativo ("1 h", "1 d", "4 d") e vira da
 | Página existe mas não tem aba "Publicações" | página não gerenciada — `meta.json` com `"status": "pagina_nao_gerenciada"`, siga para a próxima empresa |
 | Feed não carrega mais posts ao rolar | chegou ao fim disponível — pare e catalogue o que tem |
 | Zero posts na janela | `meta.json` com `"status": "sem_posts"` e a nota; silêncio é sinal, entra no `_summary.md` |
-| Empresa com pouquíssimos posts (<5 na janela) | catalogue o que tem e sinalize "amostra insuficiente" no perfil |
+| Janela ampliada com 5 posts ou menos | catalogue o que tem; o `metricas.js` devolve `amostra_insuficiente: true` e o perfil usa o destaque simples, sem média nem outlier |
 | Screenshot falha/timeout na mesma aba | não repita a mesma captura — siga com `read_page`/texto e marque `screenshot: null` |
 | Percepção de rate-limit (captcha, "atividade incomum") | **pare a sessão imediatamente**, não insista; avise o usuário e feche com o que já está em disco |
 

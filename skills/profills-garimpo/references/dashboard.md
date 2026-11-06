@@ -1,6 +1,6 @@
 # Dashboard visual do catálogo
 
-O dado estruturado vive em disco para rastreabilidade; o dashboard é a camada visual — o que deixa o usuário digerir cadência, formatos, hooks e outliers de relance, em vez de ler JSON. É o equivalente ao "visual companion": mostrar, não descrever.
+O dado estruturado vive em disco para rastreabilidade; o dashboard é a camada visual — o que deixa o usuário digerir cadência, formatos, hooks e outliers de relance, em vez de ler JSON.
 
 ## Antes de desenhar
 
@@ -27,5 +27,5 @@ Um painel por execução, cobrindo as empresas da seleção:
 - **Entre empresas, só taxa normalizada.** Likes brutos comparam posts da MESMA empresa; entre empresas, sempre a `taxa_normalizada` do `metricas.js` (fórmula em `benchmark-mercado.md`). Quando ela vem `null`, diga isso no painel em vez de comparar bruto.
 - **Número sozinho não brilha.** Seguidores, impressões ou alcance nunca aparecem como destaque sem a métrica de ação ao lado (taxa, comentários) — vanity metric isolada engana o olho.
 - **Cada outlier linka o post.** O usuário precisa poder clicar e ver o original.
-- **Todo valor sai do `metricas.js`** (que por sua vez só lê o `posts.json`/`meta.json`). `amostra_insuficiente: true` aparece como aviso no painel, e empresa com `status` diferente de `ok` aparece como linha "sem dados: <nota>" — nunca como gráfico vazio fingindo dado. Nenhum número do painel pode ser digitado sem estar no JSON.
+- **Todo valor sai do `metricas.js`**. `amostra_insuficiente: true` aparece como aviso no painel, e empresa com `status` diferente de `ok` aparece como linha "sem dados: <nota>" — nunca como gráfico vazio fingindo dado.
 - **Tema/formato via taxonomia.** Os eixos categóricos usam os valores fechados de `taxonomias.md`, para as empresas serem comparáveis no mesmo gráfico.
