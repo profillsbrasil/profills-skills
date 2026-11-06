@@ -2,14 +2,15 @@
 
 O `posts.json` de cada empresa é um array destes objetos. Ele é o **artefato primário** — o relatório em prosa e o dashboard nascem dele. Preencha um campo com `null` quando não houver sinal claro.
 
-> Schema v2 (2026-08): alinhado aos campos que a coleta real produz. As coletas de 2026-07-14 são compatíveis (não têm `meta.json` nem `framework_carrossel`; trate ausência como `null`).
+> Schema v2 (2026-08): alinhado aos campos que a coleta real produz. As coletas de 2026-07-14 são compatíveis (não têm `meta.json` nem `framework_carrossel`; trate ausência como `null`). Desde 2026-11, `idioma` é código curto em minúscula e o post fora do português ganha `resumo_pt`. Coleta anterior grava `PT`/`EN` em maiúscula e não tem `resumo_pt`: o código vale igual sem diferenciar maiúscula, e ausência é `null`.
 
 ```json
 {
   "post_id": "urn:li:activity:7135991839244902400",
   "url": "https://www.linkedin.com/posts/...-activity-7135991839244902400-xxxx",
   "data": "2026-07-10",
-  "idioma": "PT",
+  "idioma": "pt",
+  "resumo_pt": null,
   "texto": "texto completo do post",
   "formato": "carrossel",
   "framework_carrossel": "Hack-List",
@@ -43,7 +44,6 @@ A coluna **Fonte** diz de onde o valor sai: `JS` = retorno do script de `navegac
 | `hashtags` | JS | array das hashtags do post (`[]` se nenhuma — ausência também é sinal de estilo) |
 | `link_externo` | JS | URL externa do post (lnkd.in, blog), `null` se não houver |
 | `engajamento` | JS | likes, comentários, reposts — números na página **no momento da coleta**. Grave número (`240`); o `metricas.js` também aceita a string da UI (`"1.200"`, `"1,2 mil"`), mas o que ele não conseguir ler tira o post da média, do destaque e dos outliers, com aviso |
-| `idioma` | leitura | `PT` ou `EN` |
 | `hook`, `hook_cabe_no_corte` | leitura | primeiro parágrafo literal (até a primeira quebra dupla de linha — a mesma régua do `checar-formato.js` da post); cabe se termina antes do corte "ver mais" — o limite numérico é o `hook_max` de `../profills-post/scripts/checar-formato.js`, fonte única |
 | `cta` | leitura | a chamada final, se houver (`null` se não) |
 | `artigo_titulo` | leitura | título do card, só quando `formato` é `artigo` (`null` fora disso) |
@@ -57,7 +57,21 @@ A coluna **Fonte** diz de onde o valor sai: `JS` = retorno do script de `navegac
 | `angulo` | um dos 7 ângulos retóricos em `taxonomias.md` |
 | `gatilho_psicologico` | o gatilho dominante, se houver um claro (`null` se ambíguo) |
 | `tom` | pessoa (1ª/institucional), registro (formal/casual), uso de emoji |
+| `idioma` | o idioma dominante do texto, em código curto de duas letras e minúscula: `pt`, `en`, `pl`, `fr`, `es`, `de`… Post que mistura idiomas leva o da maior parte do texto |
+| `resumo_pt` | só quando `idioma` não é `pt`: uma ou duas frases em pt-BR que dizem o que o post diz, sem opinião sua nem dado que o texto não traz. `null` em post em português. `texto` e `hook` continuam no idioma original, porque são medidos |
 | `descricao_visual` | posts com mídia: o que a imagem/vídeo/slide mostra, em uma frase — o sinal visual quando o screenshot falhar (`null` para texto puro) |
+
+Post em outro idioma se classifica com as mesmas taxonomias fechadas: `hook_categoria`, `angulo` e `gatilho_psicologico` não ganham valor por idioma. Exemplo de post estrangeiro, só os campos que mudam:
+
+```json
+{
+  "idioma": "en",
+  "hook": "We spent 3 years redesigning one sealing jaw.",
+  "resumo_pt": "A empresa conta que levou três anos para redesenhar a mandíbula de selagem e mostra o ganho de velocidade na linha."
+}
+```
+
+O `resumo_pt` é o que a `profills-post` e as leituras em pt-BR (perfil, boletim) usam para entender o post sem traduzir de novo. O `metricas.js` devolve a contagem por idioma em `idiomas` e avisa `resumo_pt_ausente` quando um post fora do português não tem resumo.
 
 ## Computado (na síntese, não na extração)
 

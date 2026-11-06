@@ -4,12 +4,26 @@ Logar na conta pessoal vincula o usuário ao User Agreement do LinkedIn (Seção
 
 ## Regras
 
-- **Ritmo humano.** Pausas de segundos entre rolagens e entre empresas, nunca uma cadência fixa de robô. Volume por sessão baixo — dezenas de páginas, não centenas.
+- **Ritmo humano.** Pausas de segundos entre rolagens e entre empresas, nunca uma cadência fixa de robô.
 - **Só leitura.** Nunca curtir, comentar, conectar ou publicar. O que a skill produz é rascunho; publicar é sempre o usuário, à mão.
 - **Sem burlar proteção.** Authwall, captcha, "atividade incomum" → parar a sessão e avisar. Não contornar login-wall nem bot-detection.
 - **Linhagem.** Cada post coletado guarda `url` + `data` da coleta. Todo dado é rastreável à sua fonte.
-- **Volume moderado.** Se a seleção é grande, mantenha a janela padrão enxuta e espalhe empresas por sessões diferentes em vez de uma rajada só.
+- **Volume por sessão: dezenas de páginas, não centenas.** Regras abaixo, em [Tamanho da rodada](#tamanho-da-rodada).
 - **Pare na detecção.** Qualquer sinal de restrição encerra a coleta na hora. Melhor um catálogo parcial que uma conta sinalizada.
+
+## Tamanho da rodada
+
+A seleção da `profills-radar` traz até 12 empresas. Na janela padrão, cada empresa custa os passos de `navegacao.md`: uma navegação até `/company/<slug>/posts/`, a troca para Recentes, a extração e poucas rolagens ("na janela padrão raramente precisa rolar muito"), com pausas de segundos entre elas. Doze empresas somam dezenas de páginas, e por isso uma rodada de 12 cabe numa sessão em ritmo humano.
+
+Divida em sessões quando:
+
+- a rodada passa de 12 empresas;
+- a janela é ampliada para várias empresas, porque cada uma rola o feed por semanas e multiplica as páginas;
+- o LinkedIn dá qualquer sinal (lentidão anormal, captcha, aviso de atividade, pedido de login fora de hora). Aqui a coleta para na hora, pela regra acima, e o resto fica para outro dia.
+
+Ao dividir, as empresas de prioridade Alta vão na primeira sessão, e as outras na seguinte. A prioridade é o campo `prioridade` da linha da empresa em `DADOS/refs/INDEX.md`.
+
+**Tempo para avisar o usuário.** Não existe medição do tempo por empresa. A conta abaixo é estimativa e vai dita como estimativa: na janela padrão, de 3 a 5 minutos por empresa, contando as pausas. Multiplique pelo número de empresas da rodada (12 empresas dão de 36 a 60 minutos). Na janela ampliada, diga só que demora mais, sem número.
 
 ## Por que não um scraper ou a API
 

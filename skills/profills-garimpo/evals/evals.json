@@ -22,12 +22,13 @@
     {
       "id": 2,
       "prompt": "Quero monitorar o que essas 8 empresas de embalagem andam postando: Cetro, Maqinox, Sulpack, Tecnoenvase, Tecnox, Skymsen, Selopack e Pratipack.",
-      "expected_output": "Não monta nem corta a lista sozinha: invoca a profills-radar, que decide as empresas, segura a seleção em 5 e escreve DADOS/selection.md (as 6 fichas da fixture existem; Selopack e Pratipack não têm dossiê). Ao voltar, lê a seleção, mantém a janela padrão, avisa e confirma antes de abrir o navegador, invoca a profills-navegador e coleta uma empresa por vez, salvando posts.json + meta.json antes da próxima. Roda o metricas.js por empresa, gera catalog/<slug>.md para cada uma com status ok, o _summary.md comparando pela taxa normalizada (média por post) mais o eixo de mercado, atualiza o campo catálogo só das empresas com status ok no INDEX.md e publica o dashboard de verdade, entregando o link.",
+      "expected_output": "Não monta nem corta a lista sozinha: invoca a profills-radar. As 6 fichas da fixture estão com `prioridade a definir`, então a radar pergunta a prioridade de cada uma antes de montar a rodada; Selopack e Pratipack não têm dossiê e entram pelo cadastro da radar. O teto de 12 não corta nenhuma das 8, e o DADOS/selection.md sai com as empresas que o usuário aprovou. Ao voltar, a garimpo lê a seleção, mantém a janela padrão e, antes de abrir o navegador, diz quantas empresas a rodada tem, quantas são de prioridade Alta e o tempo aproximado como estimativa; oferece seguir com tudo, coletar só as Alta agora e o resto depois, ou deixar para depois. Com o 'pode ir', invoca a profills-navegador e coleta uma empresa por vez, salvando posts.json + meta.json antes da próxima. Roda o metricas.js por empresa, gera catalog/<slug>.md para cada uma com status ok, o _summary.md comparando pela taxa normalizada (média por post) mais o eixo de mercado, atualiza o campo catálogo só das empresas com status ok no INDEX.md e publica o dashboard de verdade, entregando o link.",
       "files": [
         "evals/files/2"
       ],
       "expectations": [
-        "Invoca a profills-radar em vez de montar ou cortar a lista sozinha, e DADOS/selection.md sai com exatamente 5 empresas (as 8 pedidas cruzam o teto), cada linha com nome, slug e id",
+        "Invoca a profills-radar em vez de montar ou cortar a lista sozinha; a radar pergunta a prioridade das fichas `a definir` antes de montar a rodada, e DADOS/selection.md sai com as empresas que o usuário aprovou (até 12; nenhuma das 8 pedidas é cortada pelo teto), cada linha com nome, slug e id",
+        "Antes de abrir o navegador, diz em texto quantas empresas a rodada tem, quantas são de prioridade Alta e o tempo aproximado chamado de estimativa, e confirma com AskUserQuestion oferecendo seguir com tudo, coletar só as Alta agora e o resto depois, ou deixar para depois (a opção das Alta some quando nenhuma ou todas são Alta)",
         "Cada empresa da seleção tem catalog/raw/<slug>/2026-08-24/posts.json + meta.json (janela_dias 7, ≤5 posts dentro da janela), gravados um a um antes de passar à próxima",
         "Toda empresa com status ok tem o perfil catalog/<slug>.md gerado pelo perfil-template — é ele o insumo da profills-post, e nenhum deles carrega comentário HTML `<!--` do template",
         "Os números do _summary.md (posts/semana, formato dominante, taxa normalizada) são os campos `posts_por_semana`, `formato_dominante` e `taxa_normalizada` da saída do metricas.js de cada empresa, e a taxa confere ao ser recalculada como média por post ÷ seguidores × 100",
@@ -121,6 +122,23 @@
         "NEGATIVA: não amplia a janela por conta própria nem completa a amostra com posts fora dos 90 dias para chegar a mais de 5 — a limitação é dita ao usuário, não contornada",
         "A taxa normalizada, se publicada, é a do campo `taxa_normalizada` do script (média por post ÷ 38 seguidores × 100) e vem acompanhada da ressalva de que uma base de 38 seguidores torna o número ruidoso",
         "A resposta final explica em linguagem de comercial o que 4 posts em 90 dias dizem sobre a empresa e oferece o próximo passo, sem tratar a amostra pequena como falha da coleta"
+      ]
+    },
+    {
+      "id": 8,
+      "prompt": "Cataloga a Zeta Sealing. (Contexto: o navegador está logado; a página tem 4.200 seguidores e 3 posts nos últimos 7 dias, todos em inglês. 04/11: \"We spent 3 years redesigning one sealing jaw. Here is what changed on the line.\" (carrossel, 85 likes, 9 comentários, 3 reposts). 05/11: \"Meet us at stand B12 next week. Live demo of the new pouch sealer every hour.\" (imagem, 40 likes, 2 comentários, 1 repost). 06/11: \"Most leaks start before the seal. Three checks your operators can do today.\" (texto, 120 likes, 15 comentários, 8 reposts). A captura de tela funciona.)",
+      "expected_output": "Lê a seleção da fixture (Zeta Sealing Systems, slug `zeta-sealing`, prioridade Alta), avisa o tamanho da rodada e o tempo como estimativa, confirma e invoca a profills-navegador. Grava raw/zeta-sealing/2026-11-06/posts.json com os 3 posts: `texto` e `hook` no inglês original, `idioma: \"en\"` em cada um e um `resumo_pt` de uma ou duas frases fiéis ao post. As classificações inferidas usam os valores fechados de taxonomias.md, sem valor novo por idioma. Roda o metricas.js, que devolve `idiomas: {\"en\": 3}` sem o aviso `resumo_pt_ausente`, e escreve catalog/zeta-sealing.md com a seção 'Posts em outro idioma' listando o resumo em pt-BR de cada post, copiado do posts.json.",
+      "files": [
+        "evals/files/8"
+      ],
+      "expectations": [
+        "Todo post de outputs/linkedin-data/catalog/raw/zeta-sealing/2026-11-06/posts.json tem `idioma` igual a \"en\" (minúsculo) e `resumo_pt` com uma ou duas frases em pt-BR",
+        "Cada `resumo_pt` é fiel ao post: o do dia 04/11 fala dos 3 anos de redesenho da mandíbula de selagem, o do 05/11 do estande B12 e da demonstração da seladora de pouch, o do 06/11 das três checagens contra vazamento; nenhum traz dado que o texto não tem",
+        "NEGATIVA: `texto` e `hook` ficam no inglês original no posts.json, sem tradução no lugar do texto medido",
+        "NEGATIVA: `hook_categoria`, `angulo`, `formato` e `gatilho_psicologico` usam só valores de references/taxonomias.md (ou null), sem valor criado para post estrangeiro",
+        "ARTEFATO: `node scripts/metricas.js` rodado na pasta da coleta devolve `idiomas` com {\"en\": 3} e nenhum aviso `resumo_pt_ausente`",
+        "catalog/zeta-sealing.md tem a seção 'Posts em outro idioma' com um item por post (link, data, idioma, hook original e o resumo em pt-BR igual ao `resumo_pt` do posts.json), e nenhum comentário HTML `<!--` nem o bloco 'Como usar este template'",
+        "Os números do perfil (`posts_por_semana`, `formato_dominante`, `engajamento_medio`, `taxa_normalizada`) são os da saída do metricas.js, e refs/INDEX.md muda só no campo catálogo da Zeta ('sem catálogo' para 'catálogo 2026-11-06')"
       ]
     }
   ]

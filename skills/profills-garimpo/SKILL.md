@@ -37,9 +37,11 @@ Leia `DADOS/selection.md`. Cada linha traz o nome, o slug entre crases e o id nu
 
 O **slug é a chave de todos os paths** que você escreve (`catalog/raw/<slug>/…`, `catalog/<slug>.md`, `refs/<slug>.md`); o id é o plano B quando o slug falha na navegação (`references/navegacao.md`).
 
-Arquivo ausente ou vazio → **invoque a `profills-radar`**: é ela que decide as empresas, segura a lista em 5 e escreve a seleção.
+Arquivo ausente ou vazio → **invoque a `profills-radar`**: é ela que decide as empresas, monta a rodada de até 12 e escreve a seleção.
 
-Concluído quando você tem nome, slug e id de cada empresa da rodada.
+**Rodada em mais de uma sessão.** A data do cabeçalho (`# Seleção ativa — AAAA-MM-DD`) marca a rodada. Empresa que já tem `catalog/raw/<slug>/<data>/meta.json` com data igual ou posterior à do cabeçalho já foi coletada nesta rodada: tire-a da lista desta sessão e diga ao usuário, pelo nome, quais já estavam feitas. Só colete de novo se ele pedir. É essa regra que deixa coletar as de prioridade Alta numa sessão e o resto na seguinte sem repetir página.
+
+Concluído quando você tem nome, slug e id de cada empresa que falta coletar nesta rodada.
 
 ### 2. Carregue o contexto do usuário
 
@@ -60,11 +62,19 @@ Concluído quando `janela_dias` e o teto de posts por empresa estão escritos pa
 
 ### 4. Avise, e só então abra o navegador
 
-O usuário está emprestando a conta real dele. Antes da primeira empresa, explique em uma frase e confirme com `AskUserQuestion`: "vou abrir o LinkedIn no seu navegador e ler as páginas das empresas devagar, como se você estivesse rolando o feed — nada é curtido, comentado nem publicado. Posso ir?". Ofereça as saídas junto: seguir agora, seguir com menos empresas, deixar para depois.
+O usuário está emprestando a conta real dele. Antes da primeira empresa, conte em texto o tamanho real da rodada: quantas empresas faltam coletar, quantas delas são de prioridade Alta (o campo `prioridade` da linha de cada slug em `DADOS/refs/INDEX.md`) e o tempo aproximado pela conta de `references/compliance.md`, dito como estimativa. Explique em uma frase o que vai fazer: "vou abrir o LinkedIn no seu navegador e ler as páginas das empresas devagar, como se você estivesse rolando o feed. Nada é curtido, comentado nem publicado."
+
+Então confirme com `AskUserQuestion`, com três saídas:
+
+- **seguir com a rodada inteira**, a recomendada quando a rodada cabe numa sessão pela seção "Tamanho da rodada" de `references/compliance.md`;
+- **coletar só as de prioridade Alta agora e o resto depois**, a recomendada quando aquela seção manda dividir. Sem nenhuma Alta, ou com todas Alta, a opção não aparece;
+- **deixar para depois**.
+
+Escolhendo só as Alta, colete-as e diga pelo nome quais ficaram para a próxima sessão. O `selection.md` não muda, e a retomada segue a regra do passo 1.
 
 Com o "pode ir", **invoque a skill `profills-navegador`**: é ela que garante o navegador certo (o usuário tem a extensão em várias máquinas) e trata máquina sem extensão. A coleta começa no handoff dela — navegador selecionado + tab pronta, com as tools já carregadas.
 
-Concluído quando o usuário confirmou e você tem o id da tab entregue pelo handoff.
+Concluído quando o usuário ouviu o tamanho da rodada e o tempo estimado, confirmou quais empresas entram nesta sessão, e você tem o id da tab entregue pelo handoff.
 
 ### 5. Colete — uma empresa por vez
 
@@ -85,7 +95,7 @@ Cada execução cria a pasta do dia; pasta de data anterior fica intacta — é 
 
 **5a. Extraia o medido.** Rode o JS de `references/navegacao.md` e preencha, a partir do retorno dele e do texto literal do post, os campos da tabela **Medido** de `references/schema-post.md`. Para `formato`, quando o JS devolve só `texto`/`imagem`, confira a coluna "Como reconhecer" de `references/taxonomias.md` com `read_page` (ou o screenshot do post) — enquete, newsletter, evento, documento e reshare só aparecem assim. Concluído quando cada post da janela tem todo campo medido preenchido ou `null` explícito.
 
-**5b. Classifique o inferido.** Leia o texto de cada post e preencha a tabela **Inferido** do mesmo arquivo, usando sempre um valor das taxonomias fechadas de `references/taxonomias.md`; sem sinal claro, `null`. Concluído quando todo campo inferido de todo post está preenchido com valor da taxonomia ou `null` explícito.
+**5b. Classifique o inferido.** Leia o texto de cada post e preencha a tabela **Inferido** do mesmo arquivo, usando sempre um valor das taxonomias fechadas de `references/taxonomias.md`; sem sinal claro, `null`. Grave o `idioma` de todo post e, quando ele não for `pt`, o `resumo_pt`: uma ou duas frases fiéis ao texto, sem traduzir `texto` nem `hook`, que ficam no original. Post estrangeiro usa as mesmas taxonomias. Concluído quando todo campo inferido de todo post está preenchido com valor da taxonomia ou `null` explícito, e todo post fora do português tem `resumo_pt`.
 
 **Empresa sem posts na janela é dado, não erro.** Grave o `meta.json` com `"status"` diferente de `ok` e a `"nota"` de uma frase (valores em `references/schema-post.md`), pule o perfil dela e siga para a próxima.
 
@@ -101,13 +111,13 @@ node "<pasta desta skill>/scripts/metricas.js" "<DADOS>/catalog/raw/<slug>/<AAAA
 
 "Pasta desta skill" é o diretório onde este `SKILL.md` está. Janela ampliada é detectada pelo `janela_dias` do `meta.json`; se precisar forçar, `--janela padrao|ampliada`.
 
-Ele lê `posts.json` + `meta.json` e devolve, em JSON: `n_posts`, `n_posts_com_engajamento_legivel`, `periodo`, `posts_por_semana`, `engajamento_medio`, `taxa_normalizada` (a fórmula de `references/benchmark-mercado.md`; `null` sem seguidores), `formato_dominante` + `formatos`, `hooks`, `hook_cabe_no_corte_pct` e — conforme a janela do passo 3 — `destaque_semana` ou `outliers` (com `media`, `desvio_padrao`, `limiar`; `amostra_insuficiente: true` quando a janela ampliada tem 5 posts ou menos).
+Ele lê `posts.json` + `meta.json` e devolve, em JSON: `n_posts`, `n_posts_com_engajamento_legivel`, `periodo`, `posts_por_semana`, `engajamento_medio`, `taxa_normalizada` (a fórmula de `references/benchmark-mercado.md`; `null` sem seguidores), `formato_dominante` + `formatos`, `hooks`, `hook_cabe_no_corte_pct`, `idiomas` (posts por código de idioma) e — conforme a janela do passo 3 — `destaque_semana` ou `outliers` (com `media`, `desvio_padrao`, `limiar`; `amostra_insuficiente: true` quando a janela ampliada tem 5 posts ou menos).
 
 Contador pode chegar como número (`12`), string numérica (`"1.200"`) ou o abreviado da UI (`"1,2 mil"`) — o script lê os três. O que ele não consegue ler vira aviso `engajamento_nao_numerico` (com `post_id` e o valor bruto) e **o post sai da média, do destaque e dos outliers** em vez de virar zero silencioso. **Nenhuma estatística sai como `NaN`**: quando a entrada não dá conta, o campo vem `null` e o aviso diz por quê.
 
 **A conta é do script; sua parte é a leitura.** Todo número que entra no perfil, no `_summary.md`, no dashboard e na sua resposta ao usuário é copiado desse JSON — você não recalcula média, taxa, cadência nem destaque em prosa.
 
-Exit `0` = coleta utilizável — mas leia o campo `avisos` sempre: `ok: false` significa que há checagem falhando (sem `seguidores`, `seguidores: 0` — taxa impossível —, engajamento ilegível, amostra insuficiente, post fora da janela, screenshot inexistente, com prosa no lugar do caminho ou suspeito de placeholder, `destaque_semana` gravado no post errado); conserte o que for erro seu e leve para o texto o que for limitação do dado ("sem seguidores: esta empresa não entra na comparação"). Exit `1` = `status` ≠ `ok`, sem perfil para esta empresa. Exit `2` = pasta ou arquivo errado (corrija o caminho) ou `posts.json` malformado — não é um array, ou tem item que não é objeto de post: regrave o bruto conforme `references/schema-post.md`.
+Exit `0` = coleta utilizável — mas leia o campo `avisos` sempre: `ok: false` significa que há checagem falhando (sem `seguidores`, `seguidores: 0` — taxa impossível —, engajamento ilegível, amostra insuficiente, post fora da janela, screenshot inexistente, com prosa no lugar do caminho ou suspeito de placeholder, `destaque_semana` gravado no post errado, `resumo_pt_ausente` em post fora do português); conserte o que for erro seu e leve para o texto o que for limitação do dado ("sem seguidores: esta empresa não entra na comparação"). Exit `1` = `status` ≠ `ok`, sem perfil para esta empresa. Exit `2` = pasta ou arquivo errado (corrija o caminho) ou `posts.json` malformado — não é um array, ou tem item que não é objeto de post: regrave o bruto conforme `references/schema-post.md`.
 
 Com o JSON na mão, gere `DADOS/catalog/<slug>.md` seguindo `assets/perfil-template.md` — uma empresa com `status` diferente de `ok` fica de fora. O relatório em prosa nasce **do JSON**, assim a `profills-post` lê o dado estruturado direto, sem interpretar prosa.
 
@@ -132,7 +142,7 @@ Depois de todas as empresas, dois arquivos:
 
 Com os dois gravados, rode `node "<pasta desta skill>/../profills-setup/scripts/mapa.js" "<DADOS>"`, que atualiza o resumo da pasta em `<DADOS>/CLAUDE.md`; se ele não voltar `ok: true`, avise em uma frase que o resumo não foi atualizado e siga.
 
-Concluído quando o `_summary.md` cobre todas as empresas da seleção (as com dados e as sem) com os números do `metricas.js`, as linhas de empresas fora desta rodada continuam como estavam, e, no `INDEX.md`, só as linhas das empresas com `status: ok` mostram a data de hoje.
+Concluído quando o `_summary.md` cobre todas as empresas coletadas nesta sessão (as com dados e as sem) com os números do `metricas.js`, as linhas de empresas fora desta rodada continuam como estavam, e, no `INDEX.md`, só as linhas das empresas com `status: ok` mostram a data de hoje.
 
 ### 8. Monte o dashboard visual
 
