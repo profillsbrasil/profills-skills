@@ -42,6 +42,8 @@ Concluído quando você tem o caminho absoluto de `DADOS` e ele existe no disco.
 
 O usuário escolhe o tema e, opcionalmente, a empresa que inspira. Quando ele pedir posts a partir do catálogo sem nomear tema ("transforma isso em posts"), leia `DADOS/catalog/<slug>.md`, tire de lá 3-4 temas que engajaram na empresa e ofereça-os com `AskUserQuestion`, com a sua recomendação e o porquê.
 
+**Pauta do boletim.** Quando ele pede "a pauta N do boletim", abra o boletim mais novo de `DADOS/boletins/` (o `AAAA-MM-DD.md` de data maior) e leia a pauta N da seção `## Pautas para você`: o título dela é o tema, o ângulo dela é o ângulo da primeira variação, e o post que ela cita é o post-referência. Ache esse post pelo link no `posts.json` da empresa citada (a pasta de data mais recente em `DADOS/catalog/raw/`) e siga daqui como "inspirado no que a <empresa> postou"; nesse caso o `posts.json` basta como catálogo, e o perfil `catalog/<slug>.md` entra no passo 2 só se existir. Diga em uma frase qual pauta e qual post você pegou. Sem boletim na pasta, ou sem a pauta N nele, diga isso em uma frase, liste as pautas que existem (se houver) e pergunte o tema.
+
 Havendo empresa que inspira, **nomeie o padrão que você vai reusar** — o par ângulo + categoria de hook do post-referência, lido do `posts.json` (ex.: "vou reusar o padrão do post de gummies: ângulo `trend` com hook de pergunta"). É esse par que o passo 8 confere contra a variação que ele escolheu.
 
 Concluído quando o tema cabe numa frase, a referência está definida — o nome de uma empresa do catálogo, ou "sem referência" dito em voz alta — e, havendo post-referência, o par ângulo + hook está anunciado.
@@ -129,7 +131,7 @@ As linhas de contexto trazem, nesta ordem: tema · ângulo · categoria de hook 
 
 Se a variação escolhida usa padrão diferente do que você anunciou no passo 1 (outro ângulo ou outra categoria de hook), **diga isso em uma frase ao salvar** — "você levou a história de cliente, não o padrão de pergunta da Cetro que eu tinha proposto". Não é erro, é registro.
 
-Antes de dar por pronto, rode `node "<pasta desta skill>/scripts/checar-formato.js" "<DADOS>/drafts/<AAAA-MM-DD>-<tema-slug>.md" --voz "<DADOS>/voz.md"` no arquivo salvo (`--voz` sempre que o `voz.md` existir; sem ele, o script avisa que o gate de banidas não foi medido). Aviso não impede salvar: `corpo_curto` no arquivo final é a pergunta "ficou curto — quer engordar ou vai assim?", e a resposta dele decide.
+Antes de dar por pronto, rode `node "<pasta desta skill>/scripts/checar-formato.js" "<DADOS>/drafts/<AAAA-MM-DD>-<tema-slug>.md" --voz "<DADOS>/voz.md"` no arquivo salvo; o `voz.md` sempre existe aqui, porque sem ele a run para no passo 2. Aviso não impede salvar: `corpo_curto` no arquivo final é a pergunta "ficou curto — quer engordar ou vai assim?", e a resposta dele decide.
 
 Com o arquivo salvo, rode `node "<pasta desta skill>/../profills-setup/scripts/mapa.js" "<DADOS>"`, que atualiza o resumo da pasta em `<DADOS>/CLAUDE.md`; se ele não voltar `ok: true`, avise em uma frase que o resumo não foi atualizado e siga.
 

@@ -1,0 +1,116 @@
+{
+  "skill_name": "profills-boletim",
+  "nota_fixtures": "Cada eval lista `files` na ordem em que as pastas se copiam: `evals/files/base` primeiro e a pasta do caso por cima, sobrescrevendo. O runner (`.claude/workflows/evals-profills.js`, passo 3 do preparar) diz \"cada pasta listada, por cima\" sem fixar a ordem; os casos daqui contam com a ordem da lista. O `.apagar` de cada caso lista caminhos relativos ao repo do sandbox, apagados depois da cópia; no caso 7 são pastas inteiras (`rm -r`), para que as coletas de 24/08 da base sumam e a rodada de 23/08 fique pela metade.",
+  "evals": [
+    {
+      "id": 1,
+      "prompt": "O que os concorrentes fizeram essa semana?",
+      "expected_output": "- Resolve DADOS pela regra (repo git com linkedin-data/ na raiz) e confere `.profills.json` na versão 2.\n- Vê que `linkedin-data/selection.md` já traz `# Seleção ativa — 2026-08-24` (a rodada de hoje está montada) e não reabre a seleção.\n- Roda `boletim.js linkedin-data --hoje 2026-08-24`: `faltam_coletar` vazio, então não invoca a profills-garimpo nem abre navegador.\n- Grava `linkedin-data/boletins/2026-08-24.md` pelo template: cabeçalho com a data e a rodada (3 empresas), o aviso fixo de uma linha sobre anúncio de campanha, Novidades da Alfa Envase (o post de 21/08, carrossel, com link e gancho literal) e da Nordic Fill Systems (primeira coleta, os 2 posts com o resumo em português e o gancho em inglês), a tabela de cobertura com os cinco baldes (Beta Rótulos sem novidade, Gama Tampas sem LinkedIn, Delta Selagem fora desta rodada) e 3 pautas em pt-BR, cada uma com o post que a sustenta (link) e o ângulo, rotuladas como inferido.\n- Usa o voz.md (Envix 400, envasadora semiautomática) na leitura do que cada novidade indica.\n- Roda o mapa.js e fecha com uma sugestão só: pedir à profills-post um post da pauta N do boletim.",
+      "files": [
+        "evals/files/base"
+      ],
+      "expectations": [
+        "O transcript roda `boletim.js` com `--hoje 2026-08-24` sobre linkedin-data e não lê nem invoca a SKILL.md da profills-garimpo; nenhuma tool de navegador aparece como [TOOL].",
+        "NEGATIVA — ARTEFATO: `linkedin-data/selection.md` não aparece alterado em outputs/ (a seleção de hoje já existia e não foi reaberta).",
+        "ARTEFATO: `linkedin-data/boletins/2026-08-24.md` existe em outputs/ e tem as seções `## Novidades`, `## Cobertura` e `## Pautas para você`, e a linha \"Anúncio feito só para campanha não aparece na página da empresa; este boletim cobre as publicações.\"",
+        "ARTEFATO: em Novidades, a Alfa Envase tem só o post de 21/08 (o único que não estava na coleta de 17/08), com o link `https://www.linkedin.com/feed/update/urn:li:activity:790000000000000003/`; os posts de 12/08 e 15/08 não aparecem como novidade.",
+        "ARTEFATO: a Nordic Fill Systems aparece como primeira coleta, com os 2 posts, cada um com o resumo em português do `resumo_pt` e o gancho no inglês original.",
+        "ARTEFATO: a tabela de cobertura põe cada empresa do índice num balde só: Alfa Envase e Nordic Fill Systems com novidade, Beta Rótulos sem novidade, Gama Tampas sem LinkedIn, Delta Selagem fora desta rodada; nenhum slug (`alfa-envase`, `nordic-fill`…) aparece no arquivo.",
+        "ARTEFATO: há exatamente 3 pautas numeradas, cada uma com o ângulo e um link de post que existe no `posts.json` da empresa citada, rotuladas como inferido; nenhuma pauta copia ou traduz frase do texto do post.",
+        "A resposta final chama as empresas pelo nome, dá o caminho do boletim e termina com UMA sugestão: pedir à profills-post \"gera um post da pauta N do boletim\"; o transcript roda o `mapa.js` antes de fechar."
+      ]
+    },
+    {
+      "id": 2,
+      "prompt": "Monta o boletim dos concorrentes pra mim. (Contexto: quando a coleta pergunta se pode abrir o LinkedIn, o usuário escolhe \"deixar para depois\", porque está em reunião.)",
+      "expected_output": "- A seleção de hoje já existe; roda `boletim.js --hoje 2026-08-24` e vê Épsilon Dosadoras em `rodada.faltam_coletar` (última coleta 03/08, antes da rodada).\n- Invoca a profills-garimpo para coletar a rodada que falta; a garimpo avisa o tamanho e pergunta antes de abrir o navegador, e o usuário escolhe deixar para depois.\n- Não navega. Segue com o que já foi coletado e grava `linkedin-data/boletins/2026-08-24.md`, com a Épsilon Dosadoras em Indisponível com o motivo \"ainda não coletada nesta rodada\" em palavras simples.\n- Diz ao usuário, pelo nome, que a Épsilon Dosadoras ficou de fora e que basta pedir de novo depois da coleta.",
+      "files": [
+        "evals/files/base",
+        "evals/files/2"
+      ],
+      "expectations": [
+        "O transcript roda `boletim.js` e cita `faltam_coletar` com Épsilon Dosadoras antes de ler a SKILL.md da profills-garimpo.",
+        "O transcript registra a [PERGUNTA] da garimpo antes de abrir o navegador, com a saída \"deixar para depois\", e nenhuma tool de navegador ou da profills-navegador aparece como [TOOL] depois dela.",
+        "NEGATIVA — ARTEFATO: nenhuma pasta `linkedin-data/catalog/raw/epsilon-dosadoras/2026-08-24/` existe em outputs/.",
+        "ARTEFATO: `linkedin-data/boletins/2026-08-24.md` existe e a tabela de cobertura põe Épsilon Dosadoras em Indisponível com o motivo dito como ainda não coletada nesta rodada, não como erro da página.",
+        "A resposta final diz, pelo nome, que a Épsilon Dosadoras ficou sem cobertura nesta rodada e por quê."
+      ]
+    },
+    {
+      "id": 3,
+      "prompt": "Quero ver as novidades dos concorrentes. (Contexto: quando o boletim pergunta se escreve o boletim da rodada de 10/08 ou monta uma nova, o usuário escolhe montar uma nova. Quando a escolha das empresas aparece, o usuário fica com Alfa Envase, Nordic Fill Systems e Beta Rótulos.)",
+      "expected_output": "- `selection.md` traz a rodada de 2026-08-10, toda coletada e sem boletim: `boletim.js` devolve `rodada.situacao: anterior_sem_boletim`, e a skill pergunta se escreve o boletim dessa rodada ou monta uma nova. O usuário escolhe nova.\n- Invoca a profills-radar para montar a rodada, que pergunta as empresas e grava `selection.md` com `# Seleção ativa — 2026-08-24` e as três escolhidas.\n- Com a rodada nova, roda `boletim.js`; as três já têm coleta de 24/08, então não invoca a garimpo.\n- Grava o boletim do dia com a Delta Selagem fora desta rodada (estava na seleção antiga) e Gama Tampas sem LinkedIn.",
+      "files": [
+        "evals/files/base",
+        "evals/files/3"
+      ],
+      "expectations": [
+        "O transcript roda `boletim.js` com a seleção de 2026-08-10 e registra uma [PERGUNTA] que oferece o boletim da rodada de 10/08 ou uma rodada nova, antes de ler a SKILL.md da profills-radar.",
+        "O transcript lê a SKILL.md da profills-radar antes de rodar o `boletim.js` pela primeira vez com a seleção nova.",
+        "ARTEFATO: `linkedin-data/selection.md` em outputs/ começa com `# Seleção ativa — 2026-08-24` e lista `alfa-envase`, `nordic-fill` e `beta-rotulos`, e não lista `delta-selagem`.",
+        "NEGATIVA: o transcript não lê a SKILL.md da profills-garimpo e nenhuma tool de navegador aparece como [TOOL].",
+        "ARTEFATO: `linkedin-data/boletins/2026-08-24.md` põe a Delta Selagem em Fora desta rodada e a Gama Tampas em Sem LinkedIn."
+      ]
+    },
+    {
+      "id": 4,
+      "prompt": "Roda o boletim de novo, que a coleta da Nordic terminou agora.",
+      "expected_output": "- O `boletim.js` devolve `boletim_do_dia_existe: true`: já existe `linkedin-data/boletins/2026-08-24.md` de uma rodada anterior hoje.\n- Sobrescreve o arquivo do dia (não cria `2026-08-24-2.md` nem outro nome) e diz em uma frase que substituiu o boletim da manhã.\n- O boletim novo traz a Nordic Fill Systems nas Novidades.",
+      "files": [
+        "evals/files/base",
+        "evals/files/4"
+      ],
+      "expectations": [
+        "ARTEFATO: `linkedin-data/boletins/2026-08-24.md` em outputs/ não contém a frase \"Versão da manhã\" e tem a seção `## Novidades` com a Nordic Fill Systems.",
+        "NEGATIVA — ARTEFATO: `linkedin-data/boletins/` em outputs/ não tem outro arquivo além de `2026-08-24.md`.",
+        "A resposta final diz que o boletim de hoje foi substituído pelo novo."
+      ]
+    },
+    {
+      "id": 5,
+      "prompt": "Boletim dos concorrentes, por favor.",
+      "expected_output": "- `boletim.js` põe a Beta Rótulos em indisponível (`erro_navegacao`, nota \"a página da empresa não carregou depois de duas tentativas\") e devolve o aviso `resumo_pt_ausente` para o post de 23/08 da Nordic Fill Systems, em polonês.\n- No boletim, a Beta Rótulos aparece em Indisponível com o motivo em palavras simples (a página não carregou), não em Sem novidade.\n- O post em polonês ganha um resumo em português feito a partir do texto do `posts.json`, rotulado como inferido, e o gancho fica no original.",
+      "files": [
+        "evals/files/base",
+        "evals/files/5"
+      ],
+      "expectations": [
+        "ARTEFATO: a tabela de cobertura de `linkedin-data/boletins/2026-08-24.md` põe a Beta Rótulos em Indisponível, com o motivo de a página não ter carregado, e não a lista em Sem novidade.",
+        "ARTEFATO: as Novidades da Nordic Fill Systems incluem o post de 23/08 com o gancho em polonês \"Nowa linia napełniania w Gdańsku już działa.\" e um resumo em português marcado como inferido que fala da linha de envase de sucos.",
+        "O transcript cita o aviso `resumo_pt_ausente` do `boletim.js` e lê o texto do post no `posts.json` da Nordic Fill Systems antes de escrever o resumo.",
+        "A resposta final diz pelo nome que a Beta Rótulos ficou sem cobertura e por quê."
+      ]
+    },
+    {
+      "id": 6,
+      "prompt": "O que mudou nas empresas que eu acompanho?",
+      "expected_output": "- `boletim.js` devolve `posts_novos: 0`: Alfa Envase e Beta Rótulos repetem os posts da coleta de 17/08.\n- O boletim diz que nenhuma empresa da rodada publicou algo novo, com as duas em Sem novidade, e mostra a cadência das duas coletas copiada do JSON.\n- As 3 pautas se apoiam nos posts da coleta mais recente e o boletim diz isso; nenhum post antigo é apresentado como novidade.",
+      "files": [
+        "evals/files/base",
+        "evals/files/6"
+      ],
+      "expectations": [
+        "ARTEFATO: `linkedin-data/boletins/2026-08-24.md` põe Alfa Envase e Beta Rótulos em Sem novidade e a Nordic Fill Systems em Fora desta rodada; a seção de Novidades não lista nenhum post como novo.",
+        "ARTEFATO: o boletim diz que as pautas se apoiam nos posts mais recentes já coletados, não em novidades, e cada uma das 3 cita um post com link do `posts.json` da coleta de 24/08.",
+        "A resposta final diz em uma frase que nenhuma empresa da rodada publicou nada novo desde a última coleta."
+      ]
+    },
+    {
+      "id": 7,
+      "prompt": "Monta o boletim dos concorrentes pra mim. (Contexto: quando o boletim pergunta se termina a rodada de ontem ou monta uma nova, o usuário escolhe terminar. Quando a coleta pergunta se pode abrir o LinkedIn, o usuário diz que sim; o navegador já está pronto, e a página da Beta Rótulos abre com 3.200 seguidores e nenhum post nos últimos 7 dias.)",
+      "expected_output": "- `selection.md` traz a rodada de 2026-08-23. `boletim.js --hoje 2026-08-24` devolve `rodada.situacao: anterior_por_terminar`: Alfa Envase e Nordic Fill Systems coletadas em 23/08, Beta Rótulos em `faltam_coletar`.\n- Pergunta se termina a rodada de 23/08, coletando só a Beta Rótulos, ou monta uma nova, que abriria de novo as páginas já coletadas; recomenda terminar. O usuário escolhe terminar.\n- Não invoca a profills-radar e não mexe no `selection.md`. Invoca a profills-garimpo, que retoma pela data do cabeçalho, diz pelo nome que Alfa Envase e Nordic Fill Systems já estavam feitas e abre só a página da Beta Rótulos.\n- A garimpo grava `catalog/raw/beta-rotulos/2026-08-24/meta.json` com `status: sem_posts`; o script rodado de novo volta `faltam_coletar` vazio.\n- Grava `linkedin-data/boletins/2026-08-24.md` com a rodada de 23/08 (3 empresas): Novidades da Alfa Envase (o post de 21/08) e da Nordic Fill Systems (primeira coleta), Beta Rótulos em Sem novidade.",
+      "files": [
+        "evals/files/base",
+        "evals/files/7"
+      ],
+      "expectations": [
+        "O transcript roda `boletim.js` e registra uma [PERGUNTA] que oferece terminar a rodada de 23/08, com a Beta Rótulos citada pelo nome como a que falta, ou montar uma nova, antes de ler a SKILL.md da profills-garimpo.",
+        "NEGATIVA: o transcript não lê a SKILL.md da profills-radar, e `linkedin-data/selection.md` em outputs/ não existe ou começa com `# Seleção ativa — 2026-08-23`.",
+        "NEGATIVA: nenhuma [TOOL] de navegador abre a página da Alfa Envase ou da Nordic Fill Systems, e outputs/ não tem `linkedin-data/catalog/raw/alfa-envase/2026-08-24/` nem `linkedin-data/catalog/raw/nordic-fill/2026-08-24/`.",
+        "ARTEFATO: `linkedin-data/catalog/raw/beta-rotulos/2026-08-24/meta.json` em outputs/ existe com `\"status\": \"sem_posts\"`.",
+        "ARTEFATO: `linkedin-data/boletins/2026-08-24.md` em outputs/ cita a rodada de 23/08 com 3 empresas, tem Novidades da Alfa Envase (o post de 21/08) e da Nordic Fill Systems, e põe a Beta Rótulos em Sem novidade, não em Indisponível.",
+        "A resposta final diz que a rodada de 23/08 foi terminada sem abrir de novo as páginas da Alfa Envase e da Nordic Fill Systems."
+      ]
+    }
+  ]
+}
