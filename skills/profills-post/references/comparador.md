@@ -7,7 +7,7 @@ Cada opção é renderizada como um **post real do LinkedIn**: foto do perfil, n
 O motor já existe em `scripts/picker/picker-frame.html`. Escrever HTML na mão reintroduz corte do "…mais" no lugar errado e visual que muda de rodada. O trabalho é **preencher o JSON**, não desenhar:
 
 1. Ligue o picker: `bash "<pasta desta skill>/scripts/picker/start-server.sh" --dados-dir "<DADOS>" --open`.
-2. O JSON de stdout traz `opened`. `true`: a aba abriu. `false`: sem navegador aqui, escolha pelo chat. Não cole a `url` nem chave. Aba fechada ou picker caído: rode o comando de novo e grave a tela de novo (todo start arquiva a anterior).
+2. O JSON de stdout traz `opened`. `true`: a aba abriu. `false`: sem navegador aqui, escolha pelo chat. Não cole a `url` nem chave. Aba fechada ou picker caído: siga o passo 7 da `SKILL.md`, que guarda a letra já clicada antes de religar (todo start arquiva a tela e apaga `events`).
 3. Grave `DADOS/.picker/current/content/<nome>.json` com o objeto abaixo. Nome novo a cada revisão.
 4. Depois que ele copia, leia `DADOS/.picker/current/state/events` (`choice` A/B/C, vale a última linha). O chat vale se ele digitar.
 
@@ -23,7 +23,7 @@ Referência visual do card: abra `scripts/picker/picker-frame.html` cru no naveg
 ## O que o motor renderiza (pra você saber o que prometer)
 
 1. **Cabeçalho de post** — avatar com monograma, nome + selo, descrição, "Agora · 🌐", "Seguir".
-2. **Corte "…mais" realista** — o LinkedIn mostra ~2-3 linhas antes do "…mais". O motor corta em `LIMITE = 205` caracteres, em fronteira de palavra, sem partir `[campo]` ao meio; o "…mais" é clicável. Post com ≤215 caracteres aparece inteiro. Os dois números medem coisas diferentes: o script mede o **primeiro parágrafo** contra 210 (`limites.hook_max`); o motor do preview corta o **texto corrido** em 205. Se o preview cortar o hook no meio, é sinal de parágrafo longo demais — e o `paragrafo_longo` do script já acusa.
+2. **Corte "…mais" realista** — o LinkedIn mostra ~2-3 linhas antes do "…mais". O motor corta em `LIMITE = 205` caracteres, em fronteira de palavra, sem partir `[campo]` ao meio; o "…mais" é clicável. Post com ≤215 caracteres aparece inteiro. Os dois números medem coisas diferentes: o script mede o **primeiro parágrafo** contra 210 (`limites.hook_max`), e num post sem linha em branco mede a **primeira linha**; o motor do preview corta o **texto corrido** em 205. Se o preview cortar o hook no meio, é sinal de parágrafo longo demais — e o `paragrafo_longo` do script já acusa.
 3. **Linha de corte** — a marca "↑ o que aparece antes do clique", que ensina ao usuário por que a primeira linha é tudo.
 4. **`[campos]` realçados** — viram destaque automático; são os pontos que você preenche COM o usuário no passo 8.
 5. **Espaço da foto** e **barra de reações** — para o card parecer real.

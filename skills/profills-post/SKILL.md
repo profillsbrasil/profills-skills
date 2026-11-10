@@ -107,23 +107,35 @@ As opções abrem no **picker local** desta skill, no formato do feed. Não use 
 bash "<pasta desta skill>/scripts/picker/start-server.sh" --dados-dir "<DADOS>" --open
 ```
 
-O comando devolve um JSON `{status, url, port, opened}`. A `url` sozinha não abre: a aba só entra pela chave que o `--open` carrega, e essa chave nunca vai para o chat. Então não cole a `url` nem acrescente query. Com `opened: true`, diga que a aba abriu no navegador. Com `opened: false` (sem tela gráfica, SSH, navegador que não respondeu), diga em uma frase que a aba não abriu neste ambiente e ofereça escolher pelo chat. Se ele fechou a aba ou diz que não vê nada, rode o mesmo comando de novo (`already_running` reabre a aba; `started`/`replaced` quer dizer que o picker não estava no ar). Todo start é uma rodada nova: o script move as telas anteriores para `content/.anterior/` e a aba abre na página de espera até você gravar a tela — por isso, depois de qualquer start, grave a tela desta rodada com nome novo.
+No Windows (Git Bash), acrescente `--idle-timeout-minutes 720` ao comando: lá o picker só desliga por inatividade, e o padrão de 4 horas cai antes de ele voltar no mesmo dia. O comando fica preso no terminal, então rode em background e leia a primeira linha do stdout, que é o mesmo JSON.
 
-No Windows (Git Bash) o comando fica preso no terminal: rode em background e leia a primeira linha do stdout, que é o mesmo JSON.
+O comando devolve um JSON `{status, url, port, opened}`. A `url` sozinha não abre: a aba só entra pela chave que o `--open` carrega, e essa chave nunca vai para o chat. Então não cole a `url` nem acrescente query. Com `opened: true`, diga que a aba abriu no navegador. Com `opened: false` (sem tela gráfica, SSH, navegador que não respondeu), diga em uma frase que a aba não abriu neste ambiente e ofereça escolher pelo chat. Se ele fechou a aba ou diz que não vê nada, rode o mesmo comando de novo (`already_running` reabre a aba; `started`/`replaced` quer dizer que o picker não estava no ar).
+
+Todo start é uma rodada nova: o script move as telas de `content/` para `content/.anterior/<AAAAMMDD-HHMMSS>-<nome>.json`, apaga `state/events` e a aba abre na página de espera até existir uma tela em `content/`. Por isso, antes de qualquer start com uma escolha em aberto, leia `state/events` e guarde a última letra que houver: ela é a escolha dele, e você a confirma no chat em vez de pedir de novo. E depois de qualquer start, grave uma tela com nome novo: a desta rodada, ou, quando o start foi para reabrir a aba ou religar o picker no meio da escolha, uma cópia da última tela, que é o arquivo de data de modificação mais nova em `content/.anterior/` (`ls -t "<DADOS>/.picker/current/content/.anterior/"*.json | head -1`; o `mv` do start preserva essa data).
 
 Grave a tela em `DADOS/.picker/current/content/<tema-slug>.json`, nome novo a cada revisão. O JSON é o bloco `DADOS` de `references/comparador.md`: `kicker`, `titulo`, `subtitulo`, `empresa`, `opcoes[]` (ângulo, porquê, texto, foto). Cada card tem Copiar (A, B, C…).
 
-Depois que ele copia no navegador, leia `DADOS/.picker/current/state/events`: uma linha JSON por clique, campo `choice` com a letra; vale a **última** linha, porque ele pode mudar de ideia. O arquivo é zerado a cada tela gravada e a cada start, então leia só depois de gravar a tela desta rodada. O chat vale se ele digitar a letra.
+Ao pedir a escolha, diga as duas formas de responder: clicar Copiar no card ou digitar a letra aqui no chat. A letra digitada vale tanto quanto o clique.
+
+**Picker caído.** Ele pode sair da conversa e voltar horas depois, e o picker desliga sozinho por inatividade. Antes de ler a escolha e antes de gravar qualquer tela nos passos 8 e 9, confira se ele responde:
+
+```
+node "<pasta desta skill>/scripts/picker/lifecycle-lib.cjs" ready "<DADOS>/.picker/current/state"
+```
+
+Saída 0 é picker no ar: siga. Saída 1 é picker caído (`state/server-stopped` diz o motivo, `idle timeout` quando foi inatividade). Aí, sem perguntar, religue como diz o parágrafo do start acima: guarde a letra de `state/events`, rode o comando de start deste passo e grave a cópia da última tela. Diga a ele em uma frase que o picker tinha desligado e a aba reabriu com as mesmas opções.
+
+Depois que ele copia no navegador, leia `DADOS/.picker/current/state/events`: uma linha JSON por clique, campo `choice` com a letra; vale a **última** linha, porque ele pode mudar de ideia. O arquivo é zerado a cada tela gravada e a cada start, então leia só depois de gravar a tela desta rodada.
 
 Salve **todas** as variações em `DADOS/drafts/<AAAA-MM-DD>-<tema-slug>/variacoes.md` (crie a pasta): uma seção por variação, com ângulo, categoria de hook e família de hook no cabeçalho dela e o texto integral abaixo. O picker some quando a sessão acaba; as descartadas ficam no arquivo.
 
 Não pare o picker aqui: os passos 8 e 9 mostram o preview nele. Quem para é o passo 8 (sem ajuste) ou o passo 9 (com ajuste).
 
-Concluído quando o picker está no ar com uma opção por variação, o `variacoes.md` existe no disco com todas elas (ângulo, categoria e família por variação) e o usuário escolheu uma — pelo Copiar ou pelo chat.
+Concluído quando o picker está no ar com uma opção por variação, a checagem `ready` saiu 0 logo antes de você ler a escolha, o `variacoes.md` existe no disco com todas elas (ângulo, categoria e família por variação) e o usuário escolheu uma — pelo Copiar ou pelo chat.
 
 ### 8. Persista o escolhido
 
-Preencha os `[campos]` com o dado real dele, mostre o preview final no picker (JSON de tela com uma opção só) e salve o texto em `DADOS/drafts/<AAAA-MM-DD>-<tema-slug>.md` — o texto exato do preview, pronto para colar. Crie a pasta `DADOS/drafts/` se ela ainda não existir. O preview morre com a sessão; o arquivo é o que ele encontra amanhã.
+Preencha os `[campos]` com o dado real dele, mostre o preview final no picker (JSON de tela com uma opção só, gravado depois da checagem de picker caído do passo 7) e salve o texto em `DADOS/drafts/<AAAA-MM-DD>-<tema-slug>.md` — o texto exato do preview, pronto para colar. Crie a pasta `DADOS/drafts/` se ela ainda não existir. O preview morre com a sessão; o arquivo é o que ele encontra amanhã.
 
 O arquivo tem **formato fixo**, porque é dele que o script tira o texto do post: primeiro as **linhas de contexto** (`Tema:`, `Ângulo:`, `Hook:`, `Origem dos números:`), depois uma linha sozinha com `---`, e do `---` até o fim do arquivo **só o texto do post**, exatamente como ele vai colar. Nenhum comentário seu depois da cerca.
 
@@ -139,7 +151,7 @@ Concluído quando o arquivo existe no disco no formato acima, o script devolve `
 
 ### 9. Ajuste o que ele pedir
 
-Pedidos de iteração ("encurta o 2", "troca o gancho", "deixa mais direto") mexem só no trecho afetado: grave um JSON de tela **com nome novo** em `DADOS/.picker/current/content/` e reescreva o rascunho já salvo no passo 8, no mesmo arquivo.
+Pedidos de iteração ("encurta o 2", "troca o gancho", "deixa mais direto") mexem só no trecho afetado: faça a checagem de picker caído do passo 7, grave um JSON de tela **com nome novo** em `DADOS/.picker/current/content/` e reescreva o rascunho já salvo no passo 8, no mesmo arquivo.
 
 Quando ele der o post por fechado, pare o picker:
 

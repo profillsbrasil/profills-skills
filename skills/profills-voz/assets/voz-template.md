@@ -1,6 +1,7 @@
 # Voz de <Nome / Empresa>
 
 > Montado em <AAAA-MM-DD> · atualizado em <AAAA-MM-DD>, a partir de: <material usado — ex. "áudio de 2min + 3 mensagens de WhatsApp">.
+> Quem escreve os posts: <nas palavras dele — ex. "eu mesmo" ou "alguém do marketing, com ajuda do Claude"> (perguntado em <AAAA-MM-DD>).
 > Este arquivo é o que faz os posts saírem com a sua cara: antes de te mostrar qualquer rascunho, eu confiro tudo o que está aqui.
 
 ## Identidade
@@ -51,6 +52,12 @@ Traços no formato **"X, mas nunca Y"** — cada um com o trecho do material que
 <Palavras que você nunca usaria. Rascunho que use qualquer uma volta para revisão antes de chegar a você.>
 
 - <ex.: "solução robusta" (2026-08-04)>
+
+## Termos permitidos
+
+<Nomes de produto ou do mercado que contêm uma palavra banida. Dentro deles a palavra banida não reprova o rascunho.>
+
+- <ex.: "gable top", com "top" banido>
 
 ## Isso não sou eu
 
