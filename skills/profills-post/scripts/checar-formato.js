@@ -119,10 +119,11 @@ function acharLinks(texto) {
   return lista.filter((a) => !lista.some((b) => b !== a && b.includes(a)));
 }
 
-function acharLinhasLongas(texto) {
+// As linhas do hook ficam fora desta régua: quem as limita é o hook_max, que é maior.
+function acharLinhasLongas(texto, linhasDoHook) {
   const longas = [];
   texto.split('\n').forEach((linha, i) => {
-    if (linha.trim().length > LIMITES.linha_max) {
+    if (i >= linhasDoHook && linha.trim().length > LIMITES.linha_max) {
       longas.push({ linha: i + 1, chars: linha.trim().length });
     }
   });
@@ -251,7 +252,7 @@ function main() {
   const corpoChars = texto.length;
   const marcasMarkdown = acharMarkdown(texto);
   const links = acharLinks(texto);
-  const linhasLongas = acharLinhasLongas(texto);
+  const linhasLongas = acharLinhasLongas(texto, hook.split('\n').length);
   const banidas = acharBanidas(texto, termosBanidos, termosPermitidos);
   const travessoes = (texto.match(/[—–]/g) || []).length;
   const campos = acharCamposPendentes(texto);
