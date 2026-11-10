@@ -1,0 +1,26 @@
+{
+  "kicker": "Rascunhos de post",
+  "titulo": "Manutenção preventiva de envasadora",
+  "subtitulo": "3 opções, uma por ângulo. Clique Copiar na que você quer.",
+  "empresa": "Profills",
+  "opcoes": [
+    {
+      "angulo": "contrarian",
+      "porque": "Opinião de frente sobre um costume do setor.",
+      "texto": "Envasadora não quebra do nada.\nEla avisa uns 15 dias antes.\nO bico começa a pingar, o peso oscila, o operador ajusta \"no olho\".\nQuem espera parar para chamar a assistência paga a peça e o pedido perdido.\nA preventiva é olhar esses avisos toda semana, com uma lista de 5 itens.\nQuer a lista? Comenta \"lista\" que eu te mando.",
+      "foto": "foto do bico dosador pingando"
+    },
+    {
+      "angulo": "historia-cliente",
+      "porque": "Caso real com cidade e produto, sem nome do cliente.",
+      "texto": "Uma fábrica de cosmético em Diadema parava a linha toda sexta à tarde.\nNão era defeito. Era a limpeza do bico, feita na pressa, sem ordem.\nA gente montou com eles uma rotina de 20 minutos na segunda de manhã.\nA linha parou de parar na sexta.\nO que mudou foi só o dia e a ordem da limpeza.\nNa tua fábrica, quando a envasadora para?",
+      "foto": "foto da linha de envase limpa"
+    },
+    {
+      "angulo": "insider",
+      "porque": "Bastidor de quem faz assistência, na linguagem de operador.",
+      "texto": "Três coisas que eu olho em toda envasadora antes de ela dar problema:\n1. O anel de vedação do bico: ressecado, troca.\n2. O peso de 10 frascos seguidos: variou mais que 1%, regula.\n3. O barulho do pistão: mudou, para e chama.\nLeva 10 minutos por semana.\nSalva este post e cola na parede da linha.",
+      "foto": null
+    }
+  ]
+}

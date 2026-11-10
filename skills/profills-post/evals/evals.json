@@ -148,6 +148,22 @@
         "ARTEFATO: `linkedin-data/drafts/2026-08-24-<tema-slug>/variacoes.md` existe e a primeira variação tem ângulo contrarian; nenhuma variação contém frase do post em inglês (\"Is manual filling still worth it for small batches?\") nem a tradução literal dela.",
         "ARTEFATO: `linkedin-data/drafts/2026-08-24-<tema-slug>.md` tem as linhas de contexto com a Nordic Fill Systems como empresa que inspirou e a origem do número 1.800 como resposta do usuário, e `checar-formato.js` com `--voz linkedin-data/voz.md` volta `ok: true` nele."
       ]
+    },
+    {
+      "id": 9,
+      "prompt": "Voltei. A aba com as opções do post de manutenção preventiva não carrega mais, diz que perdeu a conexão. Me mostra de novo que eu escolho. (Contexto: hoje à tarde você gerou as 3 variações, salvou o variacoes.md e abriu o picker; ele não clicou em nenhuma e saiu para uma visita, voltando 5 horas depois. Quando as opções reaparecem, ele responde \"agora tenho que sair de novo, escolho mais tarde\".)",
+      "expected_output": "- Antes de ler a escolha ou gravar tela, roda a checagem `lifecycle-lib.cjs ready` no `state/` do picker e vê que ele caiu.\n- Religa o picker com o start-server.sh sem perguntar se pode.\n- Regrava a última tela: copia o JSON mais novo de `content/.anterior/` para `content/` com nome novo, com as mesmas 3 opções, sem gerar variação nova.\n- Diz em uma frase que o picker tinha desligado e reabriu com as mesmas opções, e pede a escolha pelo Copiar ou pela letra no chat.\n- Não salva rascunho final nem para o picker, porque ele ainda não escolheu.",
+      "files": [
+        "evals/files/9"
+      ],
+      "expectations": [
+        "O transcript registra `node <skill>/scripts/picker/lifecycle-lib.cjs ready <...>/linkedin-data/.picker/current/state` rodado ANTES da primeira chamada de start-server.sh e antes de qualquer leitura de `state/events`, com a saída 1 (picker caído) levada em conta. Checagem por outro meio (curl na porta, leitura do server.log, só olhar o `server-stopped`) não cumpre esta expectativa.",
+        "start-server.sh é chamado com `--dados-dir` apontando para linkedin-data, e o transcript não registra nenhuma [PERGUNTA] antes dele pedindo licença para religar ou reabrir o picker.",
+        "Existe em outputs/linkedin-data/.picker/current/content/ um JSON de tela com nome diferente de `manutencao-preventiva.json` cujo `opcoes[].texto` é igual, opção a opção, ao das 3 opções de `evals/files/9/linkedin-data/.picker/current/content/manutencao-preventiva.json` (mesma ordem A, B, C).",
+        "NEGATIVA: `linkedin-data/drafts/2026-08-24-manutencao-preventiva/variacoes.md` volta inalterado (ou ausente de outputs/), não existe `linkedin-data/drafts/2026-08-24-manutencao-preventiva.md` em outputs/ e o transcript não registra checar-formato.js nem humanize-pt-br: nenhuma variação foi regerada.",
+        "NEGATIVA: stop-server.sh não é chamado, porque ele ainda não escolheu.",
+        "A resposta final diz em uma frase que o picker tinha desligado e reabriu com as mesmas opções, oferece as duas formas de escolher (clicar Copiar no card ou digitar a letra no chat), não cola a `url` nem query com chave, e fecha com uma única sugestão de próximo passo."
+      ]
     }
   ]
 }
