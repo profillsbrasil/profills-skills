@@ -26,7 +26,7 @@ O `posts.json` de cada empresa é um array destes objetos. Ele é o **artefato p
   "tom": "primeira pessoa, informal, com emoji",
   "descricao_visual": "slide 1 mostra a máquina em operação com título em amarelo",
   "engajamento": { "likes": 240, "comentarios": 31, "reposts": 12 },
-  "screenshot": "screenshots/post-7135991839244902400.png",
+  "screenshot": "screenshots/post-7135991839244902400.jpg",
   "destaque_semana": false
 }
 ```
@@ -37,13 +37,13 @@ A coluna **Fonte** diz de onde o valor sai: `JS` = retorno do script de `navegac
 
 | Campo | Fonte | Como obter |
 |---|---|---|
-| `post_id`, `url` | JS | do atributo `data-urn` / permalink do post |
-| `data` | JS + conversão | `dataRel` relativo vira data absoluta pelo **parser de data relativa de `navegacao.md`** (é lá que vive a tabela de sufixos, inclusive o "m" = meses) |
+| `post_id`, `url` | JS | `urn:li:activity:<id>` ou `urn:li:ugcPost:<id>` (vídeo e documento costumam ser `ugcPost`), montado do `tipo` e do `id` do retorno; o `url` é `https://www.linkedin.com/feed/update/<post_id>/` |
+| `data` | JS | o campo `dia` do retorno, tirado do id do post; o rótulo relativo da tela (`dataRel`) só confere |
 | `texto` | JS | texto completo, incluindo quebras de linha |
 | `formato` | JS (5 valores) ou leitura | ver taxonomia de formato em `taxonomias.md` — cinco valores o JS detecta, cinco você reconhece olhando |
 | `hashtags` | JS | array das hashtags do post (`[]` se nenhuma — ausência também é sinal de estilo) |
 | `link_externo` | JS | URL externa do post (lnkd.in, blog), `null` se não houver |
-| `engajamento` | JS | likes, comentários, reposts — números na página **no momento da coleta**. Grave número (`240`); o `metricas.js` também aceita a string da UI (`"1.200"`, `"1,2 mil"`), mas o que ele não conseguir ler tira o post da média, do destaque e dos outliers, com aviso |
+| `engajamento` | JS | `likes`, `comentarios`, `reposts` do retorno — números na página **no momento da coleta**. Grave número (`240`); o `metricas.js` também aceita a string da UI (`"1.200"`, `"1,2 mil"`), mas o que ele não conseguir ler tira o post da média, do destaque e dos outliers, com aviso |
 | `hook`, `hook_cabe_no_corte` | leitura | primeiro parágrafo literal (até a primeira quebra dupla de linha — a mesma régua do `checar-formato.js` da post); cabe se termina antes do corte "ver mais" — o limite numérico é o `hook_max` de `../profills-post/scripts/checar-formato.js`, fonte única |
 | `cta` | leitura | a chamada final, se houver (`null` se não) |
 | `artigo_titulo` | leitura | título do card, só quando `formato` é `artigo` (`null` fora disso) |
@@ -91,13 +91,14 @@ Ao lado de `posts.json`, um `meta.json` com o contexto da página no dia:
   "slug": "cetromaquinas",
   "coletado_em": "2026-08-04",
   "seguidores": 12400,
+  "seguidores_arredondado": false,
   "janela_dias": 7,
   "posts_coletados": 5,
   "status": "ok"
 }
 ```
 
-`seguidores` vem do topo da página da empresa ("12.400 seguidores") e é o denominador da **taxa de engajamento normalizada** (`benchmark-mercado.md`) — sem ele, comparar likes brutos entre uma página de 30k e uma de 1,9k seguidores é enganoso. `0` não é um valor válido aqui: o `metricas.js` avisa ("taxa impossível") e devolve `taxa_normalizada: null` em vez de dividir por zero.
+`seguidores` vem do topo da página da empresa ("12.400 seguidores"), pelo retorno do JS de `navegacao.md`, e é o denominador da **taxa de engajamento normalizada** (`benchmark-mercado.md`) — sem ele, comparar likes brutos entre uma página de 30k e uma de 1,9k seguidores é enganoso. O LinkedIn arredonda o número em página maior ("6 mil", "52 mil", "1,1 mi"): grave o valor convertido (`6000`) com `"seguidores_arredondado": true`, e diga no perfil que a taxa dessa empresa é aproximada. `0` não é um valor válido aqui: o `metricas.js` avisa ("taxa impossível") e devolve `taxa_normalizada: null` em vez de dividir por zero.
 
 `status` é como a coleta conta o que aconteceu, e é o que o `_summary.md`, o dashboard e a `profills-post` leem para saber se há dado:
 
@@ -112,7 +113,7 @@ Todo `status` diferente de `ok` vem com `"nota"`: uma frase em português dizend
 
 ## Screenshot
 
-Todo post com mídia (imagem, carrossel, vídeo) ganha um screenshot em `screenshots/post-<id>.png`. O screenshot captura o que o texto não diz — a anatomia visual do carrossel, o print, o gráfico. Post de texto puro não precisa (`screenshot: null`).
+Todo post com mídia (imagem, carrossel, vídeo) ganha um screenshot em `screenshots/post-<id>.png` ou `.jpg`, a extensão que a ferramenta gravar. O screenshot captura o que o texto não diz — a anatomia visual do carrossel, o print, o gráfico. Post de texto puro não precisa (`screenshot: null`).
 
 **Sem captura real, o campo é `null` — e ponto.** Quando a tool não devolveu o PNG (save indisponível, falha, post que não abriu), grave `screenshot: null` e descreva a imagem em `descricao_visual`: a descrição é o fallback documentado, e a `profills-post` trabalha com ela.
 

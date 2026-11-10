@@ -86,7 +86,7 @@ Para cada empresa, siga `references/navegacao.md` (como dirigir o `claude-in-chr
 DADOS/catalog/raw/<slug>/<AAAA-MM-DD>/
 ├── posts.json        # array de posts (dado estruturado — o artefato primário)
 ├── meta.json         # seguidores, janela, nº de posts e o status da coleta
-└── screenshots/      # um PNG por post com mídia
+└── screenshots/      # uma imagem (.png ou .jpg) por post com mídia
 ```
 
 Cada execução cria a pasta do dia; pasta de data anterior fica intacta — é isso que permite comparar cadência semana a semana. Segunda rodada no mesmo dia sobrescreve só a pasta de hoje.
