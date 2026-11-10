@@ -21,7 +21,7 @@ Ele aceita o `.md` salvo em `drafts/` (o texto do post é tudo que vem depois da
 | `tem_markdown` | `**`, `#`, `- `, `[texto](url)` — o feed mostra literal |
 | `link_no_corpo` | link no texto em vez do comentário |
 | `paragrafo_longo` | bloco sem quebra, ilegível no celular |
-| `palavras_banidas_encontradas` | ocorrência da seção **Palavras banidas** do `voz.md` |
+| `palavras_banidas_encontradas` | ocorrência, como palavra inteira ou no plural, de um termo da seção **Palavras banidas** do `voz.md`. Se a palavra acusada faz parte de um nome de produto ("top" em "gable top"), ofereça gravar o nome em **Termos permitidos** do `voz.md` e rode o script de novo |
 | `travessao` | travessão no corpo (marca de IA que o `humanize-pt-br` tira) |
 | `campos_pendentes` | `[campo]` não preenchido |
 

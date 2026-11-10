@@ -80,8 +80,12 @@ function extrairTexto(conteudo) {
 
 // Hook = o primeiro parágrafo, ou seja, o texto até a primeira quebra dupla.
 // É o que o leitor lê antes de decidir clicar em "ver mais".
+// Post sem linha em branco (título na primeira linha, parágrafos colados) teria o
+// texto inteiro como hook; nele o hook é a primeira linha.
 function extrairHook(texto) {
-  return texto.split(/\n[ \t]*\n/)[0].trim();
+  const paragrafos = texto.split(/\n[ \t]*\n/);
+  const hook = paragrafos.length > 1 ? paragrafos[0] : texto.split('\n')[0];
+  return hook.trim();
 }
 
 function acharMarkdown(texto) {
@@ -126,22 +130,22 @@ function acharLinhasLongas(texto) {
 }
 
 /*
- * Lê os termos da seção "## Palavras banidas" do voz.md. O título casa sem
+ * Lê os termos de uma seção "## <titulo>" do voz.md. O título casa sem
  * olhar caixa e aceita texto depois ("## Palavras banidas (atualizada em ...)").
  * Item entre aspas → o que está entre aspas; item sem aspas → o texto antes
  * da data entre parênteses ou do travessão de explicação. Placeholder do
  * template (linha que começa com "<") é ignorado.
- * Devolve também se a seção existe: sem ela, nenhum termo foi lido e o gate de
- * banidas não está aprovado, só não medido.
+ * Devolve também se a seção existe: sem "Palavras banidas", nenhum termo foi
+ * lido e o gate de banidas não está aprovado, só não medido.
  */
-function lerPalavrasBanidas(conteudoVoz) {
-  const linhas = conteudoVoz.split('\n');
+function lerSecaoDeTermos(linhas, titulo) {
+  const cabecalho = new RegExp(`^##\\s+${titulo.split(/\s+/).join('\\s+')}\\b`, 'i');
   const termos = [];
   let dentro = false;
   let secaoEncontrada = false;
   for (const linha of linhas) {
     if (/^##\s+/.test(linha)) {
-      dentro = /^##\s+palavras\s+banidas\b/i.test(linha.trim());
+      dentro = cabecalho.test(linha.trim());
       if (dentro) secaoEncontrada = true;
       continue;
     }
@@ -165,13 +169,50 @@ function lerPalavrasBanidas(conteudoVoz) {
   return { termos, secaoEncontrada };
 }
 
-function acharBanidas(texto, termos) {
-  const alvo = texto.toLowerCase();
-  const achadas = [];
-  for (const termo of termos) {
-    if (termo.length >= 3 && alvo.includes(termo.toLowerCase())) achadas.push(termo);
-  }
-  return achadas;
+// "## Termos permitidos" guarda nomes de produto que contêm um termo banido
+// ("gable top" com "top" banido): a ocorrência dentro deles não conta.
+function lerTermosDaVoz(conteudoVoz) {
+  const linhas = conteudoVoz.split('\n');
+  const banidas = lerSecaoDeTermos(linhas, 'palavras banidas');
+  return {
+    banidos: banidas.termos,
+    permitidos: lerSecaoDeTermos(linhas, 'termos permitidos').termos,
+    secaoBanidasEncontrada: banidas.secaoEncontrada,
+  };
+}
+
+function formasDoPlural(palavra) {
+  const formas = [palavra];
+  if (/ão$/.test(palavra)) formas.push(palavra.slice(0, -2) + 'ões', palavra.slice(0, -2) + 'ães', palavra + 's');
+  else if (/m$/.test(palavra)) formas.push(palavra.slice(0, -1) + 'ns');
+  else if (/el$/.test(palavra)) formas.push(palavra.slice(0, -1) + 'is', palavra.slice(0, -2) + 'éis');
+  else if (/ol$/.test(palavra)) formas.push(palavra.slice(0, -1) + 'is', palavra.slice(0, -2) + 'óis');
+  else if (/[au]l$/.test(palavra)) formas.push(palavra.slice(0, -1) + 'is');
+  else if (/il$/.test(palavra)) formas.push(palavra.slice(0, -1) + 's');
+  else if (/[rzs]$/.test(palavra)) formas.push(palavra + 'es');
+  else formas.push(palavra + 's');
+  return formas;
+}
+
+const escapar = (s) => s.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+
+/*
+ * Posições [início, fim) de cada ocorrência do termo como palavra inteira, com a
+ * última palavra no singular ou num plural simples. Limite de palavra por
+ * \p{L}\p{N} porque o \b do JS trata letra acentuada como separador.
+ */
+function ocorrencias(texto, termo) {
+  const palavras = termo.normalize('NFC').toLowerCase().trim().split(/\s+/);
+  const ultima = palavras.pop();
+  const corpo = [...palavras.map(escapar), `(?:${formasDoPlural(ultima).map(escapar).join('|')})`].join('\\s+');
+  const padrao = new RegExp(`(?<![\\p{L}\\p{N}])${corpo}(?![\\p{L}\\p{N}])`, 'giu');
+  return [...texto.normalize('NFC').matchAll(padrao)].map((m) => [m.index, m.index + m[0].length]);
+}
+
+function acharBanidas(texto, banidos, permitidos) {
+  const protegidas = permitidos.flatMap((termo) => ocorrencias(texto, termo));
+  const livre = ([ini, fim]) => !protegidas.some(([pIni, pFim]) => pIni <= ini && fim <= pFim);
+  return banidos.filter((termo) => termo.length >= 3 && ocorrencias(texto, termo).some(livre));
 }
 
 function acharCamposPendentes(texto) {
@@ -187,15 +228,17 @@ function main() {
 
   const avisos = [];
   let termosBanidos = [];
+  let termosPermitidos = [];
   if (!/^\s*---\s*$/m.test(conteudo)) {
     avisos.push('sem_cerca: o arquivo não tem a linha "---" que separa contexto de texto — medi o arquivo inteiro como post; se há linhas de contexto no topo, elas entraram na conta.');
   }
   if (voz && !fs.existsSync(voz)) {
     avisos.push(`voz_nao_encontrada: ${voz} não existe — o gate de palavras banidas está NÃO MEDIDO, não aprovado.`);
   } else if (voz) {
-    const lidas = lerPalavrasBanidas(lerArquivo(voz, 'o arquivo de voz'));
-    termosBanidos = lidas.termos;
-    if (!lidas.secaoEncontrada) {
+    const lidas = lerTermosDaVoz(lerArquivo(voz, 'o arquivo de voz'));
+    termosBanidos = lidas.banidos;
+    termosPermitidos = lidas.permitidos;
+    if (!lidas.secaoBanidasEncontrada) {
       avisos.push(
         `voz_sem_palavras_banidas: ${voz} não tem a seção "## Palavras banidas" — nenhum termo foi lido, ` +
           'então o gate de banidas está NÃO MEDIDO, não aprovado.'
@@ -209,7 +252,7 @@ function main() {
   const marcasMarkdown = acharMarkdown(texto);
   const links = acharLinks(texto);
   const linhasLongas = acharLinhasLongas(texto);
-  const banidas = acharBanidas(texto, termosBanidos);
+  const banidas = acharBanidas(texto, termosBanidos, termosPermitidos);
   const travessoes = (texto.match(/[—–]/g) || []).length;
   const campos = acharCamposPendentes(texto);
 
