@@ -20,7 +20,7 @@ Ele aceita o `.md` salvo em `drafts/` (o texto do post é tudo que vem depois da
 | `acima_de_2000` / corpo acima de `corpo_max` | corpo maior do que a faixa que performa |
 | `tem_markdown` | `**`, `#`, `- `, `[texto](url)` — o feed mostra literal |
 | `link_no_corpo` | link no texto em vez do comentário |
-| `paragrafo_longo` | bloco sem quebra, ilegível no celular |
+| `paragrafo_longo` | bloco sem quebra, ilegível no celular. As linhas do hook não entram aqui: quem as mede é o `hook_cabe` |
 | `palavras_banidas_encontradas` | ocorrência, como palavra inteira ou no plural, de um termo da seção **Palavras banidas** do `voz.md`. Se a palavra acusada faz parte de um nome de produto ("top" em "gable top"), ofereça gravar o nome em **Termos permitidos** do `voz.md` e rode o script de novo |
 | `travessao` | travessão no corpo (marca de IA que o `humanize-pt-br` tira) |
 | `campos_pendentes` | `[campo]` não preenchido |

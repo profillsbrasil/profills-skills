@@ -64,17 +64,31 @@ const casos = [
     assert.strictEqual(json.ok, true);
     assert.strictEqual(status, 0, 'exit 0');
   }],
-  ['hook: título de 200 chars sem linha em branco cabe no corte de 210', () => {
-    const { json } = checar(postSemLinhaEmBranco(200));
+  ['hook: título de 200 chars sem linha em branco cabe no corte de 210 e o post passa', () => {
+    const { status, json } = checar(postSemLinhaEmBranco(200));
     assert.strictEqual(json.hook_chars, 200);
     assert.strictEqual(json.hook_cabe, true);
-    assert.ok(!json.falhas.some((f) => f.startsWith('hook')), 'nenhuma falha de hook');
+    assert.strictEqual(json.paragrafo_longo, false);
+    assert.deepStrictEqual(json.falhas, []);
+    assert.strictEqual(status, 0, 'exit 0');
+  }],
+  ['hook: primeiro parágrafo de 200 chars numa linha, com linha em branco depois, também passa', () => {
+    const { json } = checar([frase(200), '', frase(150), frase(150)].join('\n'));
+    assert.strictEqual(json.hook_chars, 200);
+    assert.strictEqual(json.paragrafo_longo, false);
+    assert.deepStrictEqual(json.falhas, []);
+  }],
+  ['parágrafo longo: linha de 190 chars fora do hook continua reprovada', () => {
+    const { status, json } = checar([frase(120), frase(190), frase(150)].join('\n'));
+    assert.deepStrictEqual(json.linhas_longas, [{ linha: 2, chars: 190 }]);
+    assert.strictEqual(json.paragrafo_longo, true);
+    assert.strictEqual(status, 1, 'exit 1');
   }],
   ['hook: primeira linha acima de 210 chars continua reprovada', () => {
     const { status, json } = checar(postSemLinhaEmBranco(230));
     assert.strictEqual(json.hook_chars, 230);
     assert.strictEqual(json.hook_cabe, false);
-    assert.ok(json.falhas.includes('hook com 230 chars, acima do corte de 210'), json.falhas.join(' | '));
+    assert.deepStrictEqual(json.falhas, ['hook com 230 chars, acima do corte de 210']);
     assert.strictEqual(status, 1, 'exit 1');
   }],
   ['hook: com linha em branco, o hook continua sendo o primeiro parágrafo inteiro', () => {
