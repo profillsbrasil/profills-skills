@@ -35,7 +35,7 @@ O LinkedIn serve a aba Publicações em duas estruturas, e a conta logada decide
 | Rótulo de data | "22 h" | "há 22 h" |
 | Conferido | ao vivo em 10/11/2026: 9 posts de uma página, ordem, datas e contadores batendo com a tela | relatado na coleta de 10/11/2026 (12 empresas). O JS daqui rodou só num DOM montado por esse relato, não numa página real |
 
-Na primeira coleta em que `estrutura` vier `componentkey`, confira dois posts contra a tela (texto, dia e contadores) antes de seguir, e troque a célula "Conferido" pela data e pelo que bateu.
+Na primeira empresa da rodada em que `estrutura` vier `componentkey`, confira dois posts contra a tela: texto, dia e os três contadores. Se os dois batem, siga e diga no fecho da rodada que a estrutura `componentkey` foi conferida nesta data. Se algum item diverge, pare essa empresa com `"status": "erro_navegacao"`, ponha na nota o item que divergiu e diga ao usuário que a skill precisa de atualização para a estrutura nova.
 
 O id do `componentkey` tem dois tipos, e ler só um pula post: o primeiro byte é `0x0A` (activity, texto e imagem) ou `0x12` (ugcPost, vídeo e documento); depois vêm o tamanho, `0x08` e um varint, e o id é o varint deslocado 1 bit à direita. Os bytes `0a 0b 08 80 c0 b9 84 9a f6 92 f1 d0 01` dão `urn:li:activity:7525838065450299392`, um post de 10/11/2026.
 
@@ -56,7 +56,9 @@ await (async () => {
   if (/Recentes/.test(antes)) return { ok: true, antes, depois: antes, abriu_com: null };
   let abriu_com = null;
   for (const [nome, abre] of [['click', (g) => g.click()], ['eventos', eventos], ['eventos, 2a vez', eventos]]) {
-    abre(gatilho());
+    const g = gatilho();
+    if (!g) break;
+    abre(g);
     await espera(2000);
     if (opcao()) { abriu_com = nome; break; }
   }
@@ -134,7 +136,7 @@ await (async () => {
       if (fim === -1) fim = linhas.length;
       const cortado = /^…\s?mais$/.test(linhas[fim] || '');
       const texto = linhas.slice(ini + 1, fim).join('\n').replace(/\n{3,}/g, '\n\n').trim();
-      const documento = linhas.some((l) => /^\d+ páginas?$/.test(l));
+      const documento = linhas.some((l) => /^\d+ páginas$/.test(l));
       const formato = rels.length > 1 ? 'reshare'
         : card.querySelector('video') ? 'video'
         : documento ? 'carrossel'
@@ -159,6 +161,7 @@ await (async () => {
     if (vazios) avisos.push(`${vazios} card(s) ainda sem conteúdo: role até eles e rode de novo`);
     document.querySelectorAll('[data-urn]').forEach((e) => {
       const m = e.getAttribute('data-urn').match(/^urn:li:(activity|ugcPost):(\d+)$/);
+      if (e.parentElement.closest('[data-urn]')) return;
       if (!m) { anuncios += 1; return; }
       const social = limpa(e.querySelector('.social-details-social-counts')?.innerText).replace(/\s+/g, ' ');
       const conta = (re) => numero((social.match(re) || [])[1] || '0') || 0;
@@ -176,7 +179,7 @@ await (async () => {
         vaga: tem('a[href*="/jobs/view/"]'),
         hashtags: [...e.querySelectorAll('a[href*="HASH_TAG"], a[href*="/hashtag/"]')].map((a) => limpa(a.innerText.split('\n').pop())),
         link: e.querySelector('a[href*="lnkd.in"], .update-components-article__link')?.href || null,
-        likes: conta(/^(\d[\d.,]*(?: mil| mi)?)(?= |$)/),
+        likes: conta(/^(\d[\d.,]*(?: mil| mi)?)(?= \d|$)/),
         comentarios: conta(/(\d[\d.,]*(?: mil| mi)?) comentários?/),
         reposts: conta(/(\d[\d.,]*(?: mil| mi)?) compartilhamentos?/),
       });
