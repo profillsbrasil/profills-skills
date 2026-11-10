@@ -52,6 +52,12 @@ Traços no formato **"X, mas nunca Y"** — cada um com o trecho do material que
 
 - <ex.: "solução robusta" (2026-08-04)>
 
+## Termos permitidos
+
+<Nomes de produto ou do mercado que contêm uma palavra banida. Dentro deles a palavra banida não reprova o rascunho.>
+
+- <ex.: "gable top", com "top" banido>
+
 ## Isso não sou eu
 
 <Construções e tons que você rejeitou, cada um com o exemplo rejeitado e a data.>
