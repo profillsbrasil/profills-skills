@@ -80,8 +80,12 @@ function extrairTexto(conteudo) {
 
 // Hook = o primeiro parágrafo, ou seja, o texto até a primeira quebra dupla.
 // É o que o leitor lê antes de decidir clicar em "ver mais".
+// Post sem linha em branco (título na primeira linha, parágrafos colados) teria o
+// texto inteiro como hook; nele o hook é a primeira linha.
 function extrairHook(texto) {
-  return texto.split(/\n[ \t]*\n/)[0].trim();
+  const paragrafos = texto.split(/\n[ \t]*\n/);
+  const hook = paragrafos.length > 1 ? paragrafos[0] : texto.split('\n')[0];
+  return hook.trim();
 }
 
 function acharMarkdown(texto) {
