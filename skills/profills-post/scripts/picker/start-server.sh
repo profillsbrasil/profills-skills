@@ -319,7 +319,11 @@ json_escape() {
 }
 # printf %q makes each argument safe to paste into bash; json_escape makes the
 # whole line safe inside the JSON string.
-RECOVERY="$(json_escape "bash $(printf '%q' "$SCRIPT_DIR/start-server.sh") --dados-dir $(printf '%q' "$DADOS_DIR") --host $(printf '%q' "$BIND_HOST") --url-host $(printf '%q' "$URL_HOST") --foreground")"
+RECOVERY_IDLE=""
+if [[ -n "$IDLE_TIMEOUT_MINUTES" ]]; then
+  RECOVERY_IDLE=" --idle-timeout-minutes $IDLE_TIMEOUT_MINUTES"
+fi
+RECOVERY="$(json_escape "bash $(printf '%q' "$SCRIPT_DIR/start-server.sh") --dados-dir $(printf '%q' "$DADOS_DIR") --host $(printf '%q' "$BIND_HOST") --url-host $(printf '%q' "$URL_HOST")${RECOVERY_IDLE} --foreground")"
 
 if [[ "$FOREGROUND" == "true" ]]; then
   env BRAINSTORM_DIR="$SESSION_DIR" BRAINSTORM_HOST="$BIND_HOST" BRAINSTORM_URL_HOST="$URL_HOST" BRAINSTORM_OWNER_PID="$OWNER_PID" node server.cjs "--brainstorm-server-id=$SERVER_ID" > "$LOG_FILE" 2>&1 &

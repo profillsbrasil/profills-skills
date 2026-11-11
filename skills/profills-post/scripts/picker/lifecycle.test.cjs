@@ -477,6 +477,40 @@ test('recovery error line is valid JSON even with spaces, $ and quotes in DADOS'
   }
 });
 
+function recoveryLine(dadosDir, extraArgs) {
+  const fakeBin = path.join(dadosDir, 'bin');
+  fs.mkdirSync(fakeBin, { recursive: true });
+  fs.writeFileSync(path.join(fakeBin, 'node'), '#!/usr/bin/env bash\ncase "$1" in *lifecycle-lib.cjs) exec ' + process.execPath + ' "$@";; esac\nexit 3\n');
+  fs.chmodSync(path.join(fakeBin, 'node'), 0o700);
+  const r = spawnSync('bash', [START, '--dados-dir', dadosDir, ...extraArgs], {
+    encoding: 'utf8', timeout: 15000, env: { ...process.env, PATH: fakeBin + ':' + process.env.PATH }
+  });
+  assert.equal(r.status, 1);
+  return parseOneJson(r.stdout).error.replace(/^.*aberto: /, '');
+}
+
+test('recovery line restarts with the idle timeout the picker started with', async (t) => {
+  const dadosDir = makeDados();
+  const infoFile = path.join(sessionDir(dadosDir), 'state', 'server-info');
+  t.after(() => {
+    runStop(dadosDir);
+    fs.rmSync(dadosDir, { recursive: true, force: true });
+  });
+
+  assert.equal(recoveryLine(dadosDir, []).includes('--idle-timeout-minutes'), false, 'no flag in, no flag out');
+
+  const cmd = recoveryLine(dadosDir, ['--idle-timeout-minutes', '1']);
+  assert.equal(parseOneJson(runStop(dadosDir).stdout).status, 'not_running');
+  const env = { ...process.env, BRAINSTORM_LIFECYCLE_CHECK_MS: '200' };
+  delete env.BRAINSTORM_IDLE_TIMEOUT_MS;
+  const fg = spawn('bash', ['-c', cmd], { env, stdio: 'ignore' });
+  t.after(() => {
+    try { process.kill(fg.pid, 'SIGKILL'); } catch (e) { /* gone */ }
+  });
+  await waitUntil(() => fs.existsSync(infoFile) && fs.readFileSync(infoFile, 'utf8').trim().length > 0, 8000, 'recovery never wrote server-info');
+  assert.equal(JSON.parse(fs.readFileSync(infoFile, 'utf8')).idle_timeout_ms, 60000);
+});
+
 test('ready works without /proc (macOS path)', async (t) => {
   const dadosDir = makeDados();
   t.after(() => {
