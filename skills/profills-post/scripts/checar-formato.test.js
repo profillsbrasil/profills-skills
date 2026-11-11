@@ -131,6 +131,13 @@ const casos = [
     assert.deepStrictEqual(banidas(texto, { banidas: ['top', 'solução'], permitidos: ['gable top'] }), []);
     assert.deepStrictEqual(banidas(texto, { banidas: ['top', 'solução'] }), ['top']);
   }],
+  ['links: o domínio solto noutra frase aparece junto da URL que o contém', () => {
+    const texto = 'Veja www.profills.com.br/dosadoras para a linha.\n\nO site é profills.com.br, sem segredo.';
+    assert.deepStrictEqual(checar(texto).json.links, ['www.profills.com.br/dosadoras', 'profills.com.br']);
+  }],
+  ['links: um link só aparece uma vez', () => {
+    assert.deepStrictEqual(checar('Veja https://profills.com.br/x hoje.').json.links, ['https://profills.com.br/x']);
+  }],
 ];
 
 let falhou = 0;
