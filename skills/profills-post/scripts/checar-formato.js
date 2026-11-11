@@ -104,19 +104,20 @@ function acharMarkdown(texto) {
  * em qualquer caixa.
  */
 function acharLinks(texto) {
-  const achados = new Set();
   const padroes = [
     /https?:\/\/\S+/gi,
     /\bwww\.[a-z0-9-]+\.[a-z]{2,}\S*/gi,
     /\b[a-z0-9-]{2,}\.(?:com\.br|com|br|net|org|io|co|app|me|ai)\b(?:\/\S*)?/g,
   ];
-  for (const padrao of padroes) {
-    const m = texto.match(padrao);
-    if (m) m.forEach((achado) => achados.add(achado));
-  }
-  // Um link casa com mais de um padrão (URL inteira e domínio solto): fica só o achado mais longo.
-  const lista = [...achados];
-  return lista.filter((a) => !lista.some((b) => b !== a && b.includes(a)));
+  const achados = padroes.flatMap((padrao) =>
+    [...texto.matchAll(padrao)].map((m) => ({ inicio: m.index, fim: m.index + m[0].length, texto: m[0] })),
+  );
+  // Um link casa com mais de um padrão (URL inteira e domínio solto dentro dela). A comparação é
+  // pela posição no texto, não pela string: o mesmo domínio solto noutra frase é outro link.
+  const dentroDeOutro = (a) =>
+    achados.some((b) => b.inicio <= a.inicio && a.fim <= b.fim && b.fim - b.inicio > a.fim - a.inicio);
+  const soltos = achados.filter((a) => !dentroDeOutro(a)).sort((a, b) => a.inicio - b.inicio);
+  return [...new Set(soltos.map((a) => a.texto))];
 }
 
 // As linhas do hook ficam fora desta régua: quem as limita é o hook_max, que é maior.
