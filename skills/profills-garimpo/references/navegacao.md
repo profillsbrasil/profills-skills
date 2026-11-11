@@ -108,17 +108,33 @@ await (async () => {
       }
       return { tipo, id: String(v >> 1n) };
     };
-    const contador = (card, icone) => {
-      let no = card.querySelector(`svg[id="${icone}"]`);
-      for (let nivel = 0; no && nivel < 2; nivel += 1) {
-        no = no.parentElement;
-        const folha = no && [...no.querySelectorAll('*')].find((e) => !e.children.length && numero(e.textContent) !== null);
-        if (folha) return numero(folha.textContent);
-      }
-      return 0;
+    const ICONES = {
+      likes: 'thumbs-up-outline-feed-compact',
+      comentarios: 'comment-outline-feed-compact',
+      reposts: 'arrows-swap-outline-feed-compact',
+    };
+    const contadores = (card) => {
+      const icones = Object.entries(ICONES).map(([campo, id]) => [campo, card.querySelector(`svg[id="${id}"]`)]);
+      const achados = icones.map(([, svg]) => svg).filter(Boolean);
+      const lidos = {};
+      icones.forEach(([campo, svg]) => {
+        const outros = achados.filter((s) => s !== svg);
+        if (!svg || !outros.length) { lidos[campo] = null; return; }
+        let no = svg;
+        let folha;
+        while (!folha && !outros.some((s) => no.parentElement.contains(s))) {
+          no = no.parentElement;
+          folha = [...no.querySelectorAll('*')].find((e) => !e.children.length && numero(e.textContent) !== null);
+        }
+        lidos[campo] = folha ? numero(folha.textContent) : 0;
+      });
+      let barra = achados.length > 1 ? achados[0].parentElement : null;
+      while (barra && !achados.every((s) => barra.contains(s))) barra = barra.parentElement;
+      return { lidos, barra };
     };
     cardsNovos.forEach((card, i) => {
-      const linhas = card.innerText.split('\n').map(limpa);
+      const bruto = card.innerText;
+      const linhas = bruto.split('\n').map(limpa);
       const chave = card.querySelector('[componentkey*="-replaceableCommentTools"]')?.getAttribute('componentkey');
       const rels = linhas.filter((l) => REL.test(l));
       if (!chave) {
@@ -131,11 +147,18 @@ await (async () => {
         avisos.push(`card ${i + 1} com id que não decodifica (${rels[0] || 'sem data'}): post pulado`);
         return;
       }
-      const ini = linhas.findIndex((l) => REL.test(l));
-      let fim = linhas.findIndex((l, k) => k > ini && (/^…\s?mais$/.test(l) || numero(l) !== null));
-      if (fim === -1) fim = linhas.length;
-      const cortado = /^…\s?mais$/.test(linhas[fim] || '');
-      const texto = linhas.slice(ini + 1, fim).join('\n').replace(/\n{3,}/g, '\n\n').trim();
+      const { lidos, barra } = contadores(card);
+      Object.keys(ICONES).filter((campo) => lidos[campo] === null)
+        .forEach((campo) => avisos.push(`post ${posts.length + 1}: contador de ${campo} não achado (${rels[0] || 'sem data'})`));
+      const rodape = barra ? barra.innerText.trim() : '';
+      const corte = rodape ? bruto.lastIndexOf(rodape) : -1;
+      const antesDoRodape = corte > -1 ? bruto.slice(0, corte).split('\n').map(limpa) : [];
+      const corpo = antesDoRodape.some((l) => REL.test(l)) ? antesDoRodape : linhas;
+      const ini = corpo.findIndex((l) => REL.test(l));
+      let fim = corpo.findIndex((l, k) => k > ini && /^…\s?mais$/.test(l));
+      if (fim === -1) fim = corpo.length;
+      const cortado = /^…\s?mais$/.test(corpo[fim] || '');
+      const texto = corpo.slice(ini + 1, fim).join('\n').replace(/\n{3,}/g, '\n\n').trim();
       const documento = linhas.some((l) => /^\d+ páginas$/.test(l));
       const formato = rels.length > 1 ? 'reshare'
         : card.querySelector('video') ? 'video'
@@ -148,9 +171,7 @@ await (async () => {
         vaga: !!card.querySelector('a[href*="/jobs/view/"]'),
         hashtags: texto.match(/#[\p{L}\p{N}_]+/gu) || [],
         link: card.querySelector('a[href*="lnkd.in"]')?.href || null,
-        likes: contador(card, 'thumbs-up-outline-feed-compact'),
-        comentarios: contador(card, 'comment-outline-feed-compact'),
-        reposts: contador(card, 'arrows-swap-outline-feed-compact'),
+        ...lidos,
       });
     });
   } else {
@@ -213,7 +234,7 @@ O retorno traz `estrutura`, `cards`, `anuncios`, `avisos`, `seguidores` e um res
 - **Texto.** A ferramenta corta valor acima de uns 1.000 caracteres, então o texto fica em `window.__garimpo` e sai em pedaços: `window.__garimpo[<n - 1>].texto.match(/[\s\S]{1,850}/g)`. Junte os pedaços na ordem. Com `texto_cortado: true`, o card só tinha o trecho antes do "… mais": abra o `url` do post e leia o texto inteiro de lá.
 - **Data.** `dia` é o `data` do `posts.json`. Ele sai do id, que é um Snowflake (`id >> 22` são os milissegundos desde 1970), no fuso do navegador. `dataRel` é o rótulo da tela e serve para conferir.
 - **Formato.** Na estrutura `data-urn` o JS devolve `texto`, `imagem`, `carrossel`, `video` ou `artigo`; na `componentkey`, `texto`, `imagem`, `carrossel`, `video` ou `reshare`. Os outros valores dependem de você olhar o post — coluna "Como reconhecer" de `taxonomias.md`. `vaga: true` marca post com link de vaga.
-- **Engajamento.** `likes`, `comentarios` e `reposts` já vêm em número; contador ausente na tela é `0`.
+- **Engajamento.** `likes`, `comentarios` e `reposts` já vêm em número. Na `data-urn`, contador ausente na tela é `0`. Na `componentkey`, o JS procura o número no grupo do próprio ícone: ícone sem número é `0`, e ícone que o JS não acha vem `null`, com aviso.
 - **Seguidores.** O LinkedIn arredonda ("6 mil", "1,1 mi"). O JS devolve o número convertido e `seguidores_arredondado`; os dois vão para o `meta.json` (`schema-post.md`).
 - **Página global.** Ela mostra os posts do mercado da conta que olha (português, inglês, alemão): registre o `idioma` do que veio.
 
@@ -224,6 +245,7 @@ O retorno traz `estrutura`, `cards`, `anuncios`, `avisos`, `seguidores` e um res
 | `N card(s) ainda sem conteúdo` | role até o fim da lista carregada e rode a extração de novo |
 | `card N sem id` ou `com id que não decodifica` | é um post pulado: leia esse card com `read_page`, grave o post à mão se for da empresa e conte na `nota` do `meta.json`. O formato do id mudou — avise o usuário que este arquivo precisa de atualização |
 | `a conta não fecha` | algum card não virou post nem anúncio: ache qual pela ordem da tela e trate como post pulado |
+| `post N: contador de <campo> não achado` | leia esse número no card do post N na tela e grave-o no `posts.json`. Não grave `0` nem `null` no lugar: o `metricas.js` lê `null` como zero, e o post entraria na média com um contador falso. Confira também o fim do texto desse post, que sem a barra de contadores pode trazer números do rodapé. Se o aviso vier em todos os posts, o ícone mudou: avise o usuário que este arquivo precisa de atualização |
 | `post N é mais novo que o post N-1` | post fixado no topo: siga. Sem post fixado, a ordenação não pegou: refaça o passo 5 |
 
 ## Data relativa da tela
