@@ -170,6 +170,23 @@
         "A seção Palavras banidas ganhou 'excelência' com a data 2026-08-24 e as três entradas de 2026-08-15 da fixture continuam idênticas",
         "NEGATIVA: Identidade, Tom por contexto, Linguagem do cliente e Provas seguem idênticas à fixture (evals/files/10/linkedin-data/voz.md)"
       ]
+    },
+    {
+      "id": 11,
+      "prompt": "Atualiza meu arquivo de voz com esse post que saiu no meu LinkedIn, quero que o jeito dele entre lá: \"Linha parada não espera. Por isso, antes de vender, a gente vai até a fábrica e olha a linha de perto. Máquina que não cabe no galpão é dor de cabeça pros dois lados.\" (Contexto: quando perguntado quem escreve os posts do perfil, responde 'quem escreve é a agência, eu só aprovo'. Quando mostrarem o traço tirado do post e perguntarem se é assim que ele quer que o perfil soe, ele confirma.)",
+      "expected_output": "Branch Atualizar num voz.md cuja linha de autoria diz 'sem posts no material'. Como o pedido traz um post, pergunta quem escreve os posts antes de tirar qualquer traço dele. A resposta é a agência, então o post é voz construída: o traço tirado dele entra na seção Voz com o recibo marcado '(post, voz construída)', depois de ele confirmar que é assim que quer que o perfil soe. Troca a linha 'Quem escreve os posts:' pela resposta dele com a data de hoje, atualiza o cabeçalho para 2026-08-24, preserva o resto do arquivo e mostra o antes/depois das linhas mexidas.",
+      "files": [
+        "evals/files/11"
+      ],
+      "expectations": [
+        "O transcript traz a [PERGUNTA] de quem escreve os posts antes de qualquer traço tirado do post ser mostrado ou gravado",
+        "A linha 'Quem escreve os posts:' do cabeçalho do arquivo final diz que é a agência, com a data 2026-08-24; NEGATIVA: 'sem posts no material' não aparece mais no arquivo",
+        "A seção Voz ganhou um traço 'X, mas nunca Y' cujo recibo é trecho literal do post colado, marcado '(post, voz construída)'; NEGATIVA: nenhum trecho do post aparece como recibo sem essa marca nem atribuído a áudio ou WhatsApp",
+        "NEGATIVA: os três traços da fixture com recibo de WhatsApp e de áudio seguem idênticos, sem a marca de voz construída",
+        "O cabeçalho registra 'atualizado em 2026-08-24' e mantém 'Montado em 2026-08-04'",
+        "NEGATIVA: Identidade, Tom por contexto, Linguagem do cliente, Provas, Palavras banidas e Isso não sou eu seguem idênticas à fixture (evals/files/11/linkedin-data/voz.md); nenhum trecho do post entra em Tom por contexto ou Linguagem do cliente",
+        "A resposta final mostra o antes E o depois das linhas mexidas"
+      ]
     }
   ]
 }

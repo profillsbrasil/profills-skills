@@ -1,7 +1,7 @@
 # Voz de <Nome / Empresa>
 
 > Montado em <AAAA-MM-DD> · atualizado em <AAAA-MM-DD>, a partir de: <material usado — ex. "áudio de 2min + 3 mensagens de WhatsApp">.
-> Quem escreve os posts: <nas palavras dele — ex. "eu mesmo" ou "alguém do marketing, com ajuda do Claude"> (perguntado em <AAAA-MM-DD>).
+> Quem escreve os posts: <nas palavras dele, ex. "eu mesmo (perguntado em AAAA-MM-DD)"; sem post no material, "sem posts no material (registrado em AAAA-MM-DD)">.
 > Este arquivo é o que faz os posts saírem com a sua cara: antes de te mostrar qualquer rascunho, eu confiro tudo o que está aqui.
 
 ## Identidade
