@@ -67,7 +67,7 @@
         "A seção Isso não sou eu ganhou entrada nomeando a construção rejeitada, com o exemplo 'Em um mercado cada vez mais competitivo' e a data 2026-08-24, preservando a entrada de 2026-08-15",
         "O traço da fixture cujo recibo era 'a gente entrega uma solução robusta pra linha de envase' foi detectado como contraditado e reescrito: essa citação não aparece mais como recibo de traço na seção Voz do arquivo final",
         "O cabeçalho registra 'atualizado em 2026-08-24' e mantém 'Montado em 2026-08-04'",
-        "Como a fixture não registra autoria, o transcript traz a [PERGUNTA] de quem escreve os posts, e o cabeçalho do arquivo final ganhou a linha 'Quem escreve os posts:' com 'eu mesmo' e a data 2026-08-24",
+        "NEGATIVA: a fixture não registra autoria e nenhum recibo dela é post, então o transcript não traz [PERGUNTA] de quem escreve os posts; o cabeçalho do arquivo final ganhou a linha 'Quem escreve os posts:' dizendo que não há posts no material, com a data 2026-08-24",
         "NEGATIVA: nada além da rejeição foi inventado — Identidade, Tom por contexto, Linguagem do cliente e Provas seguem idênticas à fixture (evals/files/4/linkedin-data/voz.md)",
         "A resposta final mostra literalmente as linhas que entraram no arquivo e diz que é isso que faz o próximo rascunho errar menos"
       ]
@@ -137,6 +137,38 @@
         "A seção Palavras banidas ganhou 'excelência' com a data 2026-08-24 e as três entradas de 2026-08-15 da fixture continuam idênticas",
         "O cabeçalho registra 'atualizado em 2026-08-24' e mantém 'Montado em 2026-08-04'",
         "A resposta final mostra literalmente a linha que entrou no arquivo e diz que é isso que faz o próximo rascunho errar menos"
+      ]
+    },
+    {
+      "id": 9,
+      "prompt": "Monta meu arquivo de voz, vou te mandar um áudio. (Contexto: ele não tem post publicado no LinkedIn. Ao pedido de material, escolhe o áudio e não manda post nenhum. A transcrição do áudio é: \"Então, a gente vende máquina de envase pra fábrica de alimento pequena. O cliente me liga e fala 'tô sem dar conta do pedido'. Eu falo: me manda um vídeo da linha. Aí eu vejo se é a máquina ou se é o jeito que tão usando. Não adianta eu vender a maior se ele não tem pedido pra ela. Quando a gente fecha, eu mando foto da máquina chegando no grupo, só isso, sem textão.\" Nas perguntas de eixo de tom ele escolhe sempre a frase do extremo mais casual e mais direto. Não dá número nenhum. Nas frases de teste ele rejeita 'solução robusta', 'excelência' e 'parceiro'; o resto ele aprova. Se perguntado quem escreve os posts, responde 'não tenho post ainda'.)",
+      "expected_output": "Branch Criar. Pede o material com AskUserQuestion; como ele escolhe o áudio e nenhum post entra no material, não faz a pergunta de quem escreve os posts. Extrai os traços com recibo literal do áudio, completa a entrevista e grava linkedin-data/voz.md pelo template, com a linha 'Quem escreve os posts:' no cabeçalho dizendo que não há posts no material, com a data de hoje. Provas em [a confirmar], valida com frases de teste e grava as três rejeições em Palavras banidas. Fecha dizendo onde salvou, com uma única sugestão (/profills-post).",
+      "files": [
+        "evals/files/9"
+      ],
+      "expectations": [
+        "NEGATIVA: o transcript não traz nenhuma [PERGUNTA] sobre quem escreve os posts, nem a opção 'Eu mesmo' da pergunta de autoria",
+        "O cabeçalho de linkedin-data/voz.md traz a linha 'Quem escreve os posts:' dizendo que não há posts no material, com a data 2026-08-24",
+        "Os traços 'X, mas nunca Y' têm recibo que aparece literalmente na transcrição do áudio (ex.: 'me manda um vídeo da linha', 'sem textão') — NEGATIVA: nenhum recibo é atribuído a post nem leva a marca '(post, voz construída)'",
+        "A seção Palavras banidas tem exatamente 'solução robusta', 'excelência' e 'parceiro', cada uma com a data 2026-08-24, e a seção Provas não traz número nenhum ([a confirmar])",
+        "A resposta final diz o caminho onde salvou e traz UMA única sugestão de próximo passo (/profills-post)"
+      ]
+    },
+    {
+      "id": 10,
+      "prompt": "Esse rascunho ficou com cara de propaganda, não sou eu. (Contexto: quando você perguntar o que exatamente doeu, ele responde: 'a palavra excelência, eu nunca falo isso'. Quando perguntado quem escreve os posts do perfil, responde 'quem posta é a agência, eu só aprovo'.)",
+      "expected_output": "Branch Calibrar num voz.md antigo, sem a linha de autoria e com dois traços cujo recibo é post do LinkedIn. No mesmo AskUserQuestion da pergunta sobre o que doeu, pergunta quem escreve os posts. Grava 'excelência' em Palavras banidas com a data de hoje. Como a resposta é a agência, marca na hora com '(post, voz construída)' os dois traços com recibo de post, deixa como estão os traços com recibo de áudio e de WhatsApp, e avisa em uma frase simples que marcou os traços que vieram dos posts. Grava a linha 'Quem escreve os posts:' com a resposta dele e a data, atualiza o cabeçalho para 2026-08-24 e mostra as linhas novas.",
+      "files": [
+        "evals/files/10"
+      ],
+      "expectations": [
+        "O transcript traz a [PERGUNTA] de quem escreve os posts, porque a fixture não registra autoria e tem recibo de post, e a pergunta vem antes de qualquer gravação no arquivo",
+        "O cabeçalho do arquivo final ganhou a linha 'Quem escreve os posts:' dizendo que é a agência, com a data 2026-08-24, e mantém 'Montado em 2026-08-04' com 'atualizado em 2026-08-24'",
+        "Os dois traços da fixture com recibo de post ('Pacote de 500 g de café não é a mesma coisa que sachê de tempero' e 'Antes de vender, a gente vai até a fábrica e olha a linha de perto') levam a marca '(post, voz construída)' e continuam na seção Voz",
+        "NEGATIVA: os traços com recibo de WhatsApp ('manda o vídeo da linha aí que eu te falo hoje se resolve') e de áudio ('a gente erra também, mas não some depois que erra') seguem idênticos à fixture, sem a marca de voz construída",
+        "A resposta final avisa em uma frase simples que os traços que vieram dos posts foram marcados porque não é ele quem escreve os posts",
+        "A seção Palavras banidas ganhou 'excelência' com a data 2026-08-24 e as três entradas de 2026-08-15 da fixture continuam idênticas",
+        "NEGATIVA: Identidade, Tom por contexto, Linguagem do cliente e Provas seguem idênticas à fixture (evals/files/10/linkedin-data/voz.md)"
       ]
     }
   ]

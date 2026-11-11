@@ -6,7 +6,7 @@ A regra: **quanto menos editado, mais voz.** Edição lixa exatamente os marcado
 
 1. **Fala transcrita** — áudio de WhatsApp, gravação de call/reunião, vídeo dele falando. O padrão-ouro: ninguém edita a própria fala. Peça assim: *"me manda um áudio de 1 minuto explicando o que a empresa faz, como se eu fosse um cliente interessado"*.
 2. **Mensagem escrita no calor** — WhatsApp/e-mail real para cliente ou fornecedor. Escrita, mas espontânea. Peça assim: *"cola aqui as duas últimas mensagens que você mandou pra um cliente"*.
-3. **Post antigo dele** (LinkedIn, Instagram) — já é performance, mas performance *dele*. Peça assim: *"cola 3 a 5 posts seus que você acha que ficaram com a sua cara"*.
+3. **Post publicado** (LinkedIn, Instagram) — já é performance, e só é dele se ele mesmo escreve; confira em `Autoria dos posts` da `SKILL.md` antes de usar. Peça assim: *"cola 3 a 5 posts seus que você acha que ficaram com a sua cara"*.
 4. **Texto editado** — site, catálogo, apresentação. Sinal fraco: costuma ser a voz de quem escreveu o site, não a dele. Use só para Identidade e Provas.
 
 Peça sempre pelo topo da lista: gravar um áudio é mais fácil para o usuário do que procurar material antigo.

@@ -33,9 +33,9 @@ Concluído quando você sabe se o arquivo existe e qual das três branches está
 
 ### 1. Peça o material bruto
 
-Peça o mais bruto que ele tiver: quanto menos editado, mais voz. A escala das fontes, da mais forte à mais fraca, e a frase pronta para pedir cada uma estão em `references/extracao-voz.md` — um áudio de 1 minuto resolve a maioria dos casos, e dois ou três exemplos bastam. Ofereça as opções com `AskUserQuestion`, em linguagem simples, com a recomendada e o porquê. No mesmo `AskUserQuestion`, faça a pergunta de [Autoria dos posts](#autoria-dos-posts).
+Peça o mais bruto que ele tiver: quanto menos editado, mais voz. A escala das fontes, da mais forte à mais fraca, e a frase pronta para pedir cada uma estão em `references/extracao-voz.md` — um áudio de 1 minuto resolve a maioria dos casos, e dois ou três exemplos bastam. Ofereça as opções com `AskUserQuestion`, em linguagem simples, com a recomendada e o porquê. Resolva a linha de autoria por [Autoria dos posts](#autoria-dos-posts): se o pedido já traz ou cita posts, a pergunta vai no mesmo `AskUserQuestion`; se os posts só chegam na resposta, pergunte antes de tirar qualquer marcador deles; sem post no material, não há pergunta.
 
-Concluído quando você sabe quem escreve os posts do perfil e tem em mãos 2-3 amostras do material dele. Se ele não tiver nada agora, peça que grave o áudio de 1 minuto na hora; se nem isso der, siga com o que ele contar, avise que a voz sai inferida e marque cada traço como hipótese a confirmar no passo 5.
+Concluído quando a linha de autoria está decidida e você tem em mãos 2-3 amostras do material dele. Se ele não tiver nada agora, peça que grave o áudio de 1 minuto na hora; se nem isso der, siga com o que ele contar, avise que a voz sai inferida e marque cada traço como hipótese a confirmar no passo 5.
 
 ### 2. Extraia os marcadores de voz
 
@@ -82,8 +82,8 @@ Pedido sobre *voz*, e não sobre fato → [Calibrar](#calibrar).
 
 Um rascunho foi rejeitado por voz. Essa rejeição é o único pedaço medido do arquivo — o resto é inferido do material —, então grave-a inteira.
 
-1. Pergunte **qual palavra ou frase** doeu, específico ("foi 'solução robusta' ou o tom da abertura?"). Se o cabeçalho do arquivo ainda não tem a linha `Quem escreve os posts:`, faça no mesmo `AskUserQuestion` a pergunta de [Autoria dos posts](#autoria-dos-posts).
-2. Grave: palavra rejeitada em **Palavras banidas** com a data; construção ou tom em **Isso não sou eu** com o exemplo rejeitado e a data; traço "X, mas nunca Y" que se mostrou errado, reescrito.
+1. Pergunte **qual palavra ou frase** doeu, específico ("foi 'solução robusta' ou o tom da abertura?"). Se o cabeçalho do arquivo ainda não tem a linha `Quem escreve os posts:`, resolva-a por [Autoria dos posts](#autoria-dos-posts); com recibo de post no arquivo, a pergunta vai no mesmo `AskUserQuestion`.
+2. Grave: palavra rejeitada em **Palavras banidas** com a data; construção ou tom em **Isso não sou eu** com o exemplo rejeitado e a data; traço "X, mas nunca Y" que se mostrou errado, reescrito. Se a resposta de autoria dá voz construída, marque agora com `(post, voz construída)` todo traço cujo recibo é post e avise em uma frase: "como os posts não são escritos por você, marquei os traços que vieram deles; o resto continua vindo da sua fala". Traço com recibo de áudio ou mensagem fica como está.
 3. Atualize o cabeçalho com a data de hoje e mostre a ele a linha que entrou, dizendo que é isso que faz o próximo rascunho errar menos.
 
 Concluído quando a rejeição está gravada em `DADOS/voz.md`, o cabeçalho registra a data e quem escreve os posts, e o usuário viu a linha nova.
@@ -97,7 +97,11 @@ Antes de fechar, rode `node "<pasta desta skill>/../profills-setup/scripts/mapa.
 
 ## Autoria dos posts
 
-Post publicado só mostra a voz dele quando ele mesmo o escreve. Quando o cabeçalho do `voz.md` já traz a linha `Quem escreve os posts:`, use o registro e siga. Senão, pergunte em linguagem dele, "Quem escreve os posts que saem no seu LinkedIn?", com três opções:
+Post publicado só mostra a voz dele quando ele mesmo o escreve. Quando o cabeçalho do `voz.md` já traz a linha `Quem escreve os posts:`, use o registro e siga.
+
+A pergunta só existe quando há post no material: o pedido traz ou cita posts, ele escolhe os posts no pedido de material, ou o `voz.md` tem recibo de post. Sem post no material (ele manda só áudio ou mensagem, ou diz que não tem post), não pergunte e grave no cabeçalho `Quem escreve os posts: sem posts no material (registrado em <AAAA-MM-DD>)`. Se um post chegar depois, num Atualizar ou num Calibrar, faça a pergunta antes de usar o post como recibo e troque a linha pela resposta.
+
+Com post no material, pergunte em linguagem dele, "Quem escreve os posts que saem no seu LinkedIn?", com três opções:
 
 | Opção | O que os posts são |
 |---|---|
