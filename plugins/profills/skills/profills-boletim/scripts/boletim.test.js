@@ -14,14 +14,14 @@ const BOLETIM = path.join(__dirname, 'boletim.js');
 const HOJE = '2026-08-24';
 
 const linha = (nome, slug, { prioridade = 'Alta', linkedin = 'sim' } = {}) =>
-  `- [${nome}](${slug}.md) — \`${slug}\` · id — · setor envase · país BR · prioridade ${prioridade} · linkedin ${linkedin} · pesquisa 2026-08-01 · sem catálogo`;
+  `- [${nome}](${slug}.md) — \`${slug}\` · id — · setor envase · país BR · prioridade ${prioridade} · linkedin ${linkedin} · instagram — · pesquisa 2026-08-01 · sem catálogo`;
 
 function montar({ empresas, selecao, rodada = HOJE, catalog = true, boletins = [] }) {
   const dados = fs.mkdtempSync(path.join(os.tmpdir(), 'boletim-test-'));
   fs.mkdirSync(path.join(dados, 'refs'), { recursive: true });
   fs.mkdirSync(path.join(dados, 'boletins'), { recursive: true });
   for (const d of boletins) fs.writeFileSync(path.join(dados, 'boletins', `${d}.md`), '# Boletim\n');
-  if (catalog) fs.mkdirSync(path.join(dados, 'catalog', 'raw'), { recursive: true });
+  if (catalog) fs.mkdirSync(path.join(dados, 'catalog', 'raw', 'linkedin'), { recursive: true });
   fs.writeFileSync(path.join(dados, 'refs', 'INDEX.md'), ['# Índice de referências — empresas do LinkedIn', '', '## Empresas', '', ...empresas.map((e) => linha(...e)), ''].join('\n'));
   for (const [nome, slug] of empresas) fs.writeFileSync(path.join(dados, 'refs', `${slug}.md`), `# ${nome}\n`);
   if (selecao) {
@@ -47,12 +47,12 @@ const post = (n, extra = {}) => ({
 });
 
 function coleta(dados, slug, data, posts, meta = {}) {
-  const pasta = path.join(dados, 'catalog', 'raw', slug, data);
+  const pasta = path.join(dados, 'catalog', 'raw', 'linkedin', slug, data);
   fs.mkdirSync(pasta, { recursive: true });
   if (posts !== undefined) fs.writeFileSync(path.join(pasta, 'posts.json'), typeof posts === 'string' ? posts : JSON.stringify(posts, null, 2));
   if (meta === null) return;
   const n = Array.isArray(posts) ? posts.length : 0;
-  fs.writeFileSync(path.join(pasta, 'meta.json'), JSON.stringify({ slug, coletado_em: data, seguidores: 1000, janela_dias: 7, posts_coletados: n, status: 'ok', ...meta }, null, 2));
+  fs.writeFileSync(path.join(pasta, 'meta.json'), JSON.stringify({ slug, coletado_em: data, seguidores: 1000, janela_dias: 7, posts_coletados: n, status: 'ok', concluida: true, ...meta }, null, 2));
 }
 
 function boletim(dados) {
@@ -349,6 +349,38 @@ const casos = [
     const e = empresa(boletim(dados).json, 'alfa-envase');
     assert.strictEqual(e.coleta_anterior.data, '2026-08-17');
     assert.deepStrictEqual(e.novos.map((p) => p.post_id), ['urn:li:activity:7003'], 'os posts de 17/08 já eram conhecidos');
+  }],
+
+  ['meta.json com "concluida": false dentro da rodada é coleta interrompida', () => {
+    const dados = montar({ empresas: [['Alfa Envase', 'alfa-envase']], selecao: ['alfa-envase'] });
+    coleta(dados, 'alfa-envase', '2026-08-17', [post(1)]);
+    coleta(dados, 'alfa-envase', '2026-08-24', [post(2), post(1)], { concluida: false });
+    const { json } = boletim(dados);
+    assert.deepStrictEqual(json.rodada.faltam_coletar.map((x) => x.slug), ['alfa-envase']);
+    const e = empresa(json, 'alfa-envase');
+    assert.strictEqual(e.motivo, 'nao_coletada_nesta_rodada');
+    assert.match(e.nota, /coleta interrompida em 2026-08-24/);
+    assert.match(e.nota, /concluida/);
+  }],
+
+  ['coleta com "concluida": false antes da rodada não serve de anterior', () => {
+    const dados = montar({ empresas: [['Alfa Envase', 'alfa-envase']], selecao: ['alfa-envase'], rodada: '2026-08-23' });
+    coleta(dados, 'alfa-envase', '2026-08-10', [post(1)]);
+    coleta(dados, 'alfa-envase', '2026-08-17', [post(2)], { concluida: false });
+    coleta(dados, 'alfa-envase', '2026-08-24', [post(3), post(2), post(1)]);
+    const e = empresa(boletim(dados).json, 'alfa-envase');
+    assert.strictEqual(e.coleta_anterior.data, '2026-08-10', 'a de 17/08 parou no meio: os posts dela não são base');
+    assert.deepStrictEqual(e.novos.map((p) => p.post_id).sort(), ['urn:li:activity:7002', 'urn:li:activity:7003']);
+  }],
+
+  ['coleta antiga sem meta.json, antes da rodada, continua servindo de anterior', () => {
+    const dados = montar({ empresas: [['Alfa Envase', 'alfa-envase']], selecao: ['alfa-envase'] });
+    coleta(dados, 'alfa-envase', '2026-07-14', [post(1)], null);
+    coleta(dados, 'alfa-envase', '2026-08-24', [post(2), post(1)]);
+    const e = empresa(boletim(dados).json, 'alfa-envase');
+    assert.strictEqual(e.primeira_coleta, false);
+    assert.strictEqual(e.coleta_anterior.data, '2026-07-14');
+    assert.deepStrictEqual(e.novos.map((p) => p.post_id), ['urn:li:activity:7002']);
   }],
 ];
 

@@ -304,7 +304,7 @@ function xlsx(abas) {
 const CAB_MAPA = ['ID', 'Empresa / unidade', 'Origem', 'Papel no mercado', 'Prioridade proposta', 'Grupo e nomes relacionados', 'Conferido em'];
 const CAB_CANAIS = ['ID empresa', 'Canal', 'URL', 'Status da identificação'];
 
-// mapa: [id, nome, prioridade, relacionados, conferido]; canais: [id, url, status]
+// mapa: [id, nome, prioridade, relacionados, conferido]; canais: [id, url, status, canal]
 function gravarPlanilha(mapa, canais) {
   const dir = fs.mkdtempSync(path.join(os.tmpdir(), 'importar-xlsx-'));
   const arquivo = path.join(dir, 'planilha.xlsx');
@@ -312,7 +312,7 @@ function gravarPlanilha(mapa, canais) {
     arquivo,
     xlsx({
       'Mapa competitivo': [['Título da planilha'], CAB_MAPA, ...mapa.map(([id, nome, prio, rel = '—', conf = '2026-11-01']) => [id, nome, 'Brasil', 'Caixas', prio, rel, conf])],
-      'Canais digitais': [CAB_CANAIS, ...canais.map(([id, url, status = 'Localizado']) => [id, 'LinkedIn', url, status])],
+      'Canais digitais': [CAB_CANAIS, ...canais.map(([id, url, status = 'Localizado', canal = 'LinkedIn']) => [id, canal, url, status])],
     }),
   );
   return arquivo;
@@ -484,6 +484,39 @@ caso('empresa que já existe não ganha um grupo que é só ela; o grupo leva o 
   assert.strictEqual(r.json.ok, true, JSON.stringify(r.json.problemas));
   assert.deepStrictEqual(r.json.ja_existem.map((j) => [j.nome_na_lista, j.muda]), [['Eta Cartons', { prioridade: 'Média' }]]);
   assert.strictEqual(novaPorNome(r.json, 'Eta Envase').grupo, 'Eta Cartons');
+});
+
+const IG = (url) => [url, 'Localizado', 'Instagram'];
+
+caso('o canal Instagram da planilha vai para o campo instagram da linha e para a ficha', () => {
+  const refs = montar();
+  const planilha = gravarPlanilha(
+    [['I1', 'Um Caixas', 'Alta'], ['I2', 'Dois Caixas', 'Alta'], ['I3', 'Tres Caixas', 'Alta']],
+    [['I1', LI('um-caixas')], ['I1', ...IG('https://www.instagram.com/um.caixas/?hl=pt')], ['I2', ...IG('@dois_caixas')], ['I3', LI('tres-caixas')], ['I3', ...IG('https://www.instagram.com/p/Cxyz123/')]],
+  );
+  const r = rodar(IMPORTAR, [planilha, refs, '--aplicar']);
+  assert.strictEqual(r.json.ok, true, JSON.stringify(r.json.problemas));
+  assert.deepStrictEqual(r.json.novas.map((n) => [n.nome, n.linkedin, n.instagram]), [['Um Caixas', true, 'um.caixas'], ['Dois Caixas', false, 'dois_caixas'], ['Tres Caixas', true, null]]);
+  assert.match(novaPorNome(r.json, 'Tres Caixas').notas.join(' | '), /Instagram que não é perfil.*instagram\.com\/p\/Cxyz123/);
+  const v = validar(refs).json;
+  assert.strictEqual(v.ok, true, JSON.stringify(v.problemas));
+  const porSlug = Object.fromEntries(v.empresas.map((e) => [e.slug, e.instagram]));
+  assert.deepStrictEqual([porSlug['um-caixas'], porSlug['dois-caixas'], porSlug['tres-caixas']], ['um.caixas', 'dois_caixas', null]);
+  assert.match(ler(refs, 'um-caixas.md'), /^- \*\*Instagram\*\*: `um\.caixas` \(`instagram\.com\/um\.caixas`\)$/m);
+  assert.match(ler(refs, 'tres-caixas.md'), /^- \*\*Instagram\*\*: `—`/m);
+});
+
+caso('empresa da lista sem Instagram ganha o da planilha; com Instagram, fica o da lista', () => {
+  const refs = montar();
+  const comIg = (handle) => gravarPlanilha([['E1', 'Eta Cartons', 'a definir']], [['E1', LI('eta-cartons')], ['E1', ...IG(`https://instagram.com/${handle}`)]]);
+  const r = rodar(IMPORTAR, [comIg('etacartons'), refs, '--aplicar']);
+  assert.deepStrictEqual(r.json.ja_existem.map((j) => [j.nome_na_lista, j.muda]), [['Eta Cartons', { instagram: 'etacartons' }]]);
+  assert.strictEqual(validar(refs).json.empresas.find((e) => e.slug === 'eta-cartons').instagram, 'etacartons');
+  assert.match(ler(refs, 'eta-cartons.md'), /^- \*\*Instagram\*\*: `etacartons` \(`instagram\.com\/etacartons`\)$/m);
+  const antes = hashDaPasta(refs);
+  const outra = rodar(IMPORTAR, [comIg('eta.outra'), refs, '--aplicar']);
+  assert.deepStrictEqual(outra.json.ja_existem.map((j) => j.muda), [{}], 'o handle que a lista já tem não é trocado');
+  assert.strictEqual(hashDaPasta(refs), antes);
 });
 
 let falhas = 0;

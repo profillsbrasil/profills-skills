@@ -24,11 +24,22 @@ function montar(empresas) {
     const slug = nome.toLowerCase().replace(/[^a-z0-9]+/g, '-');
     fs.writeFileSync(path.join(refs, `${slug}.md`), `# ${nome}\n`);
     const catalogo = dias === null ? 'sem catálogo' : `catálogo ${antes(dias)}`;
-    return `- [${nome}](${slug}.md) — \`${slug}\` · id — · setor caixas · país BR · prioridade ${prioridade} · linkedin ${linkedin ? 'sim' : 'não'} · pesquisa ${antes(10)} · ${catalogo}`;
+    return `- [${nome}](${slug}.md) — \`${slug}\` · id — · setor caixas · país BR · prioridade ${prioridade} · linkedin ${linkedin ? 'sim' : 'não'} · instagram — · pesquisa ${antes(10)} · ${catalogo}`;
   });
   fs.writeFileSync(path.join(refs, 'INDEX.md'), ['# Índice de referências — empresas do LinkedIn', '', '## Empresas', '', ...linhas, ''].join('\n'));
   return refs;
 }
+
+function comLinhas(linhas) {
+  const refs = fs.mkdtempSync(path.join(os.tmpdir(), 'indice-test-'));
+  for (const l of linhas) fs.writeFileSync(path.join(refs, l.match(/\]\(([^)]+)\)/)[1]), '# ficha\n');
+  fs.writeFileSync(path.join(refs, 'INDEX.md'), ['# Índice de referências — empresas do LinkedIn', '', '## Empresas', '', ...linhas, ''].join('\n'));
+  return refs;
+}
+
+const validar = (refs) => JSON.parse(spawnSync(process.execPath, [INDICE, refs, '--hoje', HOJE], { encoding: 'utf8' }).stdout);
+const reconstruir = (refs) => JSON.parse(spawnSync(process.execPath, [INDICE, refs, '--reconstruir', '--hoje', HOJE], { encoding: 'utf8' }).stdout);
+const LINHA = (instagram) => `- [Alfa](alfa.md) — \`alfa\` · id — · setor caixas · país BR · prioridade Alta · linkedin sim · ${instagram}pesquisa ${antes(10)} · sem catálogo`;
 
 function rodada(refs) {
   const r = spawnSync(process.execPath, [INDICE, refs, '--hoje', HOJE], { encoding: 'utf8' });
@@ -100,6 +111,54 @@ caso('pasta refs/ ausente: --procurar e a validação não quebram', () => {
   assert.strictEqual(JSON.parse(v.stdout).pasta_existe, false);
   const { candidatosParecidos } = require(INDICE);
   assert.deepStrictEqual(candidatosParecidos(refs, 'Kappa'), []);
+});
+
+caso('o campo instagram chega em empresas[]: o handle, ou null com —', () => {
+  const refs = comLinhas([LINHA('instagram alfa.cartonagem_br · '), LINHA('instagram — · ').replace(/alfa/g, 'beta')]);
+  const v = validar(refs);
+  assert.strictEqual(v.ok, true, JSON.stringify(v.problemas));
+  assert.deepStrictEqual(v.empresas.map((e) => [e.slug, e.instagram]), [['alfa', 'alfa.cartonagem_br'], ['beta', null]]);
+});
+
+caso('linha sem o campo instagram é da versão anterior da pasta: formato_antigo', () => {
+  const v = validar(comLinhas([LINHA('')]));
+  assert.strictEqual(v.ok, false);
+  assert.deepStrictEqual(v.problemas.map((p) => p.tipo), ['formato_antigo'], 'não é campo_ausente: quem resolve é a profills-setup');
+  assert.strictEqual(v.empresas[0].instagram, null);
+});
+
+caso('instagram com @ ou fora de letras, números, ponto e _ é instagram_invalido', () => {
+  for (const ruim of ['@alfa', 'alfa cartonagem', 'instagram.com/alfa']) {
+    const v = validar(comLinhas([LINHA(`instagram ${ruim} · `)]));
+    assert.deepStrictEqual(v.problemas.map((p) => p.tipo), ['instagram_invalido'], ruim);
+  }
+});
+
+caso('--reconstruir lê o catálogo de catalog/raw/linkedin e o Instagram da ficha', () => {
+  const dados = fs.mkdtempSync(path.join(os.tmpdir(), 'indice-test-'));
+  const refs = path.join(dados, 'refs');
+  fs.mkdirSync(refs);
+  fs.writeFileSync(
+    path.join(refs, 'alfa.md'),
+    '# Alfa\n\n- **Endereço no LinkedIn**: `alfa` (`linkedin.com/company/alfa`)\n- **Instagram**: `alfa.br` (`instagram.com/alfa.br`)\n- **Setor**: caixas\n- **País / idioma dos posts**: BR · PT\n- **Última pesquisa**: 2026-11-01\n',
+  );
+  const coleta = (data, meta) => {
+    const pasta = path.join(dados, 'catalog', 'raw', 'linkedin', 'alfa', data);
+    fs.mkdirSync(pasta, { recursive: true });
+    fs.writeFileSync(path.join(pasta, 'posts.json'), JSON.stringify([{ post_id: 'urn:li:activity:1' }]));
+    fs.writeFileSync(path.join(pasta, 'meta.json'), JSON.stringify(meta));
+  };
+  coleta('2026-11-02', { status: 'ok', concluida: true });
+  coleta('2026-11-05', { concluida: false });
+  const r = reconstruir(refs);
+  assert.strictEqual(r.ok, true, JSON.stringify(r.problemas));
+  assert.deepStrictEqual(
+    r.escritas.map((e) => [e.slug, e.catalogo, e.origem_catalogo, e.instagram]),
+    [['alfa', '2026-11-02', 'catalog/raw/linkedin', 'alfa.br']],
+    'a coleta de 05/11 com concluida false não é catálogo',
+  );
+  assert.match(fs.readFileSync(path.join(refs, 'INDEX.md'), 'utf8'), / · linkedin sim · instagram alfa\.br · pesquisa 2026-11-01 · catálogo 2026-11-02$/m);
+  assert.strictEqual(validar(refs).ok, true);
 });
 
 let falhas = 0;
