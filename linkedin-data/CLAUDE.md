@@ -30,7 +30,7 @@ O caminho comum é voz, radar, garimpo e post. O boletim chama a radar e a garim
 
 | Caminho | O que guarda | Quem grava |
 |---|---|---|
-| `refs/INDEX.md` | A lista de empresas, uma linha por empresa | `profills-radar` (a garimpo só marca a data do catálogo) |
+| `refs/INDEX.md` | A lista de empresas, uma linha por empresa | `profills-radar` |
 | `refs/<empresa>.md` | A ficha de cada empresa, com o que não copiar dela | `profills-radar`, `profills-garimpo` |
 | `catalog/raw/<rede>/<empresa>/<data>/` | Os posts coletados num dia (`posts.json`) e o contexto da página (`meta.json`), numa pasta por rede social (`linkedin`, `instagram`) | `profills-garimpo` |
 | `catalog/<empresa>.md` e `catalog/_summary.md` | O perfil de cada empresa e o comparativo entre elas | `profills-garimpo` |
@@ -38,6 +38,7 @@ O caminho comum é voz, radar, garimpo e post. O boletim chama a radar e a garim
 | `boletins/` | Um boletim por dia: novidades dos concorrentes, cobertura e 3 pautas | `profills-boletim` |
 | `voz.md` | O que o comercial vende, para quem e como ele fala | `profills-voz` |
 | `.profills.json` | A versão do formato desta pasta | `profills-setup` |
+| `indice.db` | O banco de consultas, montado destes arquivos; apagar não perde nada | o `banco.js` do plugin, que o refaz quando falta ou está velho |
 | `.backup/` | Cópias guardadas antes de cada atualização da pasta | `profills-setup` |
 <!-- profills:fixo:fim -->
 

@@ -17,3 +17,8 @@ selection.md
 # voz.md (arquivo de voz do usuário — dado vivo, mesma categoria de refs/ e catalog/*.md),
 # .profills.json (versão da pasta, lida por todas as skills),
 # CLAUDE.md (o que o Claude lê ao abrir a pasta; o mapa.js da profills-setup gera os blocos)
+
+# Banco derivado das coletas (banco.js do plugin): refeito dos arquivos a qualquer hora
+indice.db
+indice.db-wal
+indice.db-shm
