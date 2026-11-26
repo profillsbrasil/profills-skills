@@ -13,6 +13,7 @@ export const meta = {
 // ---- parâmetros -----------------------------------------------------------
 const REPO = '/home/othavio/Work/profills-skills'
 const SKILLS = REPO + '/plugins/profills/skills'
+const EVALS = REPO + '/evals'
 const TODAS = ['profills-radar', 'profills-garimpo', 'profills-post', 'profills-voz', 'profills-navegador', 'profills-setup', 'profills-boletim']
 const skills = (args && args.skills && args.skills.length) ? args.skills : TODAS
 const baseline = (args && args.baseline) || 'main'
@@ -44,9 +45,9 @@ const AGG = { type: 'object', properties: {
 phase('Preparar')
 const plano = await agent([
   'Prepare o workspace de evals. Repo: ' + REPO + ' (SOMENTE LEITURA, exceto o que está descrito abaixo, tudo fora do repo). Workspace: ' + WS + '.',
-  '1. Snapshot do baseline: mkdir -p ' + WS + '/snapshot-' + baseline.replace(/[^a-zA-Z0-9]/g, '_') + ' e dentro dele: git -C ' + REPO + ' archive ' + baseline + ' <skills> | tar -x -C <pasta>, onde <skills> é plugins/profills/skills se git -C ' + REPO + ' cat-file -e ' + baseline + ':plugins/profills/skills sai 0, senão skills (layout de antes do plugin ir para plugins/profills). O caminho completo de <pasta>/<skills> é o campo snapshot.',
-  '2. Para cada skill em ' + JSON.stringify(skills) + ', leia ' + SKILLS + '/<skill>/evals/evals.json. Para cada eval: name = "eval-<id>-" + slug ascii de até 40 chars do prompt; dir = ' + WS + '/<skill>/' + IT + '/<name>. Crie dir com eval_metadata.json {eval_id, eval_name, prompt, expected_output, assertions: expectations ou []}.',
-  '3. Em cada dir, para cfg em [atual, baseline]: mkdir <dir>/<cfg>/outputs, <dir>/<cfg>/run-1 e <dir>/<cfg>/repo; copie ' + REPO + '/linkedin-data para <dir>/<cfg>/repo/linkedin-data; se o eval tem files, copie o conteúdo de cada pasta listada (relativa à raiz da skill) POR CIMA de <dir>/<cfg>/repo (sobrescrevendo); depois git init -q <dir>/<cfg>/repo. Se a fixture pede ausência de arquivo (existe um arquivo .apagar listando caminhos), apague-os.',
+  '1. Snapshot do baseline: bash ' + EVALS + '/snapshot-baseline.sh ' + REPO + ' ' + baseline + ' <pasta>, com <pasta> = ' + WS + '/snapshot-' + baseline.replace(/[^a-zA-Z0-9]/g, '_') + '. O script acha as skills e os evals em qualquer layout do histórico e deixa <pasta>/skills/<skill>/ e <pasta>/evals/<skill>/. A linha que ele imprime (<pasta>/skills) é o campo snapshot.',
+  '2. Para cada skill em ' + JSON.stringify(skills) + ', leia ' + EVALS + '/<skill>/evals.json. Para cada eval: name = "eval-<id>-" + slug ascii de até 40 chars do prompt; dir = ' + WS + '/<skill>/' + IT + '/<name>. Crie dir com eval_metadata.json {eval_id, eval_name, prompt, expected_output, assertions: expectations ou []}.',
+  '3. Em cada dir, para cfg em [atual, baseline]: mkdir <dir>/<cfg>/outputs, <dir>/<cfg>/run-1 e <dir>/<cfg>/repo; copie ' + REPO + '/linkedin-data para <dir>/<cfg>/repo/linkedin-data; se o eval tem files, copie o conteúdo de cada pasta listada (relativa a ' + REPO + ') POR CIMA de <dir>/<cfg>/repo (sobrescrevendo); depois git init -q <dir>/<cfg>/repo. Se a fixture pede ausência de arquivo (existe um arquivo .apagar listando caminhos), apague-os.',
   '4. Devolva o plano completo no StructuredOutput.',
 ].join('\n'), { label: 'preparar', phase: 'Preparar', schema: PLAN, model: 'sonnet' })
 if (!plano) throw new Error('preparação falhou')
@@ -74,7 +75,7 @@ const runPrompt = (e, cfg) => {
 }
 const gradePrompt = (e) => [
   'Você é o grader. Leia primeiro ' + SC + '/agents/grader.md. Eval: ' + e.dir + '/eval_metadata.json — o campo assertions é a lista FIXA de expectations (se estiver vazio, derive 4-8 de expected_output e grave-as de volta em assertions).',
-  'Duas execuções: ' + e.dir + '/atual/outputs/ (skill ATUAL: ' + SKILLS + '/' + e.skill + ') e ' + e.dir + '/baseline/outputs/ (BASELINE: ' + plano.snapshot + '/' + e.skill + '). Grade as duas com as MESMAS asserções. Regra dura: afirmação do transcript sem evidência em arquivo de outputs/ ou na "## Resposta final" é FAIL. Quando a asserção citar um script da skill (metricas.js, checar-formato.js, indice.js), RODE o script sobre o artefato para decidir, sempre com --hoje ' + HOJE + ' (a data congelada do caso).',
+  'Duas execuções: ' + e.dir + '/atual/outputs/ (skill ATUAL: ' + SKILLS + '/' + e.skill + ') e ' + e.dir + '/baseline/outputs/ (BASELINE: ' + plano.snapshot + '/' + e.skill + '). Grade as duas com as MESMAS asserções. Caminhos evals/<skill>/files/... nas asserções são relativos a ' + REPO + '. Regra dura: afirmação do transcript sem evidência em arquivo de outputs/ ou na "## Resposta final" é FAIL. Quando a asserção citar um script da skill (metricas.js, checar-formato.js, indice.js), RODE o script sobre o artefato para decidir, sempre com --hoje ' + HOJE + ' (a data congelada do caso).',
   'Escreva o grading.json em DUAS cópias por execução: <run>/grading.json e <run>/run-1/grading.json (o aggregate_benchmark lê run-*/; o viewer lê a raiz). Formato: {"expectations":[{"text","passed","evidence"}],"summary":{"passed","failed","total","pass_rate"},"eval_feedback":{"weak_assertions":[],"missing_coverage":[],"notes":"uma frase"}}. Campos text/passed/evidence exatamente assim.',
 ].join('\n')
 
