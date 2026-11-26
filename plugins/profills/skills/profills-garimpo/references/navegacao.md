@@ -1,14 +1,14 @@
 # Navegação — dirigindo o navegador logado
 
-A coleta usa o `claude-in-chrome` no navegador que a `profills-navegador` selecionou, já logado no LinkedIn. A aba `/company/<slug>/posts/` **só existe logado** — deslogado ela cai em authwall total (testado). Por que o navegador real e não um scraper ou a API: `compliance.md`.
+A coleta usa a extensão do navegador do próprio comercial, no navegador que a `profills-navegador` selecionou, já logado no LinkedIn. Este arquivo diz **o que** fazer; **com que ferramenta** é a intenção citada em cada passo, traduzida pelo adaptador do harness que a `SKILL.md` mandou ler. A aba `/company/<slug>/posts/` **só existe logado** — deslogado ela cai em authwall total (testado). Por que o navegador real e não um scraper ou a API: `compliance.md`.
 
 ## Passos por empresa
 
-1. **Navegador pronto primeiro**: a `profills-navegador` já rodou (o `SKILL.md` a invoca antes da primeira empresa) e entregou no handoff o navegador selecionado, o id de uma tab própria e as tools `tabs_context_mcp`, `tabs_create_mcp`, `navigate`, `read_page`, `get_page_text`, `find` e `computer` já carregadas. Trabalhe nessa tab: com a conta conectada em mais de um PC, uma tab criada fora do handoff abre no computador errado.
+1. **Navegador pronto primeiro**: a `profills-navegador` já rodou (o `SKILL.md` a invoca antes da primeira empresa) e entregou no handoff o navegador selecionado e o id de uma aba própria (intenção `navegador-pronto`). Trabalhe nessa aba: no Claude in Chrome, com a conta conectada em mais de um PC, uma aba criada fora do handoff abre no computador errado.
 
-2. **Carregue o `javascript_tool`**, que não vem no handoff e é o que roda os passos 5 e 6: `ToolSearch` com `select:mcp__claude-in-chrome__javascript_tool`.
+2. **Tenha à mão como rodar JavaScript de leitura na aba** (intenção `rodar-js`): é o que roda os passos 5 e 6. O adaptador diz se é preciso carregar algo antes.
 
-3. **Navegue** (`navigate`) para `https://www.linkedin.com/company/<slug>/posts/`.
+3. **Navegue** (intenção `abrir-pagina`) para `https://www.linkedin.com/company/<slug>/posts/`.
 
 4. **Confirme que carregou logado.** Feed visível → siga; os seguidores do topo da página ("N seguidores"), denominador da taxa de engajamento, saem da extração do passo 6. Authwall/tela de login → a sessão do usuário caiu: pare, peça para ele logar no LinkedIn no navegador que a `profills-navegador` selecionou e diga que o catálogo continua de onde parou quando ele avisar.
 
@@ -16,11 +16,11 @@ A coleta usa o `claude-in-chrome` no navegador que a `profills-navegador` seleci
 
 6. **Extraia** com o JS de [Extração](#extração-js). Concluído quando `avisos` volta vazio ou cada aviso foi tratado pela [tabela de avisos](#avisos-do-extrator): é ela que pega post pulado.
 
-7. **Role para carregar mais.** A paginação é scroll infinito client-side, sem parâmetro de URL. Use `computer` para rolar (tecla End ou scroll) ou clique em "Exibir mais resultados", esperando o carregamento entre cada rolagem. Ritmo humano — pausas de segundos, não rajada. Depois de rolar, rode a extração de novo: ela relê a página inteira.
+7. **Role para carregar mais.** A paginação é scroll infinito client-side, sem parâmetro de URL. Role (intenção `rolar`: tecla End ou scroll) ou clique em "Exibir mais resultados", esperando o carregamento entre cada rolagem. Ritmo humano — pausas de segundos, não rajada. Depois de rolar, rode a extração de novo: ela relê a página inteira.
 
 8. **Pare** cedo: ao atingir o teto de posts da rodada, ao passar da janela em dias (pelo campo `dia` da extração), ou quando o feed acabar — o que vier primeiro. Na janela padrão (até 5 posts / 7 dias) raramente precisa rolar muito.
 
-9. **Screenshot dos posts com mídia** com `computer` (screenshot, `save_to_disk: true`), salvando em `screenshots/post-<id>` com a extensão que a ferramenta gravar (`.png` ou `.jpg`). Só posts com imagem/carrossel/vídeo — texto puro não precisa.
+9. **Screenshot dos posts com mídia** (intenção `capturar-tela`, gravando o arquivo em disco), salvando em `screenshots/post-<id>` com a extensão que a ferramenta gravar (`.png` ou `.jpg`). Só posts com imagem/carrossel/vídeo — texto puro não precisa.
 
 ## As duas estruturas da aba
 
@@ -230,8 +230,8 @@ await (async () => {
 
 O retorno traz `estrutura`, `cards`, `anuncios`, `avisos`, `seguidores` e um resumo por post, na ordem da tela. Como usar cada parte:
 
-- **Id.** A ferramenta bloqueia sequência longa de dígitos, então `id` vem com `_` a cada 4: tire os `_`. O `post_id` é `urn:li:<tipo>:<id>` e o `url` é `https://www.linkedin.com/feed/update/<post_id>/`, nos dois tipos.
-- **Texto.** A ferramenta corta valor acima de uns 1.000 caracteres, então o texto fica em `window.__garimpo` e sai em pedaços: `window.__garimpo[<n - 1>].texto.match(/[\s\S]{1,850}/g)`. Junte os pedaços na ordem. Com `texto_cortado: true`, o card só tinha o trecho antes do "… mais": abra o `url` do post e leia o texto inteiro de lá.
+- **Id.** Ferramentas de navegação bloqueiam sequência longa de dígitos (o adaptador diz qual), então `id` vem com `_` a cada 4: tire os `_`. O `post_id` é `urn:li:<tipo>:<id>` e o `url` é `https://www.linkedin.com/feed/update/<post_id>/`, nos dois tipos.
+- **Texto.** Ferramentas de navegação cortam valor acima de uns 1.000 caracteres, então o texto fica em `window.__garimpo` e sai em pedaços: `window.__garimpo[<n - 1>].texto.match(/[\s\S]{1,850}/g)`. Junte os pedaços na ordem. Com `texto_cortado: true`, o card só tinha o trecho antes do "… mais": abra o `url` do post e leia o texto inteiro de lá.
 - **Data.** `dia` é o `data` do `posts.json`. Ele sai do id, que é um Snowflake (`id >> 22` são os milissegundos desde 1970), no fuso do navegador. `dataRel` é o rótulo da tela e serve para conferir.
 - **Formato.** Na estrutura `data-urn` o JS devolve `texto`, `imagem`, `carrossel`, `video` ou `artigo`; na `componentkey`, `texto`, `imagem`, `carrossel`, `video` ou `reshare`. Os outros valores dependem de você olhar o post — coluna "Como reconhecer" de `taxonomias.md`. `vaga: true` marca post com link de vaga.
 - **Engajamento.** `likes`, `comentarios` e `reposts` já vêm em número. Na `data-urn`, contador ausente na tela é `0`. Na `componentkey`, o JS procura o número no grupo do próprio ícone: ícone sem número é `0`, e ícone que o JS não acha vem `null`, com aviso.
@@ -243,7 +243,7 @@ O retorno traz `estrutura`, `cards`, `anuncios`, `avisos`, `seguidores` e um res
 | Aviso | O que fazer |
 |---|---|
 | `N card(s) ainda sem conteúdo` | role até o fim da lista carregada e rode a extração de novo |
-| `card N sem id` ou `com id que não decodifica` | é um post pulado: leia esse card com `read_page`, grave o post à mão se for da empresa e conte na `nota` do `meta.json`. O formato do id mudou — avise o usuário que este arquivo precisa de atualização |
+| `card N sem id` ou `com id que não decodifica` | é um post pulado: leia esse card pela árvore da página (intenção `ler-pagina`), grave o post à mão se for da empresa e conte na `nota` do `meta.json`. O formato do id mudou — avise o usuário que este arquivo precisa de atualização |
 | `a conta não fecha` | algum card não virou post nem anúncio: ache qual pela ordem da tela e trate como post pulado |
 | `post N: contador de <campo> não achado` | leia esse número no card do post N na tela e grave-o no `posts.json`. Não grave `0` nem `null` no lugar: o `metricas.js` lê `null` como zero, e o post entraria na média com um contador falso. Confira também o fim do texto desse post, que sem a barra de contadores pode trazer números do rodapé. Se o aviso vier em todos os posts, o ícone mudou: avise o usuário que este arquivo precisa de atualização |
 | `post N é mais novo que o post N-1` | post fixado no topo: siga. Sem post fixado, a ordenação não pegou: refaça o passo 5 |
@@ -267,14 +267,14 @@ O `dia` do post sai do id (ver Extração). O rótulo relativo só confere a tel
 
 | Sintoma | Ação |
 |---|---|
-| Tools `mcp__claude-in-chrome__*` ausentes ou nenhum navegador conectado | não é erro de página — invoque a `profills-navegador` (instalação/conexão guiada) |
+| Ferramenta de navegação ausente ou nenhum navegador conectado | não é erro de página: invoque a `profills-navegador` (intenção `invocar-skill`), que conduz a instalação e a conexão |
 | Usuário diz que a aba abriu em outro computador | navegador errado selecionado — refaça a seleção pela `profills-navegador` (ela atualiza o cache) |
 | Página pede login/authwall | sessão caiu — pare, peça o login e retome quando ele avisar |
 | Página existe mas não tem aba "Publicações" | página não gerenciada — `meta.json` com `"status": "pagina_nao_gerenciada"`, siga para a próxima empresa |
 | Feed não carrega mais posts ao rolar | chegou ao fim disponível — pare e catalogue o que tem |
 | Zero posts na janela | `meta.json` com `"status": "sem_posts"` e a nota; silêncio é sinal, entra no `_summary.md` |
 | Empresa com pouquíssimos posts (<5 na janela) | catalogue o que tem e sinalize "amostra insuficiente" no perfil |
-| Screenshot falha/timeout na mesma aba | não repita a mesma captura — siga com `read_page`/texto e marque `screenshot: null` |
+| Screenshot falha/timeout na mesma aba | não repita a mesma captura — siga com a leitura da página (`ler-pagina`) e marque `screenshot: null` |
 | Percepção de rate-limit (captcha, "atividade incomum") | **pare a sessão imediatamente**, não insista; avise o usuário e feche com o que já está em disco |
 
 ## Slug e ID

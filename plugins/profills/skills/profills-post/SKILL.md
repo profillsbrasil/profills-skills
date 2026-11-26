@@ -14,6 +14,8 @@ metadata:
 
 # profills-post
 
+**Harness.** Antes do primeiro passo, leia uma vez por sessão o adaptador do harness em que você roda: `../../docs/harness/claude-code.md` no Claude Code, `../../docs/harness/codex.md` no Codex (os caminhos são relativos a este arquivo; na dúvida, leia os dois e use o que descreve as ferramentas que você tem). Cada intenção citada aqui, como `perguntar` ou `invocar-skill`, está lá com a ferramenta, o jeito de ver que ela falta e o que fazer sem ela.
+
 Você transforma o **catálogo** em **rascunhos** de post na **voz** do usuário. O catálogo diz o que funcionou nas empresas de referência; o seu trabalho é gerar variações inspiradas nesses padrões e deixar o usuário escolher. A saída é sempre em português, mesmo quando a referência é gringa.
 
 ## Inspirar, não copiar
@@ -25,7 +27,7 @@ A linha que separa referência de plágio: você reusa o **padrão** (a estrutur
 Quem usa isto é o **comercial, não dev** — pode não saber o que escrever nem que decisões existem. Guie, um passo por vez.
 
 - **Mostre como vai ficar de verdade**, não descreva. Cada opção é um preview realista de feed no picker local (`references/comparador.md`), não card abstrato — ele bate o olho, copia no card e entende o que vai publicar.
-- **Pergunte com `AskUserQuestion`**, em linguagem simples, sempre com a opção recomendada e o porquê: ofereça as escolhas prontas (qual ângulo, mais curto?, outro gancho?).
+- **Pergunte com opções** (intenção `perguntar`), em linguagem simples, sempre com a opção recomendada e o porquê: ofereça as escolhas prontas (qual ângulo, mais curto?, outro gancho?).
 - **Pegue o dado real dele** antes de finalizar. Os `[campos]` do rascunho (nome, número, quem fez) são de propósito: você os preenche COM ele, perguntando com jeito.
 - **Fale a língua dele**: `catalog/<slug>.md` é "o que a X anda postando", o dossiê é "a ficha da empresa", o crivo é "um crivo de qualidade". Nomes internos (slug, quality gate, Expert Panel, ICP) ficam fora da conversa.
 - **Feche cada resposta com o próximo passo** ("quer que eu ajuste o tom?", "monto a ideia da foto?") — uma sugestão por vez, até o post estar pronto pra colar.
@@ -34,13 +36,13 @@ Quem usa isto é o **comercial, não dev** — pode não saber o que escrever ne
 
 ### 0. Ache a pasta de dados
 
-**Pasta de dados (`DADOS`)**: se o diretório atual está num repo git com `linkedin-data/` na raiz (`git rev-parse --show-toplevel`), `DADOS` é essa pasta; senão é `~/Profills LinkedIn/`. Se nenhuma das duas existe, ou se `DADOS/.profills.json` falta ou traz `versao_dados` menor que 3, invoque a skill `profills-setup` — ela cria ou atualiza a pasta e confere o resto da instalação.
+**Pasta de dados (`DADOS`)**: se o diretório atual está num repo git com `linkedin-data/` na raiz (`git rev-parse --show-toplevel`), `DADOS` é essa pasta; senão é `~/Profills LinkedIn/`. Se nenhuma das duas existe, ou se `DADOS/.profills.json` falta ou traz `versao_dados` menor que 4, invoque a skill `profills-setup` — ela cria ou atualiza a pasta e confere o resto da instalação.
 
 Concluído quando você tem o caminho absoluto de `DADOS` e ele existe no disco.
 
 ### 1. Fixe o tema e a referência
 
-O usuário escolhe o tema e, opcionalmente, a empresa que inspira. Quando ele pedir posts a partir do catálogo sem nomear tema ("transforma isso em posts"), leia `DADOS/catalog/<slug>.md`, tire de lá 3-4 temas que engajaram na empresa e ofereça-os com `AskUserQuestion`, com a sua recomendação e o porquê.
+O usuário escolhe o tema e, opcionalmente, a empresa que inspira. Quando ele pedir posts a partir do catálogo sem nomear tema ("transforma isso em posts"), leia `DADOS/catalog/<slug>.md`, tire de lá 3-4 temas que engajaram na empresa e ofereça-os numa pergunta com opções (`perguntar`), com a sua recomendação e o porquê.
 
 **Pauta do boletim.** Quando ele pede "a pauta N do boletim", abra o boletim mais novo de `DADOS/boletins/` (o `AAAA-MM-DD.md` de data maior) e leia a pauta N da seção `## Pautas para você`: o título dela é o tema, o ângulo dela é o ângulo da primeira variação, e o post que ela cita é o post-referência. Ache esse post pelo link no `posts.json` da empresa citada (a pasta de data mais recente em `DADOS/catalog/raw/`) e siga daqui como "inspirado no que a <empresa> postou"; nesse caso o `posts.json` basta como catálogo, e o perfil `catalog/<slug>.md` entra no passo 2 só se existir. Diga em uma frase qual pauta e qual post você pegou. Sem boletim na pasta, ou sem a pauta N nele, diga isso em uma frase, liste as pautas que existem (se houver) e pergunte o tema.
 
@@ -51,14 +53,14 @@ Concluído quando o tema cabe numa frase, a referência está definida — o nom
 ### 2. Reúna os três insumos
 
 1. **O catálogo** — leia `DADOS/catalog/<slug>.md` e o `DADOS/catalog/raw/linkedin/<slug>/<AAAA-MM-DD>/posts.json` da empresa que inspira. De lá vêm os hooks, formatos e ângulos que engajaram e o % de hooks que cabem no corte. Sem o `<slug>.md`: abra o `meta.json` da coleta — o campo `status` (`sem_posts`, `pagina_nao_gerenciada`, `erro_navegacao`) diz por quê. Conte a razão ao usuário em uma frase, ofereça rodar a `profills-garimpo` e siga só com o tema.
-2. **A voz do usuário** — leia `DADOS/voz.md`: identidade, voz, provas, palavras banidas. É o que faz o rascunho soar como ele, não como a empresa de referência. Sem esse arquivo, **invoque a skill `profills-voz`** e espere ela gravar o `voz.md` antes de seguir — ela monta o arquivo com o usuário em ~10 minutos a partir de material real dele. Não existe rascunho sem voz: se ele disser que agora não tem tempo, explique em uma frase que sem a voz o post sai genérico, com a cara da empresa de referência e não a dele, e pare sem gerar rascunho, com a sugestão de rodar a `profills-voz` quando ele tiver os 10 minutos.
-3. **O que não copiar** — leia a seção `## Do Not Copy` do dossiê da empresa em `DADOS/refs/<slug>.md`. Seção vazia ou ainda com o comentário de placeholder significa "nunca perguntado": faça uma `AskUserQuestion` ("tem algo da <empresa> que você não quer imitar?") com opções concretas tiradas dos posts dela ("o tom institucional", "os posts de vaga", "o excesso de emoji", "nada a evitar") e grave a resposta no dossiê, no lugar do comentário, antes de gerar.
+2. **A voz do usuário** — leia `DADOS/voz.md`: identidade, voz, provas, palavras banidas. É o que faz o rascunho soar como ele, não como a empresa de referência. Sem esse arquivo, **invoque a skill `profills-voz`** (intenção `invocar-skill`) e espere ela gravar o `voz.md` antes de seguir — ela monta o arquivo com o usuário em ~10 minutos a partir de material real dele. Não existe rascunho sem voz: se ele disser que agora não tem tempo, explique em uma frase que sem a voz o post sai genérico, com a cara da empresa de referência e não a dele, e pare sem gerar rascunho, com a sugestão de rodar a `profills-voz` quando ele tiver os 10 minutos.
+3. **O que não copiar** — leia a seção `## Do Not Copy` do dossiê da empresa em `DADOS/refs/<slug>.md`. Seção vazia ou ainda com o comentário de placeholder significa "nunca perguntado": faça uma pergunta com opções (`perguntar`), "tem algo da <empresa> que você não quer imitar?", com opções concretas tiradas dos posts dela ("o tom institucional", "os posts de vaga", "o excesso de emoji", "nada a evitar") e grave a resposta no dossiê, no lugar do comentário, antes de gerar.
 
 Concluído quando os três estão em contexto — cada um lido do disco, ou com a ausência resolvida pelo caminho acima. A voz só se resolve com o `DADOS/voz.md` gravado pela `profills-voz`; sem ele, a run termina neste passo, sem nada em `DADOS/drafts/`.
 
 ### 3. Colete a matéria-prima
 
-Escrita habilidosa sobre matéria-prima rasa produz post genérico. Antes de gerar, reúna **quatro elementos** — do `voz.md` (provas, dores do ICP), do catálogo e do próprio usuário, perguntando com `AskUserQuestion` em linguagem simples:
+Escrita habilidosa sobre matéria-prima rasa produz post genérico. Antes de gerar, reúna **quatro elementos** — do `voz.md` (provas, dores do ICP), do catálogo e do próprio usuário, perguntando com opções (`perguntar`) em linguagem simples:
 
 1. **Um número real** dele sobre o tema (quantos, quanto tempo, quanto custou).
 2. **Uma opinião ou insight contra-intuitivo** — o que ele sabe do tema que o senso comum do setor erra.
@@ -95,13 +97,13 @@ Concluído quando cada rascunho que segue adiante tem `ok: true` no script, os a
 
 ### 6. Humanize
 
-Encadeie a skill **`humanize-pt-br`** em cada rascunho aprovado — ela remove as marcas de IA em português (vocabulário inflado, conectivos automáticos, conclusões genéricas). O hook fica intacto; o corpo ganha voz humana.
+Encadeie a skill **`humanize-pt-br`** (intenção `invocar-skill`) em cada rascunho aprovado — ela remove as marcas de IA em português (vocabulário inflado, conectivos automáticos, conclusões genéricas). O hook fica intacto; o corpo ganha voz humana.
 
 Concluído quando todo rascunho aprovado passou pela skill.
 
 ### 7. Mostre lado a lado
 
-As opções abrem no **picker local** desta skill, no formato do feed. Não use Artifact neste passo.
+As opções abrem no **picker local** desta skill, no formato do feed. Não publique página fora da máquina neste passo: o picker roda no computador dele e abre o navegador sozinho.
 
 ```
 bash "<pasta desta skill>/scripts/picker/start-server.sh" --dados-dir "<DADOS>" --open
@@ -145,7 +147,7 @@ Se a variação escolhida usa padrão diferente do que você anunciou no passo 1
 
 Antes de dar por pronto, rode `node "<pasta desta skill>/scripts/checar-formato.js" "<DADOS>/drafts/<AAAA-MM-DD>-<tema-slug>.md" --voz "<DADOS>/voz.md"` no arquivo salvo; o `voz.md` sempre existe aqui, porque sem ele a run para no passo 2. Aviso não impede salvar: `corpo_curto` no arquivo final é a pergunta "ficou curto — quer engordar ou vai assim?", e a resposta dele decide.
 
-Com o arquivo salvo, rode `node "<pasta desta skill>/../profills-setup/scripts/mapa.js" "<DADOS>"`, que atualiza o resumo da pasta em `<DADOS>/CLAUDE.md`; se ele não voltar `ok: true`, avise em uma frase que o resumo não foi atualizado e siga.
+Com o arquivo salvo, rode `node "<pasta desta skill>/../profills-setup/scripts/mapa.js" "<DADOS>"`, que atualiza o resumo da pasta em `<DADOS>/AGENTS.md`; se ele não voltar `ok: true`, avise em uma frase que o resumo não foi atualizado e siga.
 
 Concluído quando o arquivo existe no disco no formato acima, o script devolve `ok: true` nele, os avisos foram conversados, e as linhas de contexto trazem ângulo, categoria de hook e a origem de cada número. Se ele deu o post por fechado sem pedir ajuste, pare o picker aqui com o comando do passo 9.
 
