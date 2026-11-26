@@ -35,12 +35,12 @@ const LINHAS_REAIS = [
 ];
 
 const ESPERADO_REAL = {
-  cetromaquinas: { setor: 'máquinas de embalagem/processamento', catalogo: '2026-07-14', alerta: 'catálogo parcial (smoke test)' },
-  'maqinox-ind-stria-de-maquinas': { setor: 'máquinas de envase/Doypack', catalogo: null, alerta: null },
-  'tecnoenvase-maquinas-e-equipamentos-ltda': { setor: 'envasadoras/dosadoras', catalogo: null, alerta: null },
-  'tecnox-do-brasil': { setor: 'embalagem flexível/Doypack', catalogo: null, alerta: null },
-  skymsen: { setor: 'processamento de alimentos (benchmark maior)', catalogo: null, alerta: null },
-  'sulpack-industria-de-maquinas-para-embalagens': { setor: 'seladoras/embaladoras', catalogo: null, alerta: 'presença digital fraca (~38 seguidores)' },
+  cetromaquinas: { setor: 'máquinas de embalagem/processamento', alerta: 'catálogo parcial (smoke test)' },
+  'maqinox-ind-stria-de-maquinas': { setor: 'máquinas de envase/Doypack', alerta: null },
+  'tecnoenvase-maquinas-e-equipamentos-ltda': { setor: 'envasadoras/dosadoras', alerta: null },
+  'tecnox-do-brasil': { setor: 'embalagem flexível/Doypack', alerta: null },
+  skymsen: { setor: 'processamento de alimentos (benchmark maior)', alerta: null },
+  'sulpack-industria-de-maquinas-para-embalagens': { setor: 'seladoras/embaladoras', alerta: 'presença digital fraca (~38 seguidores)' },
 };
 
 // linkedin-data/refs/INDEX.md na versão 2 da pasta, antes do campo instagram.
@@ -51,6 +51,11 @@ const LINHAS_V2 = [
   '- [Sulpack Indústria de Máquinas](sulpack-industria-de-maquinas-para-embalagens.md) — `sulpack-industria-de-maquinas-para-embalagens` · id — · setor seladoras/embaladoras · país BR · prioridade a definir · linkedin sim · pesquisa 2026-07-14 · sem catálogo · ⚠ presença digital fraca (~38 seguidores)',
 ];
 const comInstagram = (linha) => linha.replace(/ · linkedin (sim|não) · /, ' · linkedin $1 · instagram — · ');
+// A versão 3 da linha não tem o campo catálogo: a data sai das coletas.
+const semCatalogo = (linha) => linha.replace(/ · (?:sem catálogo|catálogo \d{4}-\d{2}-\d{2})(?= · |$)/, '');
+const paraV3 = (linha) => semCatalogo(comInstagram(linha));
+// O que a migração acrescenta ao .gitignore da pasta: o banco derivado de banco.js.
+const IGNORAR_BANCO = ['indice.db', 'indice.db-wal', 'indice.db-shm'];
 
 const indexCom = (linhas, quebra = '\n') => [...CABECALHO, ...linhas, ''].join(quebra);
 
@@ -178,8 +183,8 @@ const casos = [
 
   ['indice.js lê a linha 1 de um INDEX da versão atual com BOM', () => {
     const linhas = [
-      '- [A](a.md) — `a` · id 1 · setor s · país BR · prioridade Alta · linkedin sim · instagram — · pesquisa 2026-07-14 · sem catálogo',
-      '- [B](b.md) — `b` · id 2 · setor s · país BR · prioridade Alta · linkedin sim · instagram — · pesquisa 2026-07-14 · sem catálogo',
+      '- [A](a.md) — `a` · id 1 · setor s · país BR · prioridade Alta · linkedin sim · instagram — · pesquisa 2026-07-14',
+      '- [B](b.md) — `b` · id 2 · setor s · país BR · prioridade Alta · linkedin sim · instagram — · pesquisa 2026-07-14',
     ];
     const dados = montar({ index: BOM + linhas.join('\n') + '\n', marcador: 3 });
     const v = validar(dados);
@@ -239,11 +244,12 @@ const casos = [
     for (const [slug, esperado] of Object.entries(ESPERADO_REAL)) {
       const e = empresas[slug];
       assert.deepStrictEqual(
-        { setor: e.setor, pais: e.pais, id: e.id, pesquisa: e.pesquisa, catalogo: e.catalogo, alerta: e.alerta, prioridade: e.prioridade, linkedin: e.linkedin, instagram: e.instagram },
+        { setor: e.setor, pais: e.pais, id: e.id, pesquisa: e.pesquisa, alerta: e.alerta, prioridade: e.prioridade, linkedin: e.linkedin, instagram: e.instagram },
         { ...esperado, pais: 'BR', id: '—', pesquisa: '2026-07-14', prioridade: 'a definir', linkedin: true, instagram: null },
         slug,
       );
     }
+    assert.ok(lerIndex(dados).split('\n').filter((l) => l.startsWith('- ')).every((l) => !/ · (sem catálogo|catálogo \d)/.test(l.split(' · ⚠')[0])), 'nenhuma linha guarda o campo catálogo');
     assert.strictEqual(fs.readFileSync(path.join(dados, '.backup', HOJE, 'refs', 'INDEX.md'), 'utf8'), original, 'backup byte a byte');
     assert.strictEqual(JSON.parse(fs.readFileSync(path.join(dados, '.profills.json'), 'utf8')).versao_dados, 3);
   }],
@@ -254,8 +260,7 @@ const casos = [
     aplicarComSucesso(dados);
     const e = validarComSucesso(dados, 6).cetromaquinas;
     assert.strictEqual(e.id, '—');
-    assert.strictEqual(e.catalogo, '2026-07-14');
-    assert.strictEqual(e.alerta, 'catálogo parcial (smoke test)');
+    assert.strictEqual(e.alerta, 'catálogo parcial (smoke test)', 'o qualificador do catálogo vira alerta; a data sai das coletas');
   }],
 
   ['INDEX real com CRLF', () => {
@@ -343,11 +348,11 @@ const casos = [
     assert.ok(!existe(dados, 'catalog/raw/linkedin/cetromaquinas/2026-07-14/meta.json'), 'coleta de 2026-07 sem meta.json não ganha meta.json');
   }],
 
-  ['v2 → v3: a linha do índice ganha só o campo instagram', () => {
+  ['v2 → v3: a linha do índice ganha o campo instagram e perde o catálogo', () => {
     const dados = montar({ index: indexCom(LINHAS_V2), marcador: 2 });
     const r = aplicarComSucesso(dados);
     assert.ok(r.acoes.some((a) => a.tipo === 'converter_indice'));
-    assert.strictEqual(lerIndex(dados), indexCom(LINHAS_V2.map(comInstagram)), 'cada linha é a de antes com " · instagram —" depois do linkedin');
+    assert.strictEqual(lerIndex(dados), indexCom(LINHAS_V2.map(paraV3)), 'cada linha é a de antes com " · instagram —" depois do linkedin e sem o catálogo');
     const empresas = validarComSucesso(dados, 4);
     assert.ok(Object.values(empresas).every((e) => e.instagram === null), 'instagram — é null');
     assert.strictEqual(ler(dados, `.backup/${HOJE}/refs/INDEX.md`), indexCom(LINHAS_V2), 'backup do INDEX de antes');
@@ -419,7 +424,7 @@ const casos = [
   }],
 
   ['pasta v3 com coleta interrompida: concluida false continua false e nada muda', () => {
-    const dados = montar({ index: indexCom(LINHAS_V2.map(comInstagram)), marcador: 3 });
+    const dados = montar({ index: indexCom(LINHAS_V2.map(paraV3)), marcador: 3 });
     const pasta = path.join(dados, 'catalog', 'raw', 'linkedin', 'tecnox-do-brasil', '2026-11-20');
     fs.mkdirSync(pasta, { recursive: true });
     fs.writeFileSync(path.join(pasta, 'meta.json'), JSON.stringify({ slug: 'tecnox-do-brasil', coletado_em: '2026-11-20', janela_dias: 7, concluida: false }, null, 2) + '\n');
@@ -466,6 +471,47 @@ const casos = [
     assert.deepStrictEqual(r.avisos.map((a) => [a.tipo, a.alvo]), [['meta_ilegivel', path.join('catalog', 'raw', 'linkedin', 'tecnox-do-brasil', '2026-07-14', 'meta.json')]]);
     assert.strictEqual(ler(dados, 'catalog/raw/linkedin/tecnox-do-brasil/2026-07-14/meta.json'), '{ isto não é json', 'o arquivo chega como estava');
     assert.strictEqual(JSON.parse(ler(dados, '.profills.json')).versao_dados, 3);
+  }],
+
+  // ---------- versão 3: o catálogo sai da linha, o banco derivado sai do git ----------
+
+  ['pasta já na v3 com o campo catálogo: a migração tira só esse campo, e o ⚠ fica inteiro', () => {
+    const comCampo = [
+      ...LINHAS_V2.map(comInstagram),
+      '- [Zeta](zeta.md) — `zeta` · id 9 · setor s · país BR · prioridade Alta · linkedin sim · instagram zeta.br · pesquisa 2026-07-14 · catálogo 2026-08-01 · grupo Z · ⚠ revisar · catálogo 2026-01-01 era parcial',
+    ];
+    const dados = montar({ index: indexCom(comCampo), marcador: 3 });
+    const antes = validar(dados);
+    assert.ok(antes.json.problemas.length && antes.json.problemas.every((p) => p.tipo === 'formato_antigo'), `antes da migração a linha com catálogo é formato_antigo: ${JSON.stringify(antes.json.problemas)}`);
+    const r = aplicarComSucesso(dados);
+    assert.deepStrictEqual(r.acoes.map((a) => a.tipo), ['converter_indice'], 'só a conversão do índice; o marcador já está na 3');
+    assert.strictEqual(
+      lerIndex(dados),
+      indexCom([...LINHAS_V2.map(paraV3), '- [Zeta](zeta.md) — `zeta` · id 9 · setor s · país BR · prioridade Alta · linkedin sim · instagram zeta.br · pesquisa 2026-07-14 · grupo Z · ⚠ revisar · catálogo 2026-01-01 era parcial']),
+    );
+    assert.strictEqual(validarComSucesso(dados, 5).zeta.alerta, 'revisar · catálogo 2026-01-01 era parcial');
+    assert.deepStrictEqual(aplicarComSucesso(dados).acoes, [], 'segunda rodada sem ação');
+  }],
+
+  ['.gitignore da pasta ganha as linhas do banco derivado, uma vez só', () => {
+    const dados = montar({ index: indexCom(LINHAS_V2.map(paraV3)), marcador: 3 });
+    const original = '# Seleção ativa é efêmera\nselection.md\nindice.db\n';
+    fs.writeFileSync(path.join(dados, '.gitignore'), original);
+    const r = aplicarComSucesso(dados);
+    assert.deepStrictEqual(r.acoes.map((a) => a.tipo), ['ignorar_banco']);
+    const novo = ler(dados, '.gitignore');
+    assert.ok(novo.startsWith(original), 'o que já estava fica igual, no começo');
+    for (const linha of IGNORAR_BANCO) assert.strictEqual(novo.split('\n').filter((l) => l === linha).length, 1, `${linha} aparece uma vez`);
+    assert.strictEqual(ler(dados, `.backup/${HOJE}/.gitignore`), original, 'backup do .gitignore de antes');
+    const depois = hashDaPasta(dados);
+    assert.deepStrictEqual(aplicarComSucesso(dados).acoes, [], 'segunda rodada sem ação');
+    assert.strictEqual(hashDaPasta(dados), depois, 'sha256 da pasta igual');
+  }],
+
+  ['pasta sem .gitignore (fora de um repo) não ganha um', () => {
+    const dados = montar({ index: indexCom(LINHAS_V2.map(paraV3)), marcador: 3 });
+    assert.deepStrictEqual(aplicarComSucesso(dados).acoes, []);
+    assert.ok(!existe(dados, '.gitignore'));
   }],
 ];
 

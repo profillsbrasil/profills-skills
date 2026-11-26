@@ -14,7 +14,7 @@ const BOLETIM = path.join(__dirname, 'boletim.js');
 const HOJE = '2026-08-24';
 
 const linha = (nome, slug, { prioridade = 'Alta', linkedin = 'sim' } = {}) =>
-  `- [${nome}](${slug}.md) — \`${slug}\` · id — · setor envase · país BR · prioridade ${prioridade} · linkedin ${linkedin} · instagram — · pesquisa 2026-08-01 · sem catálogo`;
+  `- [${nome}](${slug}.md) — \`${slug}\` · id — · setor envase · país BR · prioridade ${prioridade} · linkedin ${linkedin} · instagram — · pesquisa 2026-08-01`;
 
 function montar({ empresas, selecao, rodada = HOJE, catalog = true, boletins = [] }) {
   const dados = fs.mkdtempSync(path.join(os.tmpdir(), 'boletim-test-'));
