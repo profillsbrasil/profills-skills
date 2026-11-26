@@ -3,9 +3,10 @@
 // Sem --aplicar só simula e lista as ações. Com --aplicar copia para DADOS/.backup/<hoje>/ cada
 // arquivo que vai reescrever, cria as subpastas que faltam, move cada catalog/raw/<slug>/ para
 // catalog/raw/linkedin/<slug>/ (anotando o movimento em .backup/<hoje>/movidos.jsonl), converte as
-// linhas antigas do refs/INDEX.md, converte STATUS.txt legado em meta.json, escreve "concluida": true
-// no meta.json que ainda não tem o campo e grava DADOS/.profills.json por último. Uma execução leva a
-// pasta da versão 1 ou 2 até a 3. Cada ação sai do que está no disco: rodar de novo depois de terminar
+// linhas antigas do refs/INDEX.md (e tira delas o campo catálogo, que agora sai das coletas), converte
+// STATUS.txt legado em meta.json, escreve "concluida": true no meta.json que ainda não tem o campo, põe o
+// banco derivado (indice.db) no .gitignore da pasta quando ela tem um e grava DADOS/.profills.json por
+// último. Uma execução leva a pasta da versão 1 ou 2 até a 3. Cada ação sai do que está no disco: rodar de novo depois de terminar
 // devolve acoes [] e não muda nenhum byte; rodar de novo depois de cair no meio termina o que faltou.
 // Para desfazer um movimento, leia movidos.jsonl de baixo para cima e mova cada "para" de volta a "de".
 // Uso:     node scripts/migrar.js <DADOS> [--aplicar] [--hoje AAAA-MM-DD]
@@ -27,6 +28,8 @@ const RAW = path.join('catalog', 'raw');
 // A conta é o slug da página no LinkedIn e o handle no Instagram.
 const REDES = ['linkedin', 'instagram'];
 const SUBPASTAS = ['refs', path.join(RAW, 'linkedin'), 'drafts', 'boletins'];
+// O banco.js do plugin refaz DADOS/indice.db dos arquivos a qualquer hora: ele e os arquivos do WAL não vão para o git.
+const IGNORAR_BANCO = ['indice.db', 'indice.db-wal', 'indice.db-shm'];
 
 function morrer(mensagem) {
   process.stderr.write(mensagem + '\n');
@@ -83,19 +86,23 @@ function converterLinhaAntiga(texto, numero) {
       prioridade: 'a definir',
       linkedin: !semPagina,
       pesquisa: antiga.pesquisa,
-      catalogo: antiga.catalogo,
       grupo: null,
       alerta: antiga.alerta,
     }),
   };
 }
 
-// Linha da versão 2 sem outro problema ganha só o campo instagram, logo depois do linkedin: o resto
-// da linha fica byte a byte. Linha da versão 2 com problema fica como está, e o problema trava.
+// Linha da versão 2 sem outro problema ganha o campo instagram logo depois do linkedin, quando não o tem,
+// e perde o campo catálogo: o resto da linha fica byte a byte. O catálogo é procurado só antes do ⚠, que
+// leva o resto da linha e pode citar a palavra. Linha da versão 2 com problema fica como está, e o problema trava.
 function converterLinhaV2(texto, numero, lida) {
   const problemas = lida.problemas.filter((p) => p.tipo !== 'formato_antigo').map((p) => ({ linha: numero, trecho: texto.slice(0, 120), ...p }));
   if (problemas.length) return { problemas };
-  return { problemas, linha: texto.replace(/( · linkedin (?:sim|não))( · |$)/, '$1 · instagram —$2') };
+  const corte = texto.indexOf(' · ⚠');
+  const [campos, alerta] = corte >= 0 ? [texto.slice(0, corte), texto.slice(corte)] : [texto, ''];
+  const semCatalogo = campos.replace(/ · (?:sem catálogo|catálogo [^·]*?)(?= · |$)/, '');
+  const comInstagram = / · instagram /.test(semCatalogo) ? semCatalogo : semCatalogo.replace(/( · linkedin (?:sim|não))( · |$)/, '$1 · instagram —$2');
+  return { problemas, linha: comInstagram + alerta };
 }
 
 // O índice que fica no disco passa inteiro pelo parser da versão atual: qualquer linha de lista que ele
@@ -149,7 +156,15 @@ function planejarIndice(dados) {
   if (!problemas.length) problemas.push(...problemasDoFormatoAtual(novas));
   if (problemas.length || !convertidas) return { acoes: [], problemas };
   return {
-    acoes: [{ tipo: 'converter_indice', alvo: path.join('refs', 'INDEX.md'), detalhe: `${convertidas} linha(s) passam para o formato novo, com o campo instagram vazio (e prioridade "a definir" na linha que ainda não tinha prioridade)`, conteudo: novas.join(quebra), backup: true }],
+    acoes: [
+      {
+        tipo: 'converter_indice',
+        alvo: path.join('refs', 'INDEX.md'),
+        detalhe: `${convertidas} linha(s) passam para o formato novo: com o campo instagram (vazio onde faltava), sem o campo catálogo (a data sai das coletas) e com prioridade "a definir" na linha que ainda não tinha prioridade`,
+        conteudo: novas.join(quebra),
+        backup: true,
+      },
+    ],
     problemas,
   };
 }
@@ -265,6 +280,21 @@ function planejarMetas(dados) {
   return { acoes, avisos };
 }
 
+// Só a pasta que tem .gitignore está num repo git (o caso do repo-fonte); fora de um, não há o que ignorar.
+function planejarGitignore(dados) {
+  const caminho = path.join(dados, '.gitignore');
+  if (!fs.existsSync(caminho)) return [];
+  const original = fs.readFileSync(caminho, 'utf8');
+  const quebra = original.includes('\r\n') ? '\r\n' : '\n';
+  const presentes = new Set(original.split(/\r?\n/).map((l) => l.trim()));
+  const faltam = IGNORAR_BANCO.filter((l) => !presentes.has(l));
+  if (!faltam.length) return [];
+  const bloco = ['# Banco derivado das coletas (banco.js do plugin): refeito dos arquivos a qualquer hora', ...faltam].join(quebra);
+  // Uma linha em branco separa o bloco novo do que já estava.
+  const separador = original === '' ? '' : original.endsWith(quebra) ? quebra : quebra + quebra;
+  return [{ tipo: 'ignorar_banco', alvo: '.gitignore', detalhe: `o .gitignore passa a ignorar ${faltam.join(', ')}`, conteudo: original + separador + bloco + quebra, backup: true }];
+}
+
 function planejar(dados, hoje) {
   const versao = lerVersao(dados);
   const saida = { versao_atual: versao.versao, acoes: [], problemas: [], avisos: [] };
@@ -286,6 +316,7 @@ function planejar(dados, hoje) {
   const metas = planejarMetas(dados);
   saida.acoes.push(...metas.acoes);
   saida.avisos.push(...metas.avisos);
+  saida.acoes.push(...planejarGitignore(dados));
 
   // O marcador vai por último e só sem problema: pasta marcada como nova tem de estar nova.
   if (!saida.problemas.length && (versao.versao < VERSAO_ALVO || versao.ilegivel)) {

@@ -642,7 +642,6 @@ function planejar(planilhaPath, pasta, hoje, pular) {
         linkedin: e.linkedin,
         instagram: e.instagram,
         pesquisa: e.pesquisa,
-        catalogo: null,
         grupo: e.grupo,
         alerta: null,
       }),

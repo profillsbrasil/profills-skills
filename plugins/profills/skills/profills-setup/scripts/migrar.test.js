@@ -56,6 +56,8 @@ const semCatalogo = (linha) => linha.replace(/ · (?:sem catálogo|catálogo \d{
 const paraV3 = (linha) => semCatalogo(comInstagram(linha));
 // O que a migração acrescenta ao .gitignore da pasta: o banco derivado de banco.js.
 const IGNORAR_BANCO = ['indice.db', 'indice.db-wal', 'indice.db-shm'];
+// O montar() cria catalog/raw/ sem a pasta da rede: a criação dela não é o que estes casos conferem.
+const tiposSemPasta = (r) => r.acoes.map((a) => a.tipo).filter((t) => t !== 'criar_pasta');
 
 const indexCom = (linhas, quebra = '\n') => [...CABECALHO, ...linhas, ''].join(quebra);
 
@@ -484,7 +486,7 @@ const casos = [
     const antes = validar(dados);
     assert.ok(antes.json.problemas.length && antes.json.problemas.every((p) => p.tipo === 'formato_antigo'), `antes da migração a linha com catálogo é formato_antigo: ${JSON.stringify(antes.json.problemas)}`);
     const r = aplicarComSucesso(dados);
-    assert.deepStrictEqual(r.acoes.map((a) => a.tipo), ['converter_indice'], 'só a conversão do índice; o marcador já está na 3');
+    assert.deepStrictEqual(tiposSemPasta(r), ['converter_indice'], 'só a conversão do índice; o marcador já está na 3');
     assert.strictEqual(
       lerIndex(dados),
       indexCom([...LINHAS_V2.map(paraV3), '- [Zeta](zeta.md) — `zeta` · id 9 · setor s · país BR · prioridade Alta · linkedin sim · instagram zeta.br · pesquisa 2026-07-14 · grupo Z · ⚠ revisar · catálogo 2026-01-01 era parcial']),
@@ -498,7 +500,7 @@ const casos = [
     const original = '# Seleção ativa é efêmera\nselection.md\nindice.db\n';
     fs.writeFileSync(path.join(dados, '.gitignore'), original);
     const r = aplicarComSucesso(dados);
-    assert.deepStrictEqual(r.acoes.map((a) => a.tipo), ['ignorar_banco']);
+    assert.deepStrictEqual(tiposSemPasta(r), ['ignorar_banco']);
     const novo = ler(dados, '.gitignore');
     assert.ok(novo.startsWith(original), 'o que já estava fica igual, no começo');
     for (const linha of IGNORAR_BANCO) assert.strictEqual(novo.split('\n').filter((l) => l === linha).length, 1, `${linha} aparece uma vez`);
@@ -510,7 +512,7 @@ const casos = [
 
   ['pasta sem .gitignore (fora de um repo) não ganha um', () => {
     const dados = montar({ index: indexCom(LINHAS_V2.map(paraV3)), marcador: 3 });
-    assert.deepStrictEqual(aplicarComSucesso(dados).acoes, []);
+    assert.deepStrictEqual(tiposSemPasta(aplicarComSucesso(dados)), []);
     assert.ok(!existe(dados, '.gitignore'));
   }],
 ];

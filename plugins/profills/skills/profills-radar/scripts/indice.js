@@ -2,10 +2,11 @@
 // indice.js — a conta do índice de referências da profills-radar (Node >= 18, sem dependência).
 // Faz três coisas sobre DADOS/refs: valida o INDEX.md linha a linha (campos por chave, id, datas,
 // existência da ficha, fichas órfãs, pesquisa vencida em 60 dias) e monta a rodada por camadas de
-// prioridade (CAMADAS, até LIMITE_POR_RODADA empresas); reconstrói o INDEX.md a partir
-// das fichas quando ele sumiu (--reconstruir, recuperando o campo catálogo em catalog/raw/linkedin/ e no
-// índice anterior — o alerta ⚠ não é recuperável do disco); e procura ficha parecida antes de criar
-// uma nova (--procurar, sem acento e por distância, também pelo grupo e pelos nomes relacionados).
+// prioridade (CAMADAS, até LIMITE_POR_RODADA empresas), com a data do último catálogo de cada empresa
+// tirada das coletas em catalog/raw/linkedin/ (a linha não guarda essa data); reconstrói o INDEX.md a
+// partir das fichas quando ele sumiu (--reconstruir; o alerta ⚠ não é recuperável do disco); e procura
+// ficha parecida antes de criar uma nova (--procurar, sem acento e por distância, também pelo grupo e
+// pelos nomes relacionados).
 // Uso:     node scripts/indice.js <pasta refs> [--reconstruir] [--catalog <pasta>] [--procurar "<nome>"] [--hoje AAAA-MM-DD]
 // Exemplo: node scripts/indice.js linkedin-data/refs --procurar "Maquimox"
 //          → {"acao":"procurar","termo":"Maquimox","ha_parecido":true,"candidatos":[{"slug":"maqinox-...","semelhanca":0.75}],"ok":true}
@@ -15,6 +16,9 @@
 
 const fs = require('fs');
 const path = require('path');
+
+// O que uma coleta diz (e quando ela vira catálogo) é regra compartilhada do plugin.
+const { ultimoCatalogo } = require(path.join(__dirname, '..', '..', '..', 'scripts', 'coleta.js'));
 
 // ---------- utilidades ----------
 
@@ -168,8 +172,9 @@ function listarFichas(pasta) {
 
 // Versão 3 da linha, campos ` · ` com chave nomeada:
 // - [Nome](<slug>.md) — `<slug>` · id <número|—> · setor <texto> · país <texto> · prioridade <…> · linkedin <sim|não>
-//   · instagram <handle|—> · pesquisa AAAA-MM-DD · <sem catálogo|catálogo AAAA-MM-DD> [· grupo <texto>] [· ⚠ <frase>]
-// A versão 2 era igual sem o instagram; a 1 não tinha chave no setor e no país.
+//   · instagram <handle|—> · pesquisa AAAA-MM-DD [· grupo <texto>] [· ⚠ <frase>]
+// A versão 2 não tinha o instagram e tinha o campo <sem catálogo|catálogo AAAA-MM-DD>, que saiu porque a
+// data passou a ser calculada das coletas; a 1 não tinha chave no setor e no país.
 const RE_LINHA = /^-\s+\[([^\]]+)\]\(([^)]+)\)\s+—\s+`([^`]*)`\s+·\s+(.+)$/;
 // Toda linha de lista do INDEX.md é candidata a linha de empresa: linha solta vira problema, não sumiço.
 const RE_ITEM = /^-\s+/;
@@ -178,7 +183,7 @@ const SLUG_VALIDO = /^[A-Za-z0-9_-]+$/;
 const HANDLE_INSTAGRAM = /^[A-Za-z0-9._]{1,30}$/;
 const PRIORIDADES = ['Alta', 'Média', 'Adjacente', 'Validação', 'a definir'];
 const FORMATO_DA_LINHA =
-  '- [Nome](<slug>.md) — `<slug>` · id <número|—> · setor <texto> · país <texto> · prioridade <Alta|Média|Adjacente|Validação|a definir> · linkedin <sim|não> · instagram <handle|—> · pesquisa AAAA-MM-DD · <sem catálogo|catálogo AAAA-MM-DD> [· grupo <texto>] [· ⚠ <frase>]';
+  '- [Nome](<slug>.md) — `<slug>` · id <número|—> · setor <texto> · país <texto> · prioridade <Alta|Média|Adjacente|Validação|a definir> · linkedin <sim|não> · instagram <handle|—> · pesquisa AAAA-MM-DD [· grupo <texto>] [· ⚠ <frase>]';
 
 const falha = (tipo, detalhe) => ({ problema: { tipo, detalhe } });
 
@@ -190,8 +195,7 @@ function lerData(tipo, chave) {
   return (v) => (dataValida(v) ? { valor: v } : falha(tipo, `esperado "${chave} AAAA-MM-DD", veio "${chave} ${v}"`));
 }
 
-// Ordem da tabela = ordem em que --reconstruir e a migração escrevem a linha.
-// O "sem catálogo" chega aqui como catálogo com valor null; o ⚠ é sempre o último e leva o resto da linha.
+// Ordem da tabela = ordem em que --reconstruir e a migração escrevem a linha. O ⚠ é sempre o último e leva o resto da linha.
 const CAMPOS = [
   {
     chave: 'id',
@@ -227,25 +231,13 @@ const CAMPOS = [
     escrever: (v) => `instagram ${v || '—'}`,
   },
   { chave: 'pesquisa', propriedade: 'pesquisa', obrigatorio: true, ler: lerData('data_pesquisa_invalida', 'pesquisa'), escrever: (v) => `pesquisa ${v}` },
-  {
-    chave: 'catálogo',
-    propriedade: 'catalogo',
-    obrigatorio: true,
-    ler: (v) => {
-      if (v === null) return { valor: null };
-      if (/^\d{4}-\d{2}-\d{2}$/.test(v)) {
-        return dataValida(v) ? { valor: v } : falha('data_catalogo_invalida', `"${v}" não é uma data AAAA-MM-DD real`);
-      }
-      return falha('catalogo_fora_do_formato', `esperado "sem catálogo" ou "catálogo AAAA-MM-DD", veio "catálogo ${v}"`);
-    },
-    escrever: (v) => (v ? `catálogo ${v}` : 'sem catálogo'),
-  },
   { chave: 'grupo', propriedade: 'grupo', obrigatorio: false, ler: lerTextoLivre('grupo'), escrever: (v) => `grupo ${v}` },
   { chave: '⚠', propriedade: 'alerta', obrigatorio: false, ler: lerTextoLivre('⚠'), escrever: (v) => `⚠ ${v}` },
 ];
 const CAMPO_POR_CHAVE = new Map(CAMPOS.map((c) => [c.chave, c]));
 
 // Divide a cauda da linha em campos { chave, valor }; o ⚠ engole o resto, com · e tudo.
+// O "sem catálogo" da versão 2 chega como o campo catálogo, para a linha ser reconhecida como antiga.
 function separarCampos(resto) {
   const pedacos = resto.split(/\s+·\s+/).map((c) => c.trim()).filter(Boolean);
   const campos = [];
@@ -341,13 +333,18 @@ function parsearLinha(texto, numero) {
 
   if (ehCaudaAntiga(cabeca.resto)) {
     const antiga = parsearCaudaAntiga(cabeca.resto);
-    Object.assign(empresa, { id: antiga.id, setor: antiga.setor, pais: antiga.pais, pesquisa: antiga.pesquisa, catalogo: antiga.catalogo, alerta: antiga.alerta, formato: 1 });
+    Object.assign(empresa, { id: antiga.id, setor: antiga.setor, pais: antiga.pais, pesquisa: antiga.pesquisa, alerta: antiga.alerta, formato: 1 });
     problemas.push({ tipo: 'formato_antigo', detalhe: `a linha está no formato antigo (setor e país sem chave): ${PASTA_ANTIGA}` });
     return { empresa, problemas };
   }
 
   const vistos = new Set();
+  let temCatalogo = false;
   for (const { chave, valor, texto: trecho } of separarCampos(cabeca.resto)) {
+    if (chave === 'catálogo') {
+      temCatalogo = true;
+      continue;
+    }
     const campo = CAMPO_POR_CHAVE.get(chave);
     if (!campo) {
       problemas.push({ tipo: 'campo_desconhecido', detalhe: `"${trecho}" não começa por nenhuma chave conhecida (${CAMPOS.map((c) => c.chave).join(', ')})` });
@@ -362,10 +359,12 @@ function parsearLinha(texto, numero) {
     if (lido.problema) problemas.push({ campo: chave, ...lido.problema });
     else empresa[campo.propriedade] = lido.valor;
   }
-  // Linha sem o instagram é da versão 2: quem a converte é a migração, não uma correção à mão.
-  if (!vistos.has('instagram')) {
+  // Linha sem o instagram, ou ainda com o campo catálogo, é da versão 2: quem a converte é a migração,
+  // não uma correção à mão.
+  if (!vistos.has('instagram') || temCatalogo) {
     empresa.formato = 2;
-    problemas.push({ tipo: 'formato_antigo', detalhe: `a linha está no formato antigo (sem o campo instagram): ${PASTA_ANTIGA}` });
+    const falta = [!vistos.has('instagram') && 'sem o campo instagram', temCatalogo && 'com o campo catálogo, que agora sai das coletas'].filter(Boolean).join(' e ');
+    problemas.push({ tipo: 'formato_antigo', detalhe: `a linha está no formato antigo (${falta}): ${PASTA_ANTIGA}` });
   }
   for (const c of CAMPOS) {
     if (c.obrigatorio && !vistos.has(c.chave) && !(c.chave === 'instagram' && empresa.formato === 2)) {
@@ -438,7 +437,8 @@ function montarRodada(empresas, hoje) {
 }
 
 // Lê o índice e devolve a saída da validação, sem imprimir: o importar.js chama isto direto.
-function examinar(pasta, hoje) {
+// O catálogo de cada empresa é a data da última coleta que virou catálogo em <raizCatalogo>/<slug>/.
+function examinar(pasta, hoje, raizCatalogo = path.resolve(pasta, '..', 'catalog', 'raw', 'linkedin')) {
   const saida = {
     acao: 'validar',
     pasta,
@@ -506,13 +506,14 @@ function examinar(pasta, hoje) {
     const dias = e.pesquisa ? diasEntre(e.pesquisa, hoje) : null;
     const vencida = dias !== null && dias > 60;
     if (vencida) saida.pesquisa_vencida.push(e.slug);
+    e.catalogo = e.linkedin === false || !SLUG_VALIDO.test(e.slug) ? null : ultimoCatalogo(path.join(raizCatalogo, e.slug));
     if (e.catalogo && diasEntre(e.catalogo, hoje) < 0) {
       saida.avisos.push({
         tipo: 'catalogo_no_futuro',
         linha: numero,
         slug: e.slug,
         catalogo: e.catalogo,
-        detalhe: `${e.nome} tem catálogo ${e.catalogo}, depois de hoje (${hoje}): a data está errada ou o relógio do computador está; ela entra na rodada como devida até a data ser corrigida`,
+        detalhe: `o último catálogo de ${e.nome} está numa pasta de coleta de ${e.catalogo}, depois de hoje (${hoje}): o relógio ou o fuso do computador estava adiantado quando ela foi gravada; ela entra na rodada como devida até a pasta ser corrigida`,
       });
     }
 
@@ -550,50 +551,13 @@ function examinar(pasta, hoje) {
   return saida;
 }
 
-function validar(pasta, hoje) {
-  const saida = examinar(pasta, hoje);
+function validar(pasta, hoje, raizCatalogo) {
+  const saida = examinar(pasta, hoje, raizCatalogo);
   process.stdout.write(JSON.stringify(saida, null, 2) + '\n');
   process.exit(saida.ok ? 0 : 1);
 }
 
-// O campo catálogo é do disco, não do índice: cada coleta da profills-garimpo deixa
-// catalog/raw/linkedin/<slug>/<AAAA-MM-DD>/. Vale a data mais recente que trouxe post — meta.json com
-// status "ok" ou posts.json com pelo menos um post. Coleta vazia (sem_posts, página não
-// gerenciada) e coleta interrompida ("concluida": false) não contam como catálogo.
-function catalogoNoDisco(raiz, slug) {
-  const pastaEmpresa = path.join(raiz, slug);
-  let datas;
-  try {
-    datas = fs
-      .readdirSync(pastaEmpresa, { withFileTypes: true })
-      .filter((d) => d.isDirectory() && /^\d{4}-\d{2}-\d{2}$/.test(d.name) && dataValida(d.name))
-      .map((d) => d.name)
-      .sort()
-      .reverse();
-  } catch (e) {
-    return null;
-  }
-  for (const data of datas) {
-    const dia = path.join(pastaEmpresa, data);
-    let meta = null;
-    try {
-      meta = JSON.parse(lerTexto(path.join(dia, 'meta.json')));
-    } catch (e) {
-      meta = null;
-    }
-    if (meta && meta.concluida === false) continue;
-    if (meta && meta.status === 'ok') return { data, prova: 'meta.json com status ok' };
-    try {
-      const posts = JSON.parse(lerTexto(path.join(dia, 'posts.json')));
-      if (Array.isArray(posts) && posts.length) return { data, prova: `posts.json com ${posts.length} post(s)` };
-    } catch (e) {
-      // pasta sem posts.json legível: não é catálogo, segue para a data anterior
-    }
-  }
-  return null;
-}
-
-function reconstruir(pasta, hoje, raizCatalogo) {
+function reconstruir(pasta, hoje) {
   const indice = lerIndice(pasta);
   const anteriores = new Map();
   const linhasIlegiveis = [];
@@ -604,7 +568,7 @@ function reconstruir(pasta, hoje, raizCatalogo) {
       if (r.erro) linhasIlegiveis.push({ linha: i + 1, trecho: texto.slice(0, 120) });
       else {
         const e = r.empresa;
-        anteriores.set(e.slug, { catalogo: e.catalogo, alerta: e.alerta, prioridade: e.prioridade, grupo: e.grupo, instagram: e.instagram });
+        anteriores.set(e.slug, { alerta: e.alerta, prioridade: e.prioridade, grupo: e.grupo, instagram: e.instagram });
       }
     });
   }
@@ -616,8 +580,6 @@ function reconstruir(pasta, hoje, raizCatalogo) {
     hoje,
     arquivo: indice.caminho,
     indice_existia: indice.existe,
-    catalogo_raiz: raizCatalogo,
-    catalogo_raiz_existe: fs.existsSync(raizCatalogo),
     n_fichas: fichas.length,
     escritas: [],
     fichas_ignoradas: [],
@@ -650,18 +612,6 @@ function reconstruir(pasta, hoje, raizCatalogo) {
       continue;
     }
     const anterior = anteriores.get(ficha.slug) || {};
-    const doDisco = catalogoNoDisco(raizCatalogo, ficha.slug);
-    // Entre a data do disco e a do índice anterior vale a mais recente: nenhuma das duas mente,
-    // e a do disco costuma ser a que o índice perdido não chegou a registrar.
-    let dataCatalogo = null;
-    let origem = 'sem catálogo';
-    if (doDisco && (!anterior.catalogo || doDisco.data >= anterior.catalogo)) {
-      dataCatalogo = doDisco.data;
-      origem = 'catalog/raw/linkedin';
-    } else if (anterior.catalogo) {
-      dataCatalogo = anterior.catalogo;
-      origem = 'índice anterior';
-    }
     const setor = resumirSetor(ficha.setor);
     const prioridade = ficha.prioridade || anterior.prioridade || 'a definir';
     const grupo = ficha.grupo || anterior.grupo || null;
@@ -677,7 +627,6 @@ function reconstruir(pasta, hoje, raizCatalogo) {
         linkedin: ficha.linkedin,
         instagram,
         pesquisa: ficha.pesquisa || '[a confirmar]',
-        catalogo: dataCatalogo,
         grupo,
         alerta: anterior.alerta || null,
       }),
@@ -693,9 +642,6 @@ function reconstruir(pasta, hoje, raizCatalogo) {
       instagram,
       grupo,
       pesquisa: ficha.pesquisa,
-      catalogo: dataCatalogo,
-      origem_catalogo: origem,
-      prova_catalogo: origem === 'catalog/raw/linkedin' ? doDisco.prova : null,
       alerta_preservado: anterior.alerta || null,
       campos_a_confirmar: ['setor', 'pais', 'pesquisa'].filter((c) => !ficha[c]),
     });
@@ -856,9 +802,9 @@ function principal(argv) {
   // catalog/raw/linkedin/ fica em DADOS, ao lado de refs/; --catalog sobrescreve quando não fica.
   const raizCatalogo = catalogo ? path.resolve(catalogo) : path.resolve(pasta, '..', 'catalog', 'raw', 'linkedin');
 
-  if (acao === 'reconstruir') return reconstruir(pasta, hoje, raizCatalogo);
+  if (acao === 'reconstruir') return reconstruir(pasta, hoje);
   if (acao === 'procurar') return procurar(pasta, termo);
-  return validar(pasta, hoje);
+  return validar(pasta, hoje, raizCatalogo);
 }
 
 module.exports = {
