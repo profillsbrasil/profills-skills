@@ -68,7 +68,7 @@
         "A lista sai da saída do indice.js (uma rodada de validação sobre <DADOS>/refs), não de uma leitura solta do arquivo",
         "Nomeia as 6 empresas pelos nomes de exibição do índice (Cetro Máquinas, Maqinox indústria de Máquinas, Tecnoenvase Máquinas e Equipamentos, Tecnox do Brasil, Skymsen, Sulpack Indústria de Máquinas), sem expor slug cru no lugar do nome",
         "Para cada uma das 6 informa o setor e a data da última pesquisa (2026-07-14), campo a campo coerentes com evals/profills-radar/files/4/linkedin-data/refs/INDEX.md — não vale uma frase coletiva que cubra só parte das empresas",
-        "Marca a Cetro Máquinas como catalogada em 14/07/2026 e exatamente cinco empresas como nunca catalogadas",
+        "Marca Cetro, Maqinox e Skymsen como catalogadas em 14/07/2026 e exatamente três empresas (Tecnox, Tecnoenvase e Sulpack) como nunca catalogadas",
         "Repassa o alerta ⚠ de presença digital fraca da Sulpack (~38 seguidores) e não atribui alerta a nenhuma das outras cinco",
         "NEGATIVA: não inventa dado que o índice não tem — nenhum número de seguidores, contagem de posts, porte ou data que não esteja no INDEX.md ou na saída do indice.js aparece na resposta (o ~38 da Sulpack é a única exceção, porque vem do alerta)",
         "NEGATIVA: a árvore linkedin-data/ fica byte-a-byte igual à do estado inicial — nenhum selection.md criado, nenhuma ficha ou índice alterado",
