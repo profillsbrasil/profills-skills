@@ -182,15 +182,29 @@ function blocoDeExtracao() {
   return m[1];
 }
 
+// O que existe no escopo em que o Codex Desktop roda JavaScript na página (page.playwright.evaluate, "read-only
+// page scope"), medido por sonda em 2026-11-26. Faltam lá, entre outros: parseFloat, parseInt, BigInt, Uint8Array,
+// atob e globalThis. O bloco roda aqui só com esta lista, para um global novo quebrar no teste e não no Codex.
+const GLOBAIS_DO_CODEX = ['Number', 'Math', 'Date', 'JSON', 'String', 'Array', 'Object', 'RegExp', 'Set', 'Map',
+  'isNaN', 'setTimeout', 'Promise', 'console', 'window', 'document'];
+
 function extrai(body) {
   const window = {};
-  const ctx = vm.createContext({ document: { body, querySelectorAll: (s) => body.querySelectorAll(s) }, window, atob });
-  // O avaliador de JavaScript do Codex Desktop não tem BigInt: o bloco roda sem ele, e sem literal `0n`.
-  const bloco = blocoDeExtracao();
-  assert.ok(!/\bBigInt\b|\b\d+n\b/.test(bloco), 'o bloco de extração não pode usar BigInt nem literal 0n');
-  vm.runInContext('globalThis.BigInt = undefined', ctx);
-  const retorno = vm.runInContext(bloco, ctx);
+  const ctx = vm.createContext({ document: { body, querySelectorAll: (s) => body.querySelectorAll(s) }, window });
+  vm.runInContext(
+    `(() => { const fica = new Set(${JSON.stringify(GLOBAIS_DO_CODEX)});
+      for (const nome of Object.getOwnPropertyNames(globalThis)) if (!fica.has(nome)) { try { delete globalThis[nome]; } catch (e) {} } })()`,
+    ctx,
+  );
+  const retorno = vm.runInContext(blocoDeExtracao(), ctx);
   return JSON.parse(JSON.stringify({ retorno, completos: window.__garimpo }));
+}
+
+// Os outros blocos ```js do navegacao.md não têm DOM de fixture: confere-se ao menos que não citam o que falta lá.
+const FALTAM_NO_CODEX = /\b(parseFloat|parseInt|BigInt|Uint8Array|atob|globalThis|Boolean)\b|\b\d+n\b/;
+for (const [, js] of fs.readFileSync(NAVEGACAO, 'utf8').matchAll(/```js\n([\s\S]*?)\n```/g)) {
+  const achado = js.match(FALTAM_NO_CODEX);
+  assert.ok(!achado, `bloco js do navegacao.md usa ${achado && achado[0]}, que o escopo do Codex Desktop não tem`);
 }
 
 const casos = [];

@@ -89,7 +89,7 @@ await (async () => {
   const numero = (t) => {
     const m = limpa(t).match(/^(\d[\d.,]*)\s*(mil|mi)?$/);
     if (!m) return null;
-    const n = parseFloat(m[1].replace(/\./g, '').replace(',', '.'));
+    const n = Number(m[1].replace(/\./g, '').replace(',', '.'));
     return Math.round(n * (m[2] === 'mil' ? 1e3 : m[2] === 'mi' ? 1e6 : 1));
   };
   const posts = [];
@@ -105,8 +105,23 @@ await (async () => {
     const REL = /^há \d+ ?(min|h|d|sem|m|mês|meses|a|ano|anos)\b/;
     const idDaChave = (chave) => {
       const b64 = chave.split('-replaceableCommentTools')[0].replace(/-/g, '+').replace(/_/g, '/');
-      let b;
-      try { b = Uint8Array.from(atob(b64), (c) => c.charCodeAt(0)); } catch (e) { return null; }
+      // Decodifica o base64 à mão: o escopo do Codex Desktop não traz o decodificador nem array de bytes.
+      const ALFABETO = 'ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789+/';
+      const b = [];
+      let acumulado = 0;
+      let bits = 0;
+      for (const c of b64.replace(/=+$/, '')) {
+        const valor = ALFABETO.indexOf(c);
+        if (valor < 0) return null;
+        acumulado = acumulado * 64 + valor;
+        bits += 6;
+        if (bits >= 8) {
+          bits -= 8;
+          const divisor = Math.pow(2, bits);
+          b.push(Math.floor(acumulado / divisor));
+          acumulado %= divisor;
+        }
+      }
       const tipo = b[0] === 0x0a ? 'activity' : b[0] === 0x12 ? 'ugcPost' : null;
       if (!tipo || b[2] !== 0x08) return null;
       const grupos = [];
@@ -141,7 +156,7 @@ await (async () => {
     };
     const contadores = (card) => {
       const icones = Object.entries(ICONES).map(([campo, id]) => [campo, card.querySelector(`svg[id="${id}"]`)]);
-      const achados = icones.map(([, svg]) => svg).filter(Boolean);
+      const achados = icones.map(([, svg]) => svg).filter((x) => x);
       const lidos = {};
       icones.forEach(([campo, svg]) => {
         const outros = achados.filter((s) => s !== svg);
