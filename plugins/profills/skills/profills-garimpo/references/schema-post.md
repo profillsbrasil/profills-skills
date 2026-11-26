@@ -71,7 +71,7 @@ Post em outro idioma se classifica com as mesmas taxonomias fechadas: `hook_cate
 }
 ```
 
-O `resumo_pt` é o que a `profills-post` e as leituras em pt-BR (perfil, boletim) usam para entender o post sem traduzir de novo. O `metricas.js` devolve a contagem por idioma em `idiomas` e avisa `resumo_pt_ausente` quando um post fora do português não tem resumo.
+O `resumo_pt` é o que as leituras em pt-BR (perfil, boletim) usam para entender o post sem traduzir de novo. A `profills-post` ainda não o lê. O `metricas.js` devolve a contagem por idioma em `idiomas` e avisa `resumo_pt_ausente` quando um post fora do português não tem resumo.
 
 ## Computado (na síntese, não na extração)
 
