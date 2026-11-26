@@ -37,7 +37,7 @@ Comece pela porta de entrada:
 
 Rode as checagens de `references/shell.md` — cada comando de fato executado, com a saída dele registrada, porque é essa saída que sustenta cada ✅/❌ da tabela — e monte o quadro inteiro antes de falar com o usuário — ele recebe um quadro pronto, em vez de acompanhar seis comandos passando. Concluído quando você sabe o estado de cada uma das seis peças:
 
-- **Plugin `profills-skills`** — `claude plugin list` mostra `profills-skills`. **Exceção "via repo"**: se o toplevel git do diretório atual tem `skills/profills-setup/SKILL.md`, você está dentro do repo-fonte, as skills já vêm dos symlinks de `.claude/skills` e o plugin não é necessário — marque ✅ com a nota "via repo" e não instale nada. Esse mesmo sinal decide onde criar a pasta de dados, no passo 3.
+- **Plugin `profills-skills`** — `claude plugin list` mostra `profills-skills`. **Exceção "via repo"**: se o toplevel git do diretório atual tem `plugins/profills/skills/profills-setup/SKILL.md`, você está dentro do repo-fonte, as skills já vêm dos symlinks de `.claude/skills` e o plugin não é necessário — marque ✅ com a nota "via repo" e não instale nada. Esse mesmo sinal decide onde criar a pasta de dados, no passo 3.
 - **humanize-pt-br** — `~/.claude/skills/humanize-pt-br/SKILL.md` ou `~/.agents/skills/humanize-pt-br/SKILL.md` existe.
 - **Node/npx** — `command -v npx` (Bash) ou `Get-Command npx` (PowerShell).
 - **Pasta `DADOS`** — resolvida pela regra acima, com `refs/`, `catalog/raw/` e `drafts/` dentro.
@@ -78,7 +78,7 @@ Nesta ordem, um item por vez:
   npx skills add othavi0/skills --skill humanize-pt-br -g -y -a claude-code
   ```
   Instalada quando `~/.claude/skills/humanize-pt-br/SKILL.md` existe.
-- **`DADOS` ❌**: crie onde o sinal do passo 1 mandar — dentro do repo-fonte (`skills/profills-setup/SKILL.md` no toplevel), a pasta é `linkedin-data/` na raiz do repo; fora dele, é `~/Profills LinkedIn/` (no Windows, `C:\Users\NOME\Profills LinkedIn`). O comando por shell e o `.gitignore` do caso repo-fonte estão em `references/shell.md`. Pronta quando o `ls` (ou `Get-ChildItem`) da pasta, rodado depois de criar, mostra `refs/`, `catalog/raw/` e `drafts/` — "já resolvi" só depois de ver essa saída —, o usuário ouviu o caminho no formato do sistema dele e — no repo-fonte — `git check-ignore linkedin-data/selection.md` responde o caminho.
+- **`DADOS` ❌**: crie onde o sinal do passo 1 mandar — dentro do repo-fonte (`plugins/profills/skills/profills-setup/SKILL.md` no toplevel), a pasta é `linkedin-data/` na raiz do repo; fora dele, é `~/Profills LinkedIn/` (no Windows, `C:\Users\NOME\Profills LinkedIn`). O comando por shell e o `.gitignore` do caso repo-fonte estão em `references/shell.md`. Pronta quando o `ls` (ou `Get-ChildItem`) da pasta, rodado depois de criar, mostra `refs/`, `catalog/raw/` e `drafts/` — "já resolvi" só depois de ver essa saída —, o usuário ouviu o caminho no formato do sistema dele e — no repo-fonte — `git check-ignore linkedin-data/selection.md` responde o caminho.
 - **unslop**: só entra quando o usuário pedir por nome. Aí `AskUserQuestion` com o conflito na mesa — **"Seguir só com a humanize-pt-br"** (recomendada: as duas brigam na regra de travessão) ou **"Instalar a unslop mesmo assim"** (comandos e o aviso em `references/instalacao.md`).
 
 Concluído quando cada linha ❌ da tabela virou ✅ ou virou uma decisão que o usuário tomou ("deixar o Node para depois").

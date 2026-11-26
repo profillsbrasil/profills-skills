@@ -7,7 +7,7 @@ A ferramenta de shell do Claude Code depende do sistema: Linux e Mac usam Bash; 
 | Checagem | Bash (Linux, Mac, Git Bash) | PowerShell (Windows sem Git) |
 |---|---|---|
 | Estou num repo git? | `git rev-parse --show-toplevel` | igual (sem `git` instalado o comando não existe → você não está num repo, a linha seguinte não se aplica; use `HOME`) |
-| É o repo-fonte? | `test -f "$(git rev-parse --show-toplevel)/skills/profills-setup/SKILL.md"` | `Test-Path "$(git rev-parse --show-toplevel)\skills\profills-setup\SKILL.md"` |
+| É o repo-fonte? | `test -f "$(git rev-parse --show-toplevel)/plugins/profills/skills/profills-setup/SKILL.md"` | `Test-Path "$(git rev-parse --show-toplevel)\plugins\profills\skills\profills-setup\SKILL.md"` |
 | npx existe? | `command -v npx` | `Get-Command npx` |
 | humanize-pt-br instalada? | `ls ~/.claude/skills/humanize-pt-br/SKILL.md ~/.agents/skills/humanize-pt-br/SKILL.md 2>/dev/null` (uma linha basta) | `Test-Path "$env:USERPROFILE\.claude\skills\humanize-pt-br\SKILL.md","$env:USERPROFILE\.agents\skills\humanize-pt-br\SKILL.md"` |
 | `DADOS` existe com as subpastas? | `ls -d "<DADOS>/refs" "<DADOS>/catalog/raw" "<DADOS>/drafts" "<DADOS>/boletins"` | `Test-Path "<DADOS>\refs","<DADOS>\catalog\raw","<DADOS>\drafts","<DADOS>\boletins"` |
