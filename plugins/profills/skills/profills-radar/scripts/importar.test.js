@@ -1,6 +1,6 @@
 #!/usr/bin/env node
 // importar.test.js — casos da importação de planilha, rodados pelo terminal como o comercial roda.
-// Uso: node skills/profills-radar/scripts/importar.test.js   (Node >= 18, sem dependência)
+// Uso: node plugins/profills/skills/profills-radar/scripts/importar.test.js   (Node >= 18, sem dependência)
 // A planilha é a fixture fictícia do eval 8, gerada por fixtures/gerar-planilhas.py.
 
 const assert = require('assert');

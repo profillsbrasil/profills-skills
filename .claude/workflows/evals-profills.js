@@ -12,6 +12,7 @@ export const meta = {
 
 // ---- parâmetros -----------------------------------------------------------
 const REPO = '/home/othavio/Work/profills-skills'
+const SKILLS = REPO + '/plugins/profills/skills'
 const TODAS = ['profills-radar', 'profills-garimpo', 'profills-post', 'profills-voz', 'profills-navegador', 'profills-setup', 'profills-boletim']
 const skills = (args && args.skills && args.skills.length) ? args.skills : TODAS
 const baseline = (args && args.baseline) || 'main'
@@ -43,8 +44,8 @@ const AGG = { type: 'object', properties: {
 phase('Preparar')
 const plano = await agent([
   'Prepare o workspace de evals. Repo: ' + REPO + ' (SOMENTE LEITURA, exceto o que está descrito abaixo, tudo fora do repo). Workspace: ' + WS + '.',
-  '1. Snapshot do baseline: mkdir -p ' + WS + '/snapshot-' + baseline.replace(/[^a-zA-Z0-9]/g, '_') + ' e dentro dele: git -C ' + REPO + ' archive ' + baseline + ' skills | tar -x -C <pasta>. O caminho completo da pasta skills/ do snapshot é o campo snapshot.',
-  '2. Para cada skill em ' + JSON.stringify(skills) + ', leia ' + REPO + '/skills/<skill>/evals/evals.json. Para cada eval: name = "eval-<id>-" + slug ascii de até 40 chars do prompt; dir = ' + WS + '/<skill>/' + IT + '/<name>. Crie dir com eval_metadata.json {eval_id, eval_name, prompt, expected_output, assertions: expectations ou []}.',
+  '1. Snapshot do baseline: mkdir -p ' + WS + '/snapshot-' + baseline.replace(/[^a-zA-Z0-9]/g, '_') + ' e dentro dele: git -C ' + REPO + ' archive ' + baseline + ' <skills> | tar -x -C <pasta>, onde <skills> é plugins/profills/skills se git -C ' + REPO + ' cat-file -e ' + baseline + ':plugins/profills/skills sai 0, senão skills (layout de antes do plugin ir para plugins/profills). O caminho completo de <pasta>/<skills> é o campo snapshot.',
+  '2. Para cada skill em ' + JSON.stringify(skills) + ', leia ' + SKILLS + '/<skill>/evals/evals.json. Para cada eval: name = "eval-<id>-" + slug ascii de até 40 chars do prompt; dir = ' + WS + '/<skill>/' + IT + '/<name>. Crie dir com eval_metadata.json {eval_id, eval_name, prompt, expected_output, assertions: expectations ou []}.',
   '3. Em cada dir, para cfg em [atual, baseline]: mkdir <dir>/<cfg>/outputs, <dir>/<cfg>/run-1 e <dir>/<cfg>/repo; copie ' + REPO + '/linkedin-data para <dir>/<cfg>/repo/linkedin-data; se o eval tem files, copie o conteúdo de cada pasta listada (relativa à raiz da skill) POR CIMA de <dir>/<cfg>/repo (sobrescrevendo); depois git init -q <dir>/<cfg>/repo. Se a fixture pede ausência de arquivo (existe um arquivo .apagar listando caminhos), apague-os.',
   '4. Devolva o plano completo no StructuredOutput.',
 ].join('\n'), { label: 'preparar', phase: 'Preparar', schema: PLAN, model: 'sonnet' })
@@ -53,7 +54,7 @@ log(plano.evals.length + ' evals preparados; baseline ' + baseline)
 
 // ---- fase 1+2: rodar e notar (pipeline por eval) --------------------------------
 const runPrompt = (e, cfg) => {
-  const skillPath = cfg === 'atual' ? REPO + '/skills/' + e.skill : plano.snapshot + '/' + e.skill
+  const skillPath = cfg === 'atual' ? SKILLS + '/' + e.skill : plano.snapshot + '/' + e.skill
   const runDir = e.dir + '/' + cfg
   return [
     'Você é o Claude Code atendendo um usuário comercial (não dev). Execute o pedido SEGUINDO A SKILL em ' + skillPath + '/SKILL.md (leia inteiro, mais as references que ela mandar; scripts/ da skill podem ser executados com node). Fidelidade ao que a skill manda é o que está sendo medido.',
@@ -73,7 +74,7 @@ const runPrompt = (e, cfg) => {
 }
 const gradePrompt = (e) => [
   'Você é o grader. Leia primeiro ' + SC + '/agents/grader.md. Eval: ' + e.dir + '/eval_metadata.json — o campo assertions é a lista FIXA de expectations (se estiver vazio, derive 4-8 de expected_output e grave-as de volta em assertions).',
-  'Duas execuções: ' + e.dir + '/atual/outputs/ (skill ATUAL: ' + REPO + '/skills/' + e.skill + ') e ' + e.dir + '/baseline/outputs/ (BASELINE: ' + plano.snapshot + '/' + e.skill + '). Grade as duas com as MESMAS asserções. Regra dura: afirmação do transcript sem evidência em arquivo de outputs/ ou na "## Resposta final" é FAIL. Quando a asserção citar um script da skill (metricas.js, checar-formato.js, indice.js), RODE o script sobre o artefato para decidir, sempre com --hoje ' + HOJE + ' (a data congelada do caso).',
+  'Duas execuções: ' + e.dir + '/atual/outputs/ (skill ATUAL: ' + SKILLS + '/' + e.skill + ') e ' + e.dir + '/baseline/outputs/ (BASELINE: ' + plano.snapshot + '/' + e.skill + '). Grade as duas com as MESMAS asserções. Regra dura: afirmação do transcript sem evidência em arquivo de outputs/ ou na "## Resposta final" é FAIL. Quando a asserção citar um script da skill (metricas.js, checar-formato.js, indice.js), RODE o script sobre o artefato para decidir, sempre com --hoje ' + HOJE + ' (a data congelada do caso).',
   'Escreva o grading.json em DUAS cópias por execução: <run>/grading.json e <run>/run-1/grading.json (o aggregate_benchmark lê run-*/; o viewer lê a raiz). Formato: {"expectations":[{"text","passed","evidence"}],"summary":{"passed","failed","total","pass_rate"},"eval_feedback":{"weak_assertions":[],"missing_coverage":[],"notes":"uma frase"}}. Campos text/passed/evidence exatamente assim.',
 ].join('\n')
 

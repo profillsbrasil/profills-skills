@@ -1,5 +1,5 @@
 # Gera as planilhas fictícias que o importar.test.js e o eval 8 da profills-radar leem.
-# Uso: uv run --no-project --with openpyxl python -I skills/profills-radar/scripts/fixtures/gerar-planilhas.py
+# Uso: uv run --no-project --with openpyxl python -I plugins/profills/skills/profills-radar/scripts/fixtures/gerar-planilhas.py
 # Todas as empresas são inventadas. O openpyxl grava texto inline (t="inlineStr"), como o OpenXML SDK;
 # a aba "Mapa competitivo" é reescrita com texto compartilhado (sharedStrings.xml), como o Excel grava.
 

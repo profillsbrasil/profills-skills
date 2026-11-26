@@ -1,6 +1,6 @@
 #!/usr/bin/env node
 // mapa.test.js — casos do DADOS/CLAUDE.md mantido pelo mapa.js, rodados pelo terminal como as skills rodam.
-// Uso: node skills/profills-setup/scripts/mapa.test.js   (Node >= 18, sem dependência)
+// Uso: node plugins/profills/skills/profills-setup/scripts/mapa.test.js   (Node >= 18, sem dependência)
 // Cada caso monta uma pasta temporária, roda mapa.js como processo e confere a saída e o arquivo.
 
 const assert = require('assert');

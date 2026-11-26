@@ -1,6 +1,6 @@
 #!/usr/bin/env node
 // extracao.test.js: roda o JS de "## Extração (JS)" de references/navegacao.md contra um DOM de fixture.
-// Uso: node skills/profills-garimpo/scripts/extracao.test.js [navegacao.md]   (Node >= 18, sem dependência)
+// Uso: node plugins/profills/skills/profills-garimpo/scripts/extracao.test.js [navegacao.md]   (Node >= 18, sem dependência)
 // O DOM é sintético, montado a partir da descrição das duas estruturas no navegacao.md, não copiado de página real.
 // O innerText aqui é aproximado: elemento de bloco quebra linha, inline emenda, <br> quebra linha.
 

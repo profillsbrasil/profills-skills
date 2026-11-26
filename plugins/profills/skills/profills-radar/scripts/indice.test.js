@@ -1,6 +1,6 @@
 #!/usr/bin/env node
 // indice.test.js — a rodada por camadas de prioridade do indice.js, rodada pelo terminal.
-// Uso: node skills/profills-radar/scripts/indice.test.js   (Node >= 18, sem dependência)
+// Uso: node plugins/profills/skills/profills-radar/scripts/indice.test.js   (Node >= 18, sem dependência)
 
 const assert = require('assert');
 const fs = require('fs');

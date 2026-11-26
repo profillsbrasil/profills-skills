@@ -1,6 +1,6 @@
 #!/usr/bin/env node
 // checar-formato.test.js — casos do checar-formato.js, rodados pelo terminal como a skill roda.
-// Uso: node skills/profills-post/scripts/checar-formato.test.js   (Node >= 18, sem dependência)
+// Uso: node plugins/profills/skills/profills-post/scripts/checar-formato.test.js   (Node >= 18, sem dependência)
 // Cada caso grava um rascunho (e um voz.md quando precisa) numa pasta temporária, roda o script como processo e confere o JSON.
 
 const assert = require('assert');

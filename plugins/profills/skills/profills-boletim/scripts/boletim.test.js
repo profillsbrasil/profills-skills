@@ -1,6 +1,6 @@
 #!/usr/bin/env node
 // boletim.test.js — casos do boletim.js, rodados pelo terminal como a skill roda.
-// Uso: node skills/profills-boletim/scripts/boletim.test.js   (Node >= 18, sem dependência)
+// Uso: node plugins/profills/skills/profills-boletim/scripts/boletim.test.js   (Node >= 18, sem dependência)
 // Cada caso monta uma pasta de dados temporária com empresas fictícias, roda boletim.js como processo e confere o JSON.
 
 const assert = require('assert');

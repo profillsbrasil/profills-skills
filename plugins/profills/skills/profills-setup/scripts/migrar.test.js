@@ -1,6 +1,6 @@
 #!/usr/bin/env node
 // migrar.test.js — casos da migração da pasta DADOS, rodados pelo terminal como o comercial roda.
-// Uso: node skills/profills-setup/scripts/migrar.test.js   (Node >= 18, sem dependência)
+// Uso: node plugins/profills/skills/profills-setup/scripts/migrar.test.js   (Node >= 18, sem dependência)
 // Cada caso monta uma pasta temporária, roda migrar.js e indice.js como processos e confere a saída.
 
 const assert = require('assert');
