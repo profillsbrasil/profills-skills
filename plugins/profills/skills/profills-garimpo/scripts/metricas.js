@@ -123,6 +123,10 @@ function diasEntre(a, b) {
   return Math.round((Date.parse(b) - Date.parse(a)) / 86400000);
 }
 
+// O banco.js do plugin lê o engajamento com esta mesma conta. Carregado com require(), o script para aqui.
+module.exports = { numeroBr, analisaEngajamento };
+if (require.main !== module) return;
+
 // ------------------------------------------------------------------- argumentos
 
 const USO = 'Uso: node scripts/metricas.js <pasta raw/linkedin/<slug>/<AAAA-MM-DD>> [--janela padrao|ampliada]';

@@ -101,7 +101,7 @@ caso('monta do zero e conta o que está nos arquivos', () => {
   assert.strictEqual(r.arquivo, path.join(dados, 'indice.db'));
   assert.strictEqual(r.refeito, 'banco_ausente');
   assert.deepStrictEqual(r.totais, { empresas: 3, contas: 5, coletas: 6, posts: 6, metricas: 8 });
-  assert.deepStrictEqual(r.avisos.map((a) => [a.tipo, a.pasta]), [['post_sem_chave', path.join('catalog', 'raw', 'linkedin', 'orfa', '2026-11-01')]]);
+  assert.deepStrictEqual(r.avisos.map((a) => [a.tipo, a.pasta]), [['post_sem_chave', 'catalog/raw/linkedin/orfa/2026-11-01']]);
 });
 
 caso('cada coleta guarda status, concluída e catálogo pela regra de coleta.js', () => {
@@ -254,11 +254,11 @@ caso('banco de outra versão do schema é refeito', () => {
   atualizar(dados);
   const { DatabaseSync } = require('node:sqlite');
   const db = new DatabaseSync(path.join(dados, 'indice.db'));
-  db.exec("UPDATE meta SET valor = '0' WHERE chave = 'schema'; DELETE FROM post;");
+  db.exec("UPDATE meta SET valor = '0' WHERE chave = 'schema'; DELETE FROM metrica;");
   db.close();
   const r = atualizar(dados);
   assert.deepStrictEqual([r.ok, r.refeito], [true, 'schema_novo']);
-  assert.strictEqual(r.totais.posts, 6);
+  assert.strictEqual(r.totais.metricas, 8);
 });
 
 caso('arquivo corrompido é apagado e refeito', () => {
