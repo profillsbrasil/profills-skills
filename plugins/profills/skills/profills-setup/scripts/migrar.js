@@ -5,13 +5,15 @@
 // catalog/raw/linkedin/<slug>/ (anotando o movimento em .backup/<hoje>/movidos.jsonl), converte as
 // linhas antigas do refs/INDEX.md (e tira delas o campo catálogo, que agora sai das coletas), converte
 // STATUS.txt legado em meta.json, escreve "concluida": true no meta.json que ainda não tem o campo, põe o
-// banco derivado (indice.db) no .gitignore da pasta quando ela tem um e grava DADOS/.profills.json por
-// último. Uma execução leva a pasta da versão 1 ou 2 até a 3. Cada ação sai do que está no disco: rodar de novo depois de terminar
-// devolve acoes [] e não muda nenhum byte; rodar de novo depois de cair no meio termina o que faltou.
+// banco derivado (indice.db) no .gitignore da pasta quando ela tem um, passa o texto do CLAUDE.md antigo
+// (regras e Notas da equipe) para o AGENTS.md e deixa no CLAUDE.md só a linha "@AGENTS.md", e grava
+// DADOS/.profills.json por último. Uma execução leva a pasta da versão 1, 2 ou 3 até a 4. Cada ação sai
+// do que está no disco: rodar de novo depois de terminar devolve acoes [] e não muda nenhum byte; rodar
+// de novo depois de cair no meio termina o que faltou.
 // Para desfazer um movimento, leia movidos.jsonl de baixo para cima e mova cada "para" de volta a "de".
 // Uso:     node scripts/migrar.js <DADOS> [--aplicar] [--hoje AAAA-MM-DD]
 // Exemplo: node scripts/migrar.js "$HOME/Profills LinkedIn"
-//          → {"dados":"...","versao_atual":1,"versao_alvo":2,"acoes":[{"tipo":"converter_indice",...}],"ok":true}
+//          → {"dados":"...","versao_atual":1,"versao_alvo":4,"acoes":[{"tipo":"converter_indice",...}],"ok":true}
 // Saída: JSON em stdout. Exit 0 = ok · 1 = alguma linha ou pasta não deu para converter ou a gravação
 // parou no meio (campo erro) · 2 = erro de uso. avisos[] não impede a migração.
 
@@ -21,7 +23,7 @@ const path = require('path');
 // O formato da linha do índice é da profills-radar; a migração usa o mesmo parser e o mesmo escritor.
 const indice = require(path.join(__dirname, '..', '..', 'profills-radar', 'scripts', 'indice.js'));
 
-const VERSAO_ALVO = 3;
+const VERSAO_ALVO = 4;
 const MARCADOR = '.profills.json';
 const RAW = path.join('catalog', 'raw');
 // Desde a versão 3 a rede é o primeiro nível de catalog/raw/: <rede>/<conta>/<AAAA-MM-DD>/.
@@ -30,6 +32,11 @@ const REDES = ['linkedin', 'instagram'];
 const SUBPASTAS = ['refs', path.join(RAW, 'linkedin'), 'drafts', 'boletins'];
 // O banco.js do plugin refaz DADOS/indice.db dos arquivos a qualquer hora: ele e os arquivos do WAL não vão para o git.
 const IGNORAR_BANCO = ['indice.db', 'indice.db-wal', 'indice.db-shm'];
+// Desde a versão 4 as instruções da pasta vivem no AGENTS.md (o Codex lê esse), e o CLAUDE.md só o importa.
+const INSTRUCOES = 'AGENTS.md';
+const IMPORTADOR = 'CLAUDE.md';
+const IMPORT_CLAUDE = '@AGENTS.md\n';
+const ehImport = (bruto) => bruto.replace(/^﻿/, '').replace(/\r\n/g, '\n').trim() === IMPORT_CLAUDE.trim();
 
 function morrer(mensagem) {
   process.stderr.write(mensagem + '\n');
@@ -295,11 +302,40 @@ function planejarGitignore(dados) {
   return [{ tipo: 'ignorar_banco', alvo: '.gitignore', detalhe: `o .gitignore passa a ignorar ${faltam.join(', ')}`, conteudo: original + separador + bloco + quebra, backup: true }];
 }
 
+// CLAUDE.md com texto que não é o import é o formato antigo: o texto vai byte a byte para o AGENTS.md, e o
+// CLAUDE.md vira o import. CLAUDE.md ausente ou já o import não pede nada: o mapa.js cria o que faltar.
+// AGENTS.md igual ao CLAUDE.md é a queda entre as duas gravações; diferente é texto em dois lugares, que
+// só o comercial sabe juntar.
+function planejarInstrucoes(dados) {
+  const claude = path.join(dados, IMPORTADOR);
+  const agents = path.join(dados, INSTRUCOES);
+  if (!fs.existsSync(claude)) return { acoes: [], problemas: [] };
+  const antigo = fs.readFileSync(claude);
+  if (ehImport(antigo.toString('utf8'))) return { acoes: [], problemas: [] };
+  const acao = { tipo: 'mover_instrucoes', de: IMPORTADOR, alvo: INSTRUCOES, backup: true };
+  if (!fs.existsSync(agents)) {
+    return { acoes: [{ ...acao, detalhe: `o texto do ${IMPORTADOR}, com as Notas da equipe, vai igual para o ${INSTRUCOES}, e o ${IMPORTADOR} fica só com a linha "${IMPORT_CLAUDE.trim()}"`, conteudo: antigo }], problemas: [] };
+  }
+  if (fs.readFileSync(agents).equals(antigo)) {
+    return { acoes: [{ ...acao, detalhe: `o ${INSTRUCOES} já tem o texto do ${IMPORTADOR}: o ${IMPORTADOR} fica só com a linha "${IMPORT_CLAUDE.trim()}"`, conteudo: null }], problemas: [] };
+  }
+  return {
+    acoes: [],
+    problemas: [
+      {
+        tipo: 'instrucoes_em_dois_arquivos',
+        alvo: INSTRUCOES,
+        detalhe: `"${claude}" e "${agents}" têm textos diferentes. Junte à mão no ${INSTRUCOES} o que só está no ${IMPORTADOR} (as Notas da equipe, principalmente), deixe no ${IMPORTADOR} só a linha "${IMPORT_CLAUDE.trim()}" e rode de novo`,
+      },
+    ],
+  };
+}
+
 function planejar(dados, hoje) {
   const versao = lerVersao(dados);
   const saida = { versao_atual: versao.versao, acoes: [], problemas: [], avisos: [] };
   if (versao.versao > VERSAO_ALVO) {
-    saida.problemas.push({ tipo: 'pasta_mais_nova', detalhe: `a pasta está na versão ${versao.versao} e estas skills só conhecem até a ${VERSAO_ALVO}: atualize o plugin antes` });
+    saida.problemas.push({ tipo: 'pasta_mais_nova', detalhe: `a pasta está na versão ${versao.versao} e estas skills só conhecem até a ${VERSAO_ALVO}: atualize o plugin (a profills-setup faz isso) e rode de novo` });
     return saida;
   }
 
@@ -317,6 +353,9 @@ function planejar(dados, hoje) {
   saida.acoes.push(...metas.acoes);
   saida.avisos.push(...metas.avisos);
   saida.acoes.push(...planejarGitignore(dados));
+  const instrucoes = planejarInstrucoes(dados);
+  saida.acoes.push(...instrucoes.acoes);
+  saida.problemas.push(...instrucoes.problemas);
 
   // O marcador vai por último e só sem problema: pasta marcada como nova tem de estar nova.
   if (!saida.problemas.length && (versao.versao < VERSAO_ALVO || versao.ilegivel)) {
@@ -363,7 +402,16 @@ const RETOMAR = 'O que já foi gravado continua certo e a pasta não foi marcada
 // Devolve null quando tudo foi gravado, ou a frase que explica onde e por que parou.
 function aplicar(dados, acoes, pastaBackup) {
   for (const a of acoes) {
+    let gravando = a.alvo;
     try {
+      if (a.tipo === 'mover_instrucoes') {
+        // AGENTS.md antes do CLAUDE.md: numa queda entre as duas, o texto está nos dois e a retomada termina.
+        copiarParaBackup(dados, pastaBackup, a.de);
+        if (a.conteudo !== null) escreverInteiro(path.join(dados, a.alvo), a.conteudo);
+        gravando = a.de;
+        escreverInteiro(path.join(dados, a.de), IMPORT_CLAUDE);
+        continue;
+      }
       if (a.tipo === 'criar_pasta') {
         fs.mkdirSync(path.join(dados, a.alvo), { recursive: true });
         continue;
@@ -385,7 +433,7 @@ function aplicar(dados, acoes, pastaBackup) {
       escreverInteiro(path.join(dados, a.alvo), a.conteudo);
     } catch (e) {
       const motivo = MOTIVOS[e.code] ? `${MOTIVOS[e.code]} em "${e.path ? path.dirname(e.path) : dados}"` : e.message;
-      return `Não deu para gravar "${path.join(dados, a.alvo)}": ${motivo}. ${RETOMAR}`;
+      return `Não deu para gravar "${path.join(dados, gravando)}": ${motivo}. ${RETOMAR}`;
     }
   }
   return null;

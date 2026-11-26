@@ -1,7 +1,7 @@
 <!-- profills:fixo:inicio -->
 # Pasta de dados da Profills
 
-Esta pasta guarda o trabalho de LinkedIn de um comercial da Profills: as empresas que ele acompanha, o que elas postam, a voz dele e os rascunhos de post. Quem usa é o comercial, não um programador. Fale com ele em pt-BR, em linguagem simples, um passo por vez, e explique o que vai fazer antes de fazer.
+Esta pasta guarda o trabalho de LinkedIn de um comercial da Profills: as empresas que ele acompanha, o que elas postam, a voz dele e os rascunhos de post. Este arquivo é o `AGENTS.md` da pasta: o Codex o lê direto, e o Claude Code o lê pelo `CLAUDE.md` ao lado, que só traz a linha `@AGENTS.md`. Quem usa é o comercial, não um programador. Fale com ele em pt-BR, em linguagem simples, um passo por vez, e explique o que vai fazer antes de fazer.
 
 ## Qual skill usar
 
@@ -23,7 +23,7 @@ O caminho comum é voz, radar, garimpo e post. O boletim chama a radar e a garim
 - Login pedido, captcha ou aviso de "atividade incomum" encerram a coleta na hora: pare e avise o comercial, sem tentar contornar. Um catálogo parcial é melhor que uma conta sinalizada.
 - Não proponha scraper, API nem serviço de raspagem (Firecrawl, Apify e parecidos) para ler o LinkedIn. Ler pelo navegador logado é decisão da Profills, explicada no `references/compliance.md` da skill `profills-garimpo`, não uma limitação a resolver.
 - O bloco "Estado da pasta" abaixo é gerado pelo script `scripts/mapa.js` da skill `profills-setup`. As skills rodam o script ao terminar, e os dois blocos, o "Estado da pasta" e este de regras, só mudam por ele; o que o comercial quiser registrar vai em "Notas da equipe".
-- Quando o comercial pedir para lembrar uma decisão da equipe, acrescente uma linha em "Notas da equipe", no fim deste arquivo, no formato `- AAAA-MM-DD: <decisão>`. Nunca apague nem reescreva uma nota; se uma decisão nova substitui outra, escreva a nova dizendo que substitui. Nunca escreva nas notas as linhas de marcação `<!-- profills:... -->` que delimitam os blocos acima.
+- Quando o comercial pedir para lembrar uma decisão da equipe, acrescente uma linha em "Notas da equipe", no fim deste arquivo (o `AGENTS.md`; o `CLAUDE.md` fica só com o import), no formato `- AAAA-MM-DD: <decisão>`. Nunca apague nem reescreva uma nota; se uma decisão nova substitui outra, escreva a nova dizendo que substitui. Nunca escreva nas notas as linhas de marcação `<!-- profills:... -->` que delimitam os blocos acima.
 - Número que vai para um post sai de um arquivo desta pasta ou de uma resposta do comercial. Número sem origem não entra.
 
 ## Onde fica cada coisa
@@ -37,6 +37,7 @@ O caminho comum é voz, radar, garimpo e post. O boletim chama a radar e a garim
 | `drafts/` | Os posts escritos, um arquivo por post, e as variações de cada um | `profills-post` |
 | `boletins/` | Um boletim por dia: novidades dos concorrentes, cobertura e 3 pautas | `profills-boletim` |
 | `voz.md` | O que o comercial vende, para quem e como ele fala | `profills-voz` |
+| `AGENTS.md` e `CLAUDE.md` | Estas instruções, que o Claude Code e o Codex leem ao abrir a pasta; o `CLAUDE.md` só importa o `AGENTS.md` | o `mapa.js` da `profills-setup` |
 | `.profills.json` | A versão do formato desta pasta | `profills-setup` |
 | `indice.db` | O banco de consultas, montado destes arquivos; apagar não perde nada | o `banco.js` do plugin, que o refaz quando falta ou está velho |
 | `.backup/` | Cópias guardadas antes de cada atualização da pasta | `profills-setup` |

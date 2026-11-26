@@ -63,7 +63,7 @@ const indexCom = (linhas, quebra = '\n') => [...CABECALHO, ...linhas, ''].join(q
 
 // coletas: [slug, data, { posts, meta, status }] na forma da versão 2, catalog/raw/<slug>/<data>/.
 // meta é o objeto do meta.json (ou o texto cru); status é o texto de um STATUS.txt da versão 1.
-function montar({ index, marcador, coletas = [] } = {}) {
+function montar({ index, marcador, coletas = [], claude, agents } = {}) {
   const dados = fs.mkdtempSync(path.join(os.tmpdir(), 'migrar-test-'));
   for (const sub of ['refs', 'catalog/raw', 'drafts', 'boletins']) fs.mkdirSync(path.join(dados, sub), { recursive: true });
   if (index !== undefined) {
@@ -71,6 +71,8 @@ function montar({ index, marcador, coletas = [] } = {}) {
     for (const m of index.matchAll(/\]\(([^)\s]+\.md)\)/g)) fs.writeFileSync(path.join(dados, 'refs', m[1]), '# ficha\n');
   }
   if (marcador !== undefined) fs.writeFileSync(path.join(dados, '.profills.json'), JSON.stringify({ versao_dados: marcador }) + '\n');
+  if (claude !== undefined) fs.writeFileSync(path.join(dados, 'CLAUDE.md'), claude);
+  if (agents !== undefined) fs.writeFileSync(path.join(dados, 'AGENTS.md'), agents);
   for (const [rel, data, { posts, meta, status } = {}] of coletas) {
     const pasta = path.join(dados, 'catalog', 'raw', rel, data);
     fs.mkdirSync(pasta, { recursive: true });
@@ -253,7 +255,7 @@ const casos = [
     }
     assert.ok(lerIndex(dados).split('\n').filter((l) => l.startsWith('- ')).every((l) => !/ · (sem catálogo|catálogo \d)/.test(l.split(' · ⚠')[0])), 'nenhuma linha guarda o campo catálogo');
     assert.strictEqual(fs.readFileSync(path.join(dados, '.backup', HOJE, 'refs', 'INDEX.md'), 'utf8'), original, 'backup byte a byte');
-    assert.strictEqual(JSON.parse(fs.readFileSync(path.join(dados, '.profills.json'), 'utf8')).versao_dados, 3);
+    assert.strictEqual(JSON.parse(fs.readFileSync(path.join(dados, '.profills.json'), 'utf8')).versao_dados, 4);
   }],
 
   ['variante de 2026-08-04 sem id e com catálogo parcial', () => {
@@ -297,8 +299,8 @@ const casos = [
     recusaSemGravar(dados, 'slug_duplicado');
   }],
 
-  ['pasta na versão 4 é recusada sem mudar nada', () => {
-    const dados = montar({ index: indexCom(LINHAS_REAIS), marcador: 4 });
+  ['pasta na versão 5 é recusada sem mudar nada', () => {
+    const dados = montar({ index: indexCom(LINHAS_REAIS), marcador: 5 });
     const antes = hashDaPasta(dados);
     const r = migrar(dados, '--aplicar');
     assert.strictEqual(r.json.ok, false);
@@ -331,7 +333,7 @@ const casos = [
       { de: path.join('catalog', 'raw', 'tecnox-do-brasil'), para: path.join('catalog', 'raw', 'linkedin', 'tecnox-do-brasil') },
     ]);
     assert.ok(existe(dados, 'catalog/raw/linkedin'), 'a pasta da rede existe');
-    assert.strictEqual(JSON.parse(ler(dados, '.profills.json')).versao_dados, 3);
+    assert.strictEqual(JSON.parse(ler(dados, '.profills.json')).versao_dados, 4);
   }],
 
   ['v2 → v3: meta.json ganha "concluida": true, e a coleta antiga sem meta.json continua sem', () => {
@@ -377,7 +379,7 @@ const casos = [
     assert.strictEqual(meta.concluida, true);
     assert.ok(existe(dados, 'catalog/raw/linkedin/tecnoenvase-maquinas-e-equipamentos-ltda/2026-07-14/STATUS.txt'), 'o STATUS.txt vai junto com a pasta');
     assert.ok(!existe(dados, 'catalog/raw/tecnoenvase-maquinas-e-equipamentos-ltda'), 'nada fica no caminho antigo');
-    assert.strictEqual(JSON.parse(ler(dados, '.profills.json')).versao_dados, 3);
+    assert.strictEqual(JSON.parse(ler(dados, '.profills.json')).versao_dados, 4);
     assert.deepStrictEqual(aplicarComSucesso(dados).acoes, [], 'segunda rodada sem ação');
   }],
 
@@ -419,14 +421,14 @@ const casos = [
     );
     assert.strictEqual(lerJson(dados, 'catalog/raw/linkedin/tecnox-do-brasil/2026-07-14/meta.json').concluida, true);
     validarComSucesso(dados, 4);
-    assert.strictEqual(JSON.parse(ler(dados, '.profills.json')).versao_dados, 3);
+    assert.strictEqual(JSON.parse(ler(dados, '.profills.json')).versao_dados, 4);
     const antes = hashDaPasta(dados);
     assert.deepStrictEqual(aplicarComSucesso(dados).acoes, [], 'terceira rodada sem ação');
     assert.strictEqual(hashDaPasta(dados), antes, 'sha256 da pasta igual');
   }],
 
-  ['pasta v3 com coleta interrompida: concluida false continua false e nada muda', () => {
-    const dados = montar({ index: indexCom(LINHAS_V2.map(paraV3)), marcador: 3 });
+  ['pasta v4 com coleta interrompida: concluida false continua false e nada muda', () => {
+    const dados = montar({ index: indexCom(LINHAS_V2.map(paraV3)), marcador: 4 });
     const pasta = path.join(dados, 'catalog', 'raw', 'linkedin', 'tecnox-do-brasil', '2026-11-20');
     fs.mkdirSync(pasta, { recursive: true });
     fs.writeFileSync(path.join(pasta, 'meta.json'), JSON.stringify({ slug: 'tecnox-do-brasil', coletado_em: '2026-11-20', janela_dias: 7, concluida: false }, null, 2) + '\n');
@@ -472,7 +474,7 @@ const casos = [
     const r = aplicarComSucesso(dados);
     assert.deepStrictEqual(r.avisos.map((a) => [a.tipo, a.alvo]), [['meta_ilegivel', path.join('catalog', 'raw', 'linkedin', 'tecnox-do-brasil', '2026-07-14', 'meta.json')]]);
     assert.strictEqual(ler(dados, 'catalog/raw/linkedin/tecnox-do-brasil/2026-07-14/meta.json'), '{ isto não é json', 'o arquivo chega como estava');
-    assert.strictEqual(JSON.parse(ler(dados, '.profills.json')).versao_dados, 3);
+    assert.strictEqual(JSON.parse(ler(dados, '.profills.json')).versao_dados, 4);
   }],
 
   // ---------- versão 3: o catálogo sai da linha, o banco derivado sai do git ----------
@@ -486,7 +488,7 @@ const casos = [
     const antes = validar(dados);
     assert.ok(antes.json.problemas.length && antes.json.problemas.every((p) => p.tipo === 'formato_antigo'), `antes da migração a linha com catálogo é formato_antigo: ${JSON.stringify(antes.json.problemas)}`);
     const r = aplicarComSucesso(dados);
-    assert.deepStrictEqual(tiposSemPasta(r), ['converter_indice'], 'só a conversão do índice; o marcador já está na 3');
+    assert.deepStrictEqual(tiposSemPasta(r), ['converter_indice', 'gravar_marcador'], 'a conversão do índice e o marcador da 4');
     assert.strictEqual(
       lerIndex(dados),
       indexCom([...LINHAS_V2.map(paraV3), '- [Zeta](zeta.md) — `zeta` · id 9 · setor s · país BR · prioridade Alta · linkedin sim · instagram zeta.br · pesquisa 2026-07-14 · grupo Z · ⚠ revisar · catálogo 2026-01-01 era parcial']),
@@ -500,7 +502,7 @@ const casos = [
     const original = '# Seleção ativa é efêmera\nselection.md\nindice.db\n';
     fs.writeFileSync(path.join(dados, '.gitignore'), original);
     const r = aplicarComSucesso(dados);
-    assert.deepStrictEqual(tiposSemPasta(r), ['ignorar_banco']);
+    assert.deepStrictEqual(tiposSemPasta(r), ['ignorar_banco', 'gravar_marcador']);
     const novo = ler(dados, '.gitignore');
     assert.ok(novo.startsWith(original), 'o que já estava fica igual, no começo');
     for (const linha of IGNORAR_BANCO) assert.strictEqual(novo.split('\n').filter((l) => l === linha).length, 1, `${linha} aparece uma vez`);
@@ -512,8 +514,74 @@ const casos = [
 
   ['pasta sem .gitignore (fora de um repo) não ganha um', () => {
     const dados = montar({ index: indexCom(LINHAS_V2.map(paraV3)), marcador: 3 });
-    assert.deepStrictEqual(tiposSemPasta(aplicarComSucesso(dados)), []);
+    assert.deepStrictEqual(tiposSemPasta(aplicarComSucesso(dados)), ['gravar_marcador']);
     assert.ok(!existe(dados, '.gitignore'));
+  }],
+
+  // ---------- versão 4: as instruções vão para o AGENTS.md, e o CLAUDE.md só o importa ----------
+
+  ['v3 → v4: o CLAUDE.md antigo vai byte a byte para o AGENTS.md, com as notas, e vira o import', () => {
+    // BOM, CRLF e acento: o texto do comercial tem de chegar igual, sem normalizar nada.
+    const antigo = BOM + '<!-- profills:fixo:inicio -->\r\nregras\r\n<!-- profills:fixo:fim -->\r\n\r\n## Notas da equipe\r\n\r\n- 2026-10-01: só posts sobre manutenção preventiva.\r\n';
+    const dados = montar({ index: indexCom(LINHAS_V2.map(paraV3)), marcador: 3, claude: antigo });
+    const simulado = migrar(dados);
+    const acao = simulado.json.acoes.find((a) => a.tipo === 'mover_instrucoes');
+    assert.deepStrictEqual({ de: acao.de, alvo: acao.alvo }, { de: 'CLAUDE.md', alvo: 'AGENTS.md' }, 'a ação diz de onde e para onde');
+    assert.ok(typeof acao.detalhe === 'string' && acao.detalhe.length > 0, 'a ação traz o detalhe');
+    assert.strictEqual(ler(dados, 'CLAUDE.md'), antigo, 'a simulação não grava');
+    const r = aplicarComSucesso(dados);
+    assert.deepStrictEqual(tiposSemPasta(r), ['mover_instrucoes', 'gravar_marcador']);
+    assert.ok(fs.readFileSync(path.join(dados, 'AGENTS.md')).equals(Buffer.from(antigo, 'utf8')), 'AGENTS.md igual ao CLAUDE.md antigo, byte a byte');
+    assert.strictEqual(ler(dados, 'CLAUDE.md'), '@AGENTS.md\n', 'CLAUDE.md só com o import');
+    assert.strictEqual(ler(dados, `.backup/${HOJE}/CLAUDE.md`), antigo, 'backup do CLAUDE.md antigo');
+    assert.strictEqual(r.backup, path.join(dados, '.backup', HOJE), 'saída aponta a pasta do backup');
+    assert.strictEqual(lerJson(dados, '.profills.json').versao_dados, 4);
+    const antes = hashDaPasta(dados);
+    assert.deepStrictEqual(aplicarComSucesso(dados).acoes, [], 'segunda rodada sem ação');
+    assert.strictEqual(hashDaPasta(dados), antes, 'sha256 da pasta igual');
+  }],
+
+  ['pasta já marcada 4 com o CLAUDE.md antigo ainda termina a conversão', () => {
+    const antigo = '# Minhas anotações\n\n## Notas da equipe\n\n- tom formal.\n';
+    const dados = montar({ index: indexCom(LINHAS_V2.map(paraV3)), marcador: 4, claude: antigo });
+    const r = aplicarComSucesso(dados);
+    assert.deepStrictEqual(tiposSemPasta(r), ['mover_instrucoes'], 'só a conversão; o marcador já está na 4');
+    assert.strictEqual(ler(dados, 'AGENTS.md'), antigo);
+    assert.strictEqual(ler(dados, 'CLAUDE.md'), '@AGENTS.md\n');
+  }],
+
+  ['queda entre as duas gravações (AGENTS.md igual ao CLAUDE.md antigo): a retomada só troca o CLAUDE.md', () => {
+    const antigo = '# Regras\n\n## Notas da equipe\n\n- nota que não pode sumir.\n';
+    const dados = montar({ index: indexCom(LINHAS_V2.map(paraV3)), marcador: 3, claude: antigo, agents: antigo });
+    const r = aplicarComSucesso(dados);
+    assert.deepStrictEqual(tiposSemPasta(r), ['mover_instrucoes', 'gravar_marcador']);
+    assert.strictEqual(ler(dados, 'AGENTS.md'), antigo, 'AGENTS.md continua com o texto');
+    assert.strictEqual(ler(dados, 'CLAUDE.md'), '@AGENTS.md\n');
+    assert.deepStrictEqual(aplicarComSucesso(dados).acoes, [], 'segunda rodada sem ação');
+  }],
+
+  ['CLAUDE.md antigo e AGENTS.md com textos diferentes: problema, e nada é gravado', () => {
+    const dados = montar({ index: indexCom(LINHAS_V2.map(paraV3)), marcador: 3, claude: '## Notas da equipe\n\n- nota do CLAUDE.md.\n', agents: '## Notas da equipe\n\n- nota do AGENTS.md.\n' });
+    const antes = hashDaPasta(dados);
+    const r = migrar(dados, '--aplicar');
+    assert.strictEqual(r.json.ok, false, 'ok false');
+    assert.strictEqual(r.status, 1, 'exit 1');
+    const p = r.json.problemas.find((x) => x.tipo === 'instrucoes_em_dois_arquivos');
+    assert.ok(p, `problema instrucoes_em_dois_arquivos: ${JSON.stringify(r.json.problemas)}`);
+    assert.ok(p.detalhe.includes(path.join(dados, 'CLAUDE.md')) && p.detalhe.includes(path.join(dados, 'AGENTS.md')), `detalhe cita os dois caminhos: ${p.detalhe}`);
+    assert.strictEqual(hashDaPasta(dados), antes, 'nenhum byte da pasta mudou');
+    assert.ok(!existe(dados, '.backup'), 'nenhum backup criado');
+  }],
+
+  ['pasta v3 sem CLAUDE.md, ou com o import, só ganha o marcador 4', () => {
+    for (const claude of [undefined, '@AGENTS.md\n', BOM + '@AGENTS.md\r\n']) {
+      const dados = montar({ index: indexCom(LINHAS_V2.map(paraV3)), marcador: 3, claude });
+      const r = aplicarComSucesso(dados);
+      assert.deepStrictEqual(tiposSemPasta(r), ['gravar_marcador'], `só o marcador (CLAUDE.md ${JSON.stringify(claude)})`);
+      assert.strictEqual(lerJson(dados, '.profills.json').versao_dados, 4);
+      assert.ok(!existe(dados, 'AGENTS.md'), 'o AGENTS.md fica para o mapa.js');
+      assert.strictEqual(existe(dados, 'CLAUDE.md') ? ler(dados, 'CLAUDE.md') : undefined, claude, 'CLAUDE.md como estava');
+    }
   }],
 ];
 
