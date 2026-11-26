@@ -6,17 +6,17 @@ A coleta usa a extensão do navegador do próprio comercial, no navegador que a 
 
 1. **Navegador pronto primeiro**: a `profills-navegador` já rodou (o `SKILL.md` a invoca antes da primeira empresa) e entregou no handoff o navegador selecionado e o id de uma aba própria (intenção `navegador-pronto`). Trabalhe nessa aba: no Claude in Chrome, com a conta conectada em mais de um PC, uma aba criada fora do handoff abre no computador errado.
 
-2. **Tenha à mão como rodar JavaScript de leitura na aba** (intenção `rodar-js`): é o que roda os passos 5 e 6. O adaptador diz se é preciso carregar algo antes.
+2. **Tenha à mão como rodar JavaScript de leitura na aba** (intenção `rodar-js`): é o que roda os passos 5 e 6. O adaptador diz se é preciso carregar algo antes. Num escopo só de leitura (o adaptador diz se é o caso), o JS não clica nem guarda nada entre uma chamada e outra; os dois blocos daqui funcionam assim também, pelo caminho que cada seção descreve.
 
 3. **Navegue** (intenção `abrir-pagina`) para `https://www.linkedin.com/company/<slug>/posts/`.
 
 4. **Confirme que carregou logado.** Feed visível → siga; os seguidores do topo da página ("N seguidores"), denominador da taxa de engajamento, saem da extração do passo 6. Authwall/tela de login → a sessão do usuário caiu: pare, peça para ele logar no LinkedIn no navegador que a `profills-navegador` selecionou e diga que o catálogo continua de onde parou quando ele avisar.
 
-5. **Ordene por Recentes.** A aba abre ordenada por engajamento ("Populares" ou "Principais", conforme a estrutura), o que quebra o cálculo de cadência. Rode o JS de [Ordenar por Recentes](#ordenar-por-recentes-js). Concluído quando ele devolve `ok: true`. Com `ok: false`, recarregue a página e rode mais uma vez; se repetir, grave `"status": "erro_navegacao"` com o `motivo` na nota.
+5. **Ordene por Recentes.** A aba abre ordenada por engajamento ("Populares" ou "Principais", conforme a estrutura), o que quebra o cálculo de cadência. Rode o JS de [Ordenar por Recentes](#ordenar-por-recentes-js). Retorno com `clicar`: clique pela ferramenta (intenção `clicar`) no elemento que ele indica e rode o JS de novo, como a seção explica. Concluído quando ele devolve `ok: true`. Com `ok: false` e sem `clicar`, recarregue a página e rode mais uma vez; se repetir, grave `"status": "erro_navegacao"` com o `motivo` na nota.
 
 6. **Extraia** com o JS de [Extração](#extração-js). Concluído quando `avisos` volta vazio ou cada aviso foi tratado pela [tabela de avisos](#avisos-do-extrator): é ela que pega post pulado.
 
-7. **Role para carregar mais.** A paginação é scroll infinito client-side, sem parâmetro de URL. Role (intenção `rolar`: tecla End ou scroll) ou clique em "Exibir mais resultados", esperando o carregamento entre cada rolagem. Ritmo humano — pausas de segundos, não rajada. Depois de rolar, rode a extração de novo: ela relê a página inteira.
+7. **Role para carregar mais.** A paginação é scroll infinito client-side, sem parâmetro de URL. Role (intenção `rolar`: tecla End ou scroll) ou clique em "Exibir mais resultados" (intenção `clicar`), esperando o carregamento entre cada rolagem. Ritmo humano — pausas de segundos, não rajada. Depois de rolar, rode a extração de novo: ela relê a página inteira.
 
 8. **Pare** cedo: ao atingir o teto de posts da rodada, ao passar da janela em dias (pelo campo `dia` da extração), ou quando o feed acabar — o que vier primeiro. Na janela padrão (até 5 posts / 7 dias) raramente precisa rolar muito.
 
@@ -41,7 +41,10 @@ O id do `componentkey` tem dois tipos, e ler só um pula post: o primeiro byte �
 
 ## Ordenar por Recentes (JS)
 
-O menu abre com `click()` ou com a sequência de eventos de ponteiro, conforme a estrutura, e a primeira tentativa logo depois da carga costuma falhar; por isso o JS tenta três vezes, com 2 s entre elas. A opção se acha pelo texto exato, porque o player de vídeo põe outros `[role=menuitem]` na página.
+O bloco lê o estado do menu e faz a troca onde os elementos têm `click`; onde não têm, devolve o clique que falta. A opção se acha pelo texto exato, porque o player de vídeo põe outros `[role=menuitem]` na página.
+
+- **Os elementos têm `click`** (Claude in Chrome): o menu abre com `click()` ou com a sequência de eventos de ponteiro, conforme a estrutura, e a primeira tentativa logo depois da carga costuma falhar; por isso o JS tenta três vezes, com 2 s entre elas, escolhe "Recentes" e confere o rótulo. Uma rodada basta.
+- **Escopo só de leitura** (Codex Desktop, onde o elemento não tem `click`): o JS espera 2 s, lê o estado e devolve `clicar` com o próximo passo, o `papel` e o `texto` do elemento. São três rodadas: a primeira devolve o gatilho ("Classificar por: …"), a segunda a opção "Recentes", a terceira confere o rótulo e devolve `ok: true`. Entre uma e outra, clique pela ferramenta (intenção `clicar`) no elemento com esse papel e esse texto, achado na árvore da página (intenção `ler-pagina`). O mesmo `clicar` três vezes seguidas conta como `ok: false`.
 
 ```js
 await (async () => {
@@ -54,6 +57,16 @@ await (async () => {
   const antes = rotulo();
   if (!antes) return { ok: false, motivo: 'botão "Classificar por" não achado' };
   if (/Recentes/.test(antes)) return { ok: true, antes, depois: antes, abriu_com: null };
+  if (typeof gatilho().click !== 'function') {
+    await espera(2000);
+    const agora = rotulo() || '';
+    if (/Recentes/.test(agora)) return { ok: true, antes, depois: agora, abriu_com: 'ferramenta' };
+    const el = opcao() || gatilho();
+    return {
+      ok: false, antes,
+      clicar: { passo: opcao() ? 'escolher Recentes' : 'abrir o menu', papel: el.getAttribute('role') || 'button', texto: el.innerText.replace(/\s+/g, ' ').trim() },
+    };
+  }
   let abriu_com = null;
   for (const [nome, abre] of [['click', (g) => g.click()], ['eventos', eventos], ['eventos, 2a vez', eventos]]) {
     const g = gatilho();
@@ -73,6 +86,7 @@ await (async () => {
 
 ```js
 (() => {
+  const TEXTOS = [];
   const sep = (s) => String(s).replace(/(\d{4})(?=\d)/g, '$1_');
   // O id passa de 2^53 e o avaliador do Codex Desktop não tem inteiro grande: a conta é feita dígito a dígito.
   const dataDoId = (id) => {
@@ -255,9 +269,22 @@ await (async () => {
     if (i && p.data > posts[i - 1].data) avisos.push(`post ${i + 1} é mais novo que o post ${i}: fixado, ou a ordem não é Recentes`);
   });
   const seg = document.body.innerText.match(/(\d[\d.,]*)\s*(mil|mi)?\s+seguidores/);
-  window.__garimpo = posts;
+  let escopo = 'so_leitura';
+  try {
+    window.__garimpo = posts;
+    if (window.__garimpo === posts) escopo = 'gravavel';
+  } catch (e) {}
+  if (TEXTOS.length) {
+    return {
+      escopo,
+      textos: TEXTOS.map((n) => {
+        const p = posts[n - 1];
+        return p ? { n, id: sep(p.id), texto_chars: p.texto.length, pedacos: p.texto.match(/[\s\S]{1,850}/g) || [] } : { n, id: null };
+      }),
+    };
+  }
   return {
-    estrutura, cards, anuncios, avisos,
+    escopo, estrutura, cards, anuncios, avisos,
     seguidores: seg ? numero(`${seg[1]} ${seg[2] || ''}`) : null,
     seguidores_arredondado: !!(seg && seg[2]),
     posts: posts.map((p, i) => ({
@@ -269,10 +296,14 @@ await (async () => {
 })()
 ```
 
-O retorno traz `estrutura`, `cards`, `anuncios`, `avisos`, `seguidores` e um resumo por post, na ordem da tela. Como usar cada parte:
+O retorno traz `escopo`, `estrutura`, `cards`, `anuncios`, `avisos`, `seguidores` e um resumo por post, na ordem da tela. A primeira linha do bloco, `const TEXTOS = [];`, fica vazia em toda extração dos passos 6 e 7; ela só muda para ler o texto inteiro, como diz o item **Texto**. Como usar cada parte:
 
 - **Id.** Ferramentas de navegação bloqueiam sequência longa de dígitos (o adaptador diz qual), então `id` vem com `_` a cada 4: tire os `_`. O `post_id` é `urn:li:<tipo>:<id>` e o `url` é `https://www.linkedin.com/feed/update/<post_id>/`, nos dois tipos.
-- **Texto.** Ferramentas de navegação cortam valor acima de uns 1.000 caracteres, então o texto fica em `window.__garimpo` e sai em pedaços: `window.__garimpo[<n - 1>].texto.match(/[\s\S]{1,850}/g)`. Junte os pedaços na ordem. Com `texto_cortado: true`, o card só tinha o trecho antes do "… mais": abra o `url` do post e leia o texto inteiro de lá.
+- **Texto.** Ferramentas de navegação cortam valor acima de uns 1.000 caracteres, então o resumo traz só `texto_chars` e o texto sai em pedaços de até 850. O `escopo` diz por onde ler:
+  - `"gravavel"`: o bloco guardou os posts na página. Leia cada um com `window.__garimpo[<n - 1>].texto.match(/[\s\S]{1,850}/g)`.
+  - `"so_leitura"`: nada fica guardado entre chamadas. Rode o bloco de novo com os números dos posts na primeira linha, por exemplo `const TEXTOS = [1, 2, 3];`. Ele relê a página e devolve só `escopo` e `textos`, um item por número com `n`, `id`, `texto_chars` e `pedacos`. Confira que cada `id` é o do resumo; se não for, a página mudou: extraia de novo com `TEXTOS = []`. Item com `id: null` é número que não existe nesta leitura.
+
+  Junte os pedaços na ordem e confira que o total tem `texto_chars` caracteres; menos que isso quer dizer retorno cortado, e então peça menos posts por vez em `TEXTOS`. Com `texto_cortado: true`, o card só tinha o trecho antes do "… mais": abra o `url` do post e leia o texto inteiro de lá.
 - **Data.** `dia` é o `data` do `posts.json`. Ele sai do id, que é um Snowflake (`id >> 22` são os milissegundos desde 1970), no fuso do navegador. `dataRel` é o rótulo da tela e serve para conferir.
 - **Formato.** Na estrutura `data-urn` o JS devolve `texto`, `imagem`, `carrossel`, `video` ou `artigo`; na `componentkey`, `texto`, `imagem`, `carrossel`, `video` ou `reshare`. Os outros valores dependem de você olhar o post — coluna "Como reconhecer" de `taxonomias.md`. `vaga: true` marca post com link de vaga.
 - **Engajamento.** `likes`, `comentarios` e `reposts` já vêm em número. Na `data-urn`, contador ausente na tela é `0`. Na `componentkey`, o JS procura o número no grupo do próprio ícone: ícone sem número é `0`, e ícone que o JS não acha vem `null`, com aviso.
