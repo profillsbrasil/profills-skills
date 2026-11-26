@@ -13,7 +13,7 @@ const { spawnSync } = require('child_process');
 
 const IMPORTAR = path.join(__dirname, 'importar.js');
 const INDICE = path.join(__dirname, 'indice.js');
-const FIXTURE = path.join(__dirname, '..', 'evals', 'files', '8');
+const FIXTURE = path.join(__dirname, '..', '..', '..', '..', '..', 'evals', 'profills-radar', 'files', '8');
 const PLANILHA = path.join(FIXTURE, 'concorrentes-ficticios.xlsx');
 const SEM_COLUNA = path.join(__dirname, 'fixtures', 'sem-coluna-prioridade.xlsx');
 const HOJE = '2026-11-06';

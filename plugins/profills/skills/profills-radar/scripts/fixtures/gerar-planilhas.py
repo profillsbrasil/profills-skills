@@ -12,7 +12,7 @@ import zipfile
 from openpyxl import Workbook
 
 AQUI = pathlib.Path(sys.argv[0]).resolve().parent
-RADAR = AQUI.parent.parent
+EVALS = AQUI.parents[5] / "evals" / "profills-radar"
 
 COLUNAS_MAPA = [
     "ID", "Empresa / unidade", "Origem", "Papel no mercado", "Relação com GT", "Prioridade proposta",
@@ -134,6 +134,6 @@ def gravar(wb, caminho):
     print(caminho)
 
 
-gravar(planilha(COLUNAS_MAPA), RADAR / "evals" / "files" / "8" / "concorrentes-ficticios.xlsx")
+gravar(planilha(COLUNAS_MAPA), EVALS / "files" / "8" / "concorrentes-ficticios.xlsx")
 gravar(planilha([c for c in COLUNAS_MAPA if c != "Prioridade proposta"]), AQUI / "sem-coluna-prioridade.xlsx")
-gravar(planilha(COLUNAS_MAPA, MAPA_CONFLITO, CANAIS_CONFLITO), RADAR / "evals" / "files" / "9" / "concorrentes-conflito.xlsx")
+gravar(planilha(COLUNAS_MAPA, MAPA_CONFLITO, CANAIS_CONFLITO), EVALS / "files" / "9" / "concorrentes-conflito.xlsx")
