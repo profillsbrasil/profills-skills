@@ -80,7 +80,7 @@ function contarPrioridades(empresas) {
 }
 
 function ultimaColeta(dados) {
-  const raiz = path.join(dados, 'catalog', 'raw');
+  const raiz = path.join(dados, 'catalog', 'raw', 'linkedin');
   const porData = new Map();
   for (const slug of pastas(raiz)) {
     for (const data of pastas(path.join(raiz, slug)).filter(dataValida)) porData.set(data, (porData.get(data) || 0) + 1);

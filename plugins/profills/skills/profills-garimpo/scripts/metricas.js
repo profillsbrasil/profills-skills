@@ -6,8 +6,8 @@
  * o _summary.md, o dashboard e a resposta ao usuário usam. Ninguém recalcula
  * em prosa o que sai daqui.
  *
- * Uso:  node scripts/metricas.js <DADOS/catalog/raw/<slug>/<AAAA-MM-DD>> [--janela padrao|ampliada]
- * Ex.:  node scripts/metricas.js "$DADOS/catalog/raw/skymsen/2026-07-14"
+ * Uso:  node scripts/metricas.js <DADOS/catalog/raw/linkedin/<slug>/<AAAA-MM-DD>> [--janela padrao|ampliada]
+ * Ex.:  node scripts/metricas.js "$DADOS/catalog/raw/linkedin/skymsen/2026-07-14"
  * Saída (stdout, JSON): {"slug":"skymsen","status":"ok","n_posts":5,"taxa_normalizada":null,
  *   "engajamento_medio":8,"posts_por_semana":5,"formato_dominante":"video",
  *   "destaque_semana":{"post_id":"urn:li:activity:..."},"avisos":["..."],"ok":false}
@@ -125,7 +125,7 @@ function diasEntre(a, b) {
 
 // ------------------------------------------------------------------- argumentos
 
-const USO = 'Uso: node scripts/metricas.js <pasta raw/<slug>/<AAAA-MM-DD>> [--janela padrao|ampliada]';
+const USO = 'Uso: node scripts/metricas.js <pasta raw/linkedin/<slug>/<AAAA-MM-DD>> [--janela padrao|ampliada]';
 
 const args = process.argv.slice(2);
 let pasta = null;

@@ -3,7 +3,7 @@
 // Lê as abas "Mapa competitivo" e "Canais digitais" pelo nome das colunas, cruza cada empresa com a página
 // dela no LinkedIn e compara com o índice que já existe. Sem --aplicar só simula. Com --aplicar grava uma
 // ficha por empresa nova, pelo assets/dossie-template.md, e a linha dela no INDEX.md pelo formatarLinha do
-// indice.js; empresa que já está na lista só ganha prioridade e grupo quando estavam "a definir" ou vazios.
+// indice.js; empresa que já está na lista só ganha prioridade, grupo e Instagram quando estavam "a definir" ou vazios.
 // Qualquer dúvida sobre o dado (célula vazia ou ilegível, mesmo nome com outra página) vira problema
 // com o ID e a linha da planilha, e nada é gravado. Idempotente: rodar de novo não muda nenhum byte.
 // Uso:     node scripts/importar.js <planilha.xlsx> <DADOS>/refs [--aplicar] [--pular <ID>]... [--hoje AAAA-MM-DD]
@@ -309,6 +309,18 @@ function classificarEndereco(url) {
   return { tipo: 'outra_pagina', slug: null, pagina: linkedin ? linkedin[1].toLowerCase() : 'fora do LinkedIn' };
 }
 
+// O perfil no Instagram vem como URL (instagram.com/<handle>) ou como @handle. Link de post, reel ou
+// story não é perfil: vira nota, e o campo fica vazio.
+const CAMINHOS_QUE_NAO_SAO_PERFIL = new Set(['p', 'reel', 'reels', 'stories', 'explore', 'tv', 'accounts']);
+
+function handleDoInstagram(valor) {
+  const t = valor.trim();
+  const arroba = t.match(/^@([^\s/]+)$/);
+  const url = t.match(/instagram\.com\/([^/?#\s]+)/i);
+  const handle = arroba ? arroba[1] : url && !CAMINHOS_QUE_NAO_SAO_PERFIL.has(url[1].toLowerCase()) ? url[1] : null;
+  return handle && indice.HANDLE_INSTAGRAM.test(handle) ? handle.toLowerCase() : null;
+}
+
 function prioridadeCanonica(valor) {
   return indice.PRIORIDADES.find((p) => indice.normalizar(p) === indice.normalizar(valor || '')) || null;
 }
@@ -346,6 +358,11 @@ function montarEmpresas(mapa, canais, hoje) {
     const outras = comUrl.filter((c) => c.tipo === 'outra_pagina');
     for (const c of outras) notas.push(`endereço do LinkedIn que não é página de empresa (${c.pagina}): ${c.url}`);
 
+    const perfis = canais.filter((c) => c.id === r.id && indice.normalizar(c.canal || '') === 'instagram' && c.url).map((c) => ({ url: c.url, handle: handleDoInstagram(c.url) }));
+    for (const c of perfis.filter((p) => !p.handle)) notas.push(`endereço do Instagram que não é perfil: ${c.url}`);
+    const handles = [...new Set(perfis.map((p) => p.handle).filter(Boolean))];
+    if (handles.length > 1) notas.push(`outros perfis no Instagram na planilha: ${handles.slice(1).join(', ')}`);
+
     let endereco;
     if (paginas.length) endereco = { tipo: 'pagina', motivo: null };
     else if (pessoais.length) endereco = { tipo: 'perfil_pessoal', motivo: 'a planilha aponta só um perfil pessoal no LinkedIn, não a página da empresa; a profills-garimpo não coleta perfil de pessoa' };
@@ -364,6 +381,7 @@ function montarEmpresas(mapa, canais, hoje) {
       nome: r.nome,
       slug: paginas.length ? paginas[0].slug : slugDoNome(r.nome),
       linkedin: paginas.length > 0,
+      instagram: handles[0] || null,
       endereco,
       pagina: paginas[0] || null,
       paginas_extras: paginas.slice(1),
@@ -393,6 +411,7 @@ function lerTemplate() {
 }
 
 const SEM_DADO = 'não informado na planilha';
+const instagramDaFicha = (h) => (h ? `\`${h}\` (\`instagram.com/${h}\`)` : null);
 
 function renderizarFicha(e, contexto) {
   const r = e.registro;
@@ -406,6 +425,7 @@ function renderizarFicha(e, contexto) {
     Grupo: e.grupo || '—',
     'Grupo e nomes relacionados': r.relacionados || '—',
     'Outras páginas no LinkedIn': extras.length ? extras.join('; ') : '—',
+    Instagram: instagramDaFicha(e.instagram) || '`—` — a planilha não traz o perfil no Instagram',
     Setor: r.papel || SEM_DADO,
     'País / idioma dos posts': `${(r.origem || '[a confirmar]').replace(/·/g, '-')} · idioma a confirmar na coleta`,
     'Última pesquisa': e.pesquisa,
@@ -583,6 +603,7 @@ function planejar(planilhaPath, pasta, hoje, pular) {
       const muda = {};
       if ((existente.prioridade || 'a definir') === 'a definir' && e.prioridade !== 'a definir') muda.prioridade = e.prioridade;
       if (!existente.grupo && e.grupo && indice.normalizar(e.grupo) !== indice.normalizar(existente.nome)) muda.grupo = e.grupo;
+      if (!existente.instagram && e.instagram) muda.instagram = e.instagram;
       saida.ja_existem.push({ id_planilha: e.id_planilha, nome: e.nome, nome_na_lista: existente.nome, slug: existente.slug, muda });
       if (Object.keys(muda).length) plano.atualizar.push({ existente, muda });
       continue;
@@ -600,6 +621,7 @@ function planejar(planilhaPath, pasta, hoje, pular) {
       nome: e.nome,
       slug: e.slug,
       linkedin: e.linkedin,
+      instagram: e.instagram,
       prioridade: e.prioridade,
       grupo: e.grupo,
       pesquisa: e.pesquisa,
@@ -618,6 +640,7 @@ function planejar(planilhaPath, pasta, hoje, pular) {
         pais: e.registro.origem || '[a confirmar]',
         prioridade: e.prioridade,
         linkedin: e.linkedin,
+        instagram: e.instagram,
         pesquisa: e.pesquisa,
         catalogo: null,
         grupo: e.grupo,
@@ -644,7 +667,8 @@ function trocarCampo(textoFicha, rotulo, valor) {
   return textoFicha.replace(/^(\s*[-*]\s*\*\*(?:Endereço no LinkedIn|Slug LinkedIn)\*\*\s*:.*)$/m, `$1\n- **${rotulo}**: ${valor}`);
 }
 
-const ROTULO = { prioridade: 'Prioridade', grupo: 'Grupo' };
+const ROTULO = { prioridade: 'Prioridade', grupo: 'Grupo', instagram: 'Instagram' };
+const NA_FICHA = { instagram: instagramDaFicha };
 
 function aplicar(pasta, plano) {
   fs.mkdirSync(pasta, { recursive: true });
@@ -667,7 +691,8 @@ function aplicar(pasta, plano) {
     for (const [campo, valor] of Object.entries(muda)) {
       const lido = ficha.match(new RegExp(`^\\s*[-*]\\s*\\*\\*${ROTULO[campo]}\\*\\*\\s*:\\s*(.*)$`, 'm'));
       const atual = lido ? lido[1].replace(/`/g, '').trim() : '';
-      if (!lido || /^(a definir|—|-|)$/i.test(atual) || atual.startsWith('<')) ficha = trocarCampo(ficha, ROTULO[campo], valor);
+      // "— — a planilha não traz…" também é vazio: o motivo vem depois do traço.
+      if (!lido || /^(a definir|—|-|)(\s+—\s.*)?$/i.test(atual) || atual.startsWith('<')) ficha = trocarCampo(ficha, ROTULO[campo], NA_FICHA[campo] ? NA_FICHA[campo](valor) : valor);
     }
     escreverInteiro(caminho, ficha);
     gravados++;

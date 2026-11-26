@@ -1,7 +1,7 @@
 #!/usr/bin/env node
 // boletim.js — a conta do boletim da profills-boletim (Node >= 18, sem dependência).
 // Lê o índice (pelo indice.js da profills-radar), a seleção da rodada e, por empresa do índice,
-// a coleta mais recente e a anterior em catalog/raw/<slug>/<data>/. Devolve, por empresa, o balde
+// a coleta mais recente e a anterior em catalog/raw/linkedin/<slug>/<data>/. Devolve, por empresa, o balde
 // de cobertura, os posts novos e a cadência das duas coletas (posts_por_semana do metricas.js da
 // profills-garimpo). Só lê: não grava nada, e rodar duas vezes no mesmo estado dá a mesma saída.
 // Uso:     node scripts/boletim.js <DADOS> [--hoje AAAA-MM-DD]
@@ -68,13 +68,24 @@ function lerSelecao(arquivo) {
   return { data: cabecalho && dataValida(cabecalho[1]) ? cabecalho[1] : null, slugs };
 }
 
+// A garimpo grava o meta.json com "concluida": false ao abrir a página e com true ao terminar.
+// Pasta sem meta.json é coleta de 2026-07, de antes do meta.json, ou coleta que parou antes de começar;
+// quem decide entre as duas é a data da rodada, em examinarEmpresa. meta.json ilegível conta como
+// terminado, para o erro aparecer em lerColeta em vez de mandar a empresa de volta à garimpo.
+function estadoDaPasta(pasta) {
+  const meta = lerJson(path.join(pasta, 'meta.json'));
+  if (meta.ausente) return 'sem_meta';
+  if (meta.erro || !meta.valor || meta.valor.concluida === true) return 'concluida';
+  return 'interrompida';
+}
+
 // Uma coleta é uma pasta de data com posts.json e meta.json. `comparavel` diz se ela retrata a
 // página no dia (serve de anterior); `erro` diz por que não dá para ler.
 function lerColeta(raiz, slug, data) {
   const pasta = path.join(raiz, slug, data);
   const meta = lerJson(path.join(pasta, 'meta.json'));
   const posts = lerJson(path.join(pasta, 'posts.json'));
-  const coleta = { data, pasta, status: null, nota: null, janela_dias: null, posts: null, erro: null };
+  const coleta = { data, pasta, estado: estadoDaPasta(pasta), status: null, nota: null, janela_dias: null, posts: null, erro: null };
   if (meta.erro) coleta.erro = `meta.json ilegível: ${meta.erro}`;
   else if (meta.valor) {
     coleta.status = typeof meta.valor.status === 'string' ? meta.valor.status : null;
@@ -90,7 +101,7 @@ function lerColeta(raiz, slug, data) {
   }
   // Coleta antiga (2026-07) não tem meta.json: posts.json legível vale como status ok.
   if (!coleta.erro && !coleta.status) coleta.status = 'ok';
-  coleta.comparavel = !coleta.erro && (coleta.status === 'ok' || STATUS_SEM_POSTS.has(coleta.status));
+  coleta.comparavel = !coleta.erro && coleta.estado !== 'interrompida' && (coleta.status === 'ok' || STATUS_SEM_POSTS.has(coleta.status));
   return coleta;
 }
 
@@ -182,16 +193,22 @@ function examinarEmpresa(e, rodada, raiz, hoje, avisos) {
   if (e.linkedin === false) return { ...base, cobertura: 'sem_linkedin', motivo: null };
   if (!rodada.slugs.includes(e.slug)) return { ...base, cobertura: 'fora_desta_rodada', motivo: null, ultimo_catalogo: e.catalogo || null };
 
-  // A regra da profills-garimpo: coletada nesta rodada é quem tem meta.json numa pasta com data entre a do
-  // cabeçalho e hoje. Pasta da rodada sem meta.json é coleta interrompida e a garimpo a refaz.
+  // A regra da profills-garimpo: coletada nesta rodada é quem tem meta.json com "concluida": true numa pasta
+  // com data entre a do cabeçalho e hoje. Pasta da rodada sem meta.json, ou com "concluida": false, é coleta
+  // interrompida e a garimpo a refaz.
   const datas = datasDeColeta(raiz, e.slug, hoje);
   const daRodada = datas.filter((d) => d >= rodada.data);
-  const completas = daRodada.filter((d) => fs.existsSync(path.join(raiz, e.slug, d, 'meta.json')));
+  const completas = daRodada.filter((d) => estadoDaPasta(path.join(raiz, e.slug, d)) === 'concluida');
   const ultima = completas[completas.length - 1];
   if (!ultima) {
     const anteriores = datas.filter((d) => d < rodada.data);
     let nota = anteriores.length ? `última coleta em ${anteriores[anteriores.length - 1]}, antes desta rodada` : 'nunca coletada';
-    if (daRodada.length) nota = `coleta interrompida em ${daRodada[daRodada.length - 1]}: a pasta não tem meta.json`;
+    const parou = daRodada[daRodada.length - 1];
+    if (parou) {
+      nota = estadoDaPasta(path.join(raiz, e.slug, parou)) === 'sem_meta'
+        ? `coleta interrompida em ${parou}: a pasta não tem meta.json`
+        : `coleta interrompida em ${parou}: o meta.json não traz "concluida": true`;
+    }
     return { ...base, cobertura: 'indisponivel', motivo: 'nao_coletada_nesta_rodada', nota, coleta_atual: null };
   }
   const atual = lerColeta(raiz, e.slug, ultima);
@@ -201,7 +218,8 @@ function examinarEmpresa(e, rodada, raiz, hoje, avisos) {
   }
 
   atual.posts = semRepetidos(atual, avisos, e.nome);
-  // Pasta da rodada sem meta.json é coleta interrompida: posts parciais não servem de base de comparação.
+  // Coleta interrompida não serve de base de comparação: posts parciais. Dentro da rodada, sem meta.json também é
+  // interrompida; antes dela, pasta sem meta.json é a coleta de 2026-07, que vale.
   let anterior = null;
   const antes = datas.filter((d) => d < ultima && (d < rodada.data || completas.includes(d)));
   for (let i = antes.length - 1; i >= 0 && !anterior; i--) {
@@ -323,7 +341,7 @@ function principal(argv) {
     if (!slugsDoIndice.has(slug)) saida.avisos.push({ tipo: 'selecao_fora_do_indice', detalhe: `\`${slug}\` está na seleção e não está no índice: fica fora do boletim` });
   }
 
-  const raiz = path.join(dados, 'catalog', 'raw');
+  const raiz = path.join(dados, 'catalog', 'raw', 'linkedin');
   // Pasta com data depois de hoje fica fora da conta, mas a garimpo a contaria como coletada: sem esta
   // parada, a empresa iria para a garimpo, que a daria por feita, e o boletim a mostraria faltando de novo.
   for (const e of indice.empresas) {
