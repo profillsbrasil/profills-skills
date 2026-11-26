@@ -74,7 +74,17 @@ await (async () => {
 ```js
 (() => {
   const sep = (s) => String(s).replace(/(\d{4})(?=\d)/g, '$1_');
-  const dataDoId = (id) => new Date(Number(BigInt(id) >> 22n));
+  // O id passa de 2^53 e o avaliador do Codex Desktop não tem inteiro grande: a conta é feita dígito a dígito.
+  const dataDoId = (id) => {
+    let q = 0;
+    let r = 0;
+    for (const d of String(id)) {
+      const n = r * 10 + Number(d);
+      q = q * 10 + Math.floor(n / 4194304);
+      r = n % 4194304;
+    }
+    return new Date(q);
+  };
   const limpa = (t) => (t || '').replace(/ /g, ' ').trim();
   const numero = (t) => {
     const m = limpa(t).match(/^(\d[\d.,]*)\s*(mil|mi)?$/);
@@ -99,14 +109,30 @@ await (async () => {
       try { b = Uint8Array.from(atob(b64), (c) => c.charCodeAt(0)); } catch (e) { return null; }
       const tipo = b[0] === 0x0a ? 'activity' : b[0] === 0x12 ? 'ugcPost' : null;
       if (!tipo || b[2] !== 0x08) return null;
-      let v = 0n;
-      let desloca = 0n;
+      const grupos = [];
       for (let i = 3; i < b.length; i += 1) {
-        v |= BigInt(b[i] & 0x7f) << desloca;
-        desloca += 7n;
+        grupos.push(b[i] & 0x7f);
         if (!(b[i] & 0x80)) break;
       }
-      return { tipo, id: String(v >> 1n) };
+      const partes = [0];
+      for (let g = grupos.length - 1; g >= 0; g -= 1) {
+        let vai = grupos[g];
+        for (let k = 0; k < partes.length; k += 1) {
+          const x = partes[k] * 128 + vai;
+          partes[k] = x % 1e7;
+          vai = Math.floor(x / 1e7);
+        }
+        if (vai) partes.push(vai);
+      }
+      let resto = 0;
+      for (let k = partes.length - 1; k >= 0; k -= 1) {
+        const x = resto * 1e7 + partes[k];
+        partes[k] = Math.floor(x / 2);
+        resto = x % 2;
+      }
+      while (partes.length > 1 && !partes[partes.length - 1]) partes.pop();
+      const id = partes.map((n, k) => (k === partes.length - 1 ? String(n) : String(n).padStart(7, '0'))).reverse().join('');
+      return { tipo, id };
     };
     const ICONES = {
       likes: 'thumbs-up-outline-feed-compact',

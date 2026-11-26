@@ -185,7 +185,11 @@ function blocoDeExtracao() {
 function extrai(body) {
   const window = {};
   const ctx = vm.createContext({ document: { body, querySelectorAll: (s) => body.querySelectorAll(s) }, window, atob });
-  const retorno = vm.runInContext(blocoDeExtracao(), ctx);
+  // O avaliador de JavaScript do Codex Desktop não tem BigInt: o bloco roda sem ele, e sem literal `0n`.
+  const bloco = blocoDeExtracao();
+  assert.ok(!/\bBigInt\b|\b\d+n\b/.test(bloco), 'o bloco de extração não pode usar BigInt nem literal 0n');
+  vm.runInContext('globalThis.BigInt = undefined', ctx);
+  const retorno = vm.runInContext(bloco, ctx);
   return JSON.parse(JSON.stringify({ retorno, completos: window.__garimpo }));
 }
 
