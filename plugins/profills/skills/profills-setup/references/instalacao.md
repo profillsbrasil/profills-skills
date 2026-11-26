@@ -21,14 +21,15 @@ O repositório `profillsbrasil/profills-skills` é público — não há credenc
 2. **Comando na forma curta** `marketplace add profillsbrasil/profills-skills`: essa forma clona por SSH (`git@github.com:`) e falha com `Permission denied (publickey)` em máquina sem chave SSH — o caso de todo PC de comercial. Use sempre a forma com URL completa do passo 3 do `SKILL.md`, que clona por HTTPS (testado: clona sem credencial).
 3. **O repo ficou privado** (decisão futura): aí o Git precisa de credencial. Caminho mais simples para não-dev: instalar o GitHub CLI (cli.github.com), rodar `gh auth login` (login pelo navegador) e repetir o comando.
 
-## Node.js ausente (para `humanize-pt-br`)
+## Node.js ausente ou antigo
 
-Passo a passo para quando o usuário escolher instalar o Node:
+O `npx` instala a `humanize-pt-br`, e os scripts das skills precisam do Node 22.13 ou mais novo (o banco de consultas usa o SQLite que vem com ele). Passo a passo para quando o usuário escolher instalar ou atualizar o Node:
 
 - Link: nodejs.org → baixar a versão **LTS** (não a "Current").
 - Windows e Mac: instalador gráfico, next-next-finish.
 - Linux: o instalador do site ou o gerenciador do sistema (`apt`, `pacman`, `dnf`) — o site é o caminho que não exige saber qual gerenciador a máquina usa.
-- Depois de instalar, **abrir um terminal novo** (o `PATH` não atualiza no terminal já aberto) e repetir a checagem de `npx`.
+- Node antigo: o instalador da LTS do site instala por cima da versão velha. Quem instalou pelo `nvm` roda `nvm install --lts` e `nvm alias default 'lts/*'`.
+- Depois de instalar, **abrir um terminal novo** (o `PATH` não atualiza no terminal já aberto) e repetir a checagem de `npx` e a de `node -p process.versions.node`.
 
 ## humanize-pt-br: quando o `update` não acha a skill
 

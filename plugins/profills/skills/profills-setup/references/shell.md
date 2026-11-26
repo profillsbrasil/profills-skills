@@ -9,6 +9,7 @@ A ferramenta de shell do Claude Code depende do sistema: Linux e Mac usam Bash; 
 | Estou num repo git? | `git rev-parse --show-toplevel` | igual (sem `git` instalado o comando não existe → você não está num repo, a linha seguinte não se aplica; use `HOME`) |
 | É o repo-fonte? | `test -f "$(git rev-parse --show-toplevel)/plugins/profills/skills/profills-setup/SKILL.md"` | `Test-Path "$(git rev-parse --show-toplevel)\plugins\profills\skills\profills-setup\SKILL.md"` |
 | npx existe? | `command -v npx` | `Get-Command npx` |
+| Versão do Node (22.13 ou mais nova)? | `node -p process.versions.node` | `node -p "process.versions.node"` |
 | humanize-pt-br instalada? | `ls ~/.claude/skills/humanize-pt-br/SKILL.md ~/.agents/skills/humanize-pt-br/SKILL.md 2>/dev/null` (uma linha basta) | `Test-Path "$env:USERPROFILE\.claude\skills\humanize-pt-br\SKILL.md","$env:USERPROFILE\.agents\skills\humanize-pt-br\SKILL.md"` |
 | `DADOS` existe com as subpastas? | `ls -d "<DADOS>/refs" "<DADOS>/catalog/raw/linkedin" "<DADOS>/drafts" "<DADOS>/boletins"` | `Test-Path "<DADOS>\refs","<DADOS>\catalog\raw\linkedin","<DADOS>\drafts","<DADOS>\boletins"` |
 | Versão da pasta? | `cat "<DADOS>/.profills.json"` (erro = versão 1) | `Get-Content "<DADOS>\.profills.json"` (erro = versão 1) |
@@ -33,9 +34,14 @@ selection.md
 
 # Cópias de segurança da migração da pasta (scripts/migrar.js)
 .backup/
+
+# Banco derivado das coletas (banco.js do plugin): refeito dos arquivos a qualquer hora
+indice.db
+indice.db-wal
+indice.db-shm
 ```
 
-Versionados de propósito: `refs/`, `catalog/*.md`, `catalog/raw/**/*.json`, `drafts/`, `voz.md` e `.profills.json`. Ignorado de verdade quando `git check-ignore linkedin-data/selection.md` responde o caminho. Fora do repo-fonte (`~/Profills LinkedIn/`) não há git — nada a ignorar.
+Versionados de propósito: `refs/`, `catalog/*.md`, `catalog/raw/**/*.json`, `drafts/`, `voz.md` e `.profills.json`. Ignorado de verdade quando `git check-ignore linkedin-data/selection.md linkedin-data/indice.db` responde os dois caminhos. Fora do repo-fonte (`~/Profills LinkedIn/`) não há git — nada a ignorar.
 
 ## cmd.exe
 

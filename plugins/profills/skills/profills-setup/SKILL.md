@@ -32,7 +32,7 @@ Comece pela porta de entrada:
 
 - **Outra skill invocou você** (radar, garimpo, post, voz ou boletim). O diagnóstico completo fica para quando o usuário chamar a skill por nome; aqui você resolve só a pasta:
   - **`DADOS` não existia**: vá direto ao item **`DADOS` ❌** do passo 3, crie a pasta já com `boletins/` e o marcador da versão 3, anuncie o caminho e siga para o passo 6.
-  - **`DADOS` existe, mas é antiga** (sem `.profills.json`, ou com `versao_dados` menor que 3): faça o passo 4 inteiro e siga para o passo 6. Sem Node, conduza o item **Node/npx ❌** do passo 3 antes do passo 4. Com **Node pendente** ou o `migrar.js` sem `ok: true`, o passo 6 manda ficar com o usuário, não devolver o controle.
+  - **`DADOS` existe, mas é antiga** (sem `.profills.json`, com `versao_dados` menor que 3, ou a skill que chamou recebeu `formato_antigo` do `indice.js`): faça o passo 4 inteiro e siga para o passo 6. Sem Node, conduza o item **Node/npx ❌** do passo 3 antes do passo 4. Com **Node pendente** ou o `migrar.js` sem `ok: true`, o passo 6 manda ficar com o usuário, não devolver o controle.
 - **O usuário chamou você** ("instala", "configura", "atualiza", "o que está faltando"): passo 1.
 
 ### 1. Diagnóstico silencioso
@@ -41,7 +41,7 @@ Rode as checagens de `references/shell.md` — cada comando de fato executado, c
 
 - **Plugin `profills-skills`** — `claude plugin list` mostra `profills-skills`. **Exceção "via repo"**: se o toplevel git do diretório atual tem `plugins/profills/skills/profills-setup/SKILL.md`, você está dentro do repo-fonte, as skills já vêm dos symlinks de `.claude/skills` e o plugin não é necessário — marque ✅ com a nota "via repo" e não instale nada. Esse mesmo sinal decide onde criar a pasta de dados, no passo 3.
 - **humanize-pt-br** — `~/.claude/skills/humanize-pt-br/SKILL.md` ou `~/.agents/skills/humanize-pt-br/SKILL.md` existe.
-- **Node/npx** — `command -v npx` (Bash) ou `Get-Command npx` (PowerShell).
+- **Node/npx** — `command -v npx` (Bash) ou `Get-Command npx` (PowerShell), e a versão, `node -p process.versions.node`. ✅ só com `npx` presente e Node 22.13 ou mais novo: o banco de consultas das skills (`scripts/banco.js` do plugin) usa o SQLite que vem no Node, e ele só existe a partir da 22.13 (na linha 23, a partir da 23.4). Versão menor é ❌, com a versão na nota: "Node 20.11, precisa da 22.13 ou mais nova".
 - **Pasta `DADOS`** — resolvida pela regra acima, com `refs/`, `catalog/raw/linkedin/`, `drafts/` e `boletins/` dentro.
 - **Versão da pasta** — `versao_dados` lido de `DADOS/.profills.json`: 3 é ✅; arquivo ausente ou número menor é ❌. Sem pasta `DADOS`, fica ❌ e se resolve junto com ela.
 - **Lista de empresas** — `node "<pasta desta skill>/../profills-radar/scripts/indice.js" "<DADOS>/refs"`: o `n_empresas` da saída diz quantas empresas o índice tem. Índice ausente ou sem linha conta como 0. Lista vazia não é falta, é o começo. Sem Node ou sem pasta `DADOS`, fica `—` e se resolve junto com eles.
@@ -78,7 +78,7 @@ Nesta ordem, um item por vez:
   claude plugin install profills-skills@profills-skills
   ```
   Instalado quando `claude plugin list` volta a mostrar `profills-skills`. Se um dos comandos falhar, a causa está na tabela de sintomas no fim deste arquivo. Depois de instalar, avise: "pode ser preciso reabrir o Claude Code para as skills novas aparecerem" (não dá para confirmar isso ao vivo nesta sessão).
-- **Node/npx ❌**: o Node.js é o motor dos scripts que a radar, a garimpo e a post rodam (índice, métricas, checagem de formato) e do `npx` que instala a `humanize-pt-br` — sem ele o pipeline não anda. Pergunte com `AskUserQuestion`, duas opções — **"Instalar o Node agora"** (recomendada: passo a passo por sistema em `references/instalacao.md`, ~3 min) ou **"Deixar para depois"**. Instalou: peça para abrir um terminal novo, refaça a checagem de `npx` e siga para o item seguinte. Deixou para depois: o Node fica pendente, e você diz em uma frase que radar, garimpo e post só vão funcionar depois de instalar.
+- **Node/npx ❌**: o Node.js é o motor dos scripts que a radar, a garimpo e a post rodam (índice, métricas, checagem de formato, banco de consultas) e do `npx` que instala a `humanize-pt-br` — sem ele o pipeline não anda. Com Node instalado e versão abaixo da 22.13, diga a versão que ele tem e que as skills precisam de uma mais nova; o caminho é o mesmo, instalar a LTS por cima da antiga. Pergunte com `AskUserQuestion`, duas opções — **"Instalar o Node agora"** (ou **"Atualizar o Node agora"**, com Node antigo; recomendada: passo a passo por sistema em `references/instalacao.md`, ~3 min) ou **"Deixar para depois"**. Instalou: peça para abrir um terminal novo, refaça a checagem de `npx` e da versão e siga para o item seguinte. Deixou para depois: o Node fica pendente, e você diz em uma frase que radar, garimpo e post só vão funcionar depois de instalar.
   **Node pendente** quer dizer: a `humanize-pt-br` fica de fora, a versão da pasta fica pendente (o passo 4 não roda), o `CLAUDE.md` da pasta não é criado, e o fecho segue a **Pendência aberta** do passo 6.
 - **humanize-pt-br ❌** (com npx disponível): explique que isso traz a skill que tira as marcas de IA dos rascunhos.
   ```
@@ -95,7 +95,7 @@ Concluído quando cada linha ❌ da tabela virou ✅, virou uma decisão do usu�
 
 A pasta de dados guarda o trabalho do comercial: empresas, catálogos, rascunhos, voz. Quando as skills mudam o formato de um desses arquivos, `scripts/migrar.js` (nesta skill) leva a pasta até a versão atual e guarda uma cópia de tudo que reescreve. Ele precisa do Node (sem ele, vale o **Node pendente** do passo 3).
 
-1. **Veja o que vai mudar, sem mudar nada.** Rode `node "<pasta desta skill>/scripts/migrar.js" "<DADOS>"`. A saída é JSON: `versao_atual`, `acoes[]` (cada uma com `tipo`, `alvo` e `detalhe`; a `mover_coleta` traz também o `de`), `problemas[]`, `avisos[]` e `ok`. Uma execução leva a pasta da versão 1 ou 2 até a 3. Concluído quando você tem a lista de ações.
+1. **Veja o que vai mudar, sem mudar nada.** Rode `node "<pasta desta skill>/scripts/migrar.js" "<DADOS>"`. A saída é JSON: `versao_atual`, `acoes[]` (cada uma com `tipo`, `alvo` e `detalhe`; a `mover_coleta` traz também o `de`), `problemas[]`, `avisos[]` e `ok`. Uma execução leva a pasta da versão 1 ou 2 até a 3, e também termina uma pasta já marcada como 3 que ainda tenha o campo catálogo na lista. Concluído quando você tem a lista de ações.
 
 2. **Explique em linguagem simples, antes de aplicar.** Uma frase por tipo de ação que apareceu, sem nome de arquivo técnico nem JSON:
 
@@ -103,9 +103,10 @@ A pasta de dados guarda o trabalho do comercial: empresas, catálogos, rascunhos
    |---|---|
    | `criar_pasta` | "vou criar a pasta de <rascunhos, boletins, coletas do LinkedIn…>, que ainda não existia" |
    | `mover_coleta` | "as coletas de cada empresa vão para dentro de uma pasta do LinkedIn, para caber o Instagram depois; nenhum arquivo muda por dentro" |
-   | `converter_indice` | "a lista das suas empresas ganha um campo para o Instagram, vazio por enquanto" e, se a lista ainda era a mais antiga, "e uma etiqueta em cada informação (setor, país, prioridade); nenhuma empresa sai da lista, e a prioridade fica 'a definir' até você me dizer" |
+   | `converter_indice` | "a lista das suas empresas ganha um campo para o Instagram, vazio por enquanto, e deixa de guardar a data do último catálogo, que as skills passam a tirar das coletas" e, se a lista ainda era a mais antiga, "e uma etiqueta em cada informação (setor, país, prioridade); nenhuma empresa sai da lista, e a prioridade fica 'a definir' até você me dizer" |
    | `converter_status` | "umas anotações antigas de coleta viram o arquivo que as skills leem hoje; a anotação original continua lá" |
    | `marcar_concluida` | "cada coleta antiga ganha a anotação de que terminou, para o boletim não confundi-la com uma coleta que parou no meio" |
+   | `ignorar_banco` | "anoto que o banco de consultas da pasta fica fora do git: ele é refeito das coletas a qualquer hora" |
    | `gravar_marcador` | "anoto na pasta que ela já está na versão nova, para não refazer isso" |
 
    Diga também que uma cópia da lista e das anotações de coleta fica guardada antes da mudança. Com `avisos[]` cheio, diga em uma frase qual coleta tem a anotação ilegível: ela fica como está, e a migração segue. É atualização do que já é dele, dentro do pedido: siga sem pedir licença. Com `problemas[]` cheio, não aplique; vá ao item 5.
