@@ -67,7 +67,7 @@ const runPrompt = (e, cfg) => {
     '- Tools mcp__claude-in-chrome__ e navegador real indisponíveis: onde o contexto declara o retorno de uma tool, use-o; onde não, escreva a chamada exata e o resultado plausível, marcado [TOOL]. Nunca carregue essas tools.',
     '- Tool Artifact indisponível: onde a skill mandar publicar artefato, escreva o HTML completo em ' + runDir + '/outputs/artifact-<nome>.html e trate o caminho como o link.',
     '- claude plugin ... e npx skills add ... não são executados: escreva o comando exato e assuma o resultado que o contexto indica.',
-    '- WebSearch/WebFetch reais podem ser usados se a skill mandar pesquisar.',
+    '- WebSearch real pode ser usado se a skill mandar buscar. WebFetch não: página se abre pelo navegador, pela regra das tools mcp__claude-in-chrome__ acima.',
     '- Invocar outra skill: leia o SKILL.md dela no diretório-pai de ' + skillPath + ' e siga.',
     'PEDIDO DO USUÁRIO: o campo prompt de ' + e.dir + '/eval_metadata.json. Ignore expected_output e assertions desse arquivo — são gabarito.',
     'SAÍDA OBRIGATÓRIA em ' + runDir + '/outputs/: (1) transcript.md em pt-BR: passos executados com [PERGUNTA]/[TOOL], e ao fim a seção "## Resposta final" com o texto exato que o usuário leria; (2) cópia de todo arquivo criado ou alterado dentro de repo/, com o caminho relativo preservado (ex.: outputs/linkedin-data/refs/INDEX.md); pasta criada vazia ganha um arquivo .keep na cópia. Não faça commit.',

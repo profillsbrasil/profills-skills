@@ -54,7 +54,7 @@ A `profills-setup` confere o que falta, instala a `humanize-pt-br`, cria a pasta
 | `profills-setup` | Instala e confere tudo, cria a pasta de dados e atualiza a pasta quando as skills mudam. |
 | `profills-voz` | Conversa com você uns 10 minutos e grava o que você vende, para quem e como você fala. Todo post sai dessa voz. |
 | `profills-radar` | Guarda a lista de empresas que você acompanha, importa sua planilha de concorrentes e escolhe as empresas de cada rodada, até 12, pela prioridade. |
-| `profills-navegador` | Deixa o seu navegador, com a extensão do assistente, pronto antes de qualquer coleta, e guia a instalação da extensão quando falta. |
+| `profills-navegador` | Deixa o seu navegador, com a extensão do assistente, pronto antes de abrir qualquer página (a coleta da garimpo e as páginas que a radar lê), e guia a instalação da extensão quando falta. |
 | `profills-garimpo` | Lê os posts recentes de cada empresa da rodada no seu navegador. Post em outro idioma ganha um resumo em português. |
 | `profills-boletim` | Responde "o que os concorrentes fizeram?": o que cada empresa postou de novo, quem ficou sem leitura e por quê, e 3 pautas de post. |
 | `profills-post` | Escreve de 3 a 5 versões de post na sua voz e mostra lado a lado para você escolher e copiar. |

@@ -10,7 +10,7 @@ A extensão vai no **mesmo navegador em que o LinkedIn e o Instagram dele já es
 
 ## Claude Code: extensão Claude in Chrome
 
-**Pré-requisito**: a extensão só funciona em conta Claude de plano pago. Para conferir junto com o usuário: claude.ai → **Settings** → **Plan**. Se a conta for gratuita, diga o que muda em vez de parar em silêncio: continua funcionando pesquisar empresas pela web (`profills-radar`) e escrever posts a partir de catálogo já coletado (`profills-post`); fica bloqueado coletar posts novos (`profills-garimpo`), que precisa do navegador logado.
+**Pré-requisito**: a extensão só funciona em conta Claude de plano pago. Para conferir junto com o usuário: claude.ai → **Settings** → **Plan**. Se a conta for gratuita, diga o que muda em vez de parar em silêncio: continua funcionando buscar empresas pela web (`profills-radar`, só com o que a busca mostra, sem abrir as páginas) e escrever posts a partir de catálogo já coletado (`profills-post`); fica bloqueado coletar posts novos (`profills-garimpo`), que precisa do navegador logado.
 
 1. **Instalar**: o link direto da extensão **"Claude"** (desenvolvedor: Anthropic) na Chrome Web Store, `https://chromewebstore.google.com/detail/claude/fcoeoabgfenejglbffodgkkbkcdhcgfn` → "Adicionar ao Chrome", aberto no navegador da seção acima.
 2. **Entrar**: quando a extensão pedir, fazer login com a mesma conta do claude.ai.

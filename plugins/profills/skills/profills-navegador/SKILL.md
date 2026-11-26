@@ -3,10 +3,10 @@ name: profills-navegador
 description: >-
   Seleciona e prepara o navegador do usuário (extensão Claude in Chrome ou
   ChatGPT) antes da primeira aba de cada sessão. Use antes de navegar
-  (pesquisar na web, abrir um site, coletar posts), quando a aba "abriu no
+  (abrir um site, ler uma página, coletar posts), quando a aba "abriu no
   outro PC", quando a ferramenta do navegador não existe ou não responde, ou
-  numa máquina sem a extensão. A profills-garimpo invoca antes de coletar;
-  a profills-setup, para o teste do navegador.
+  numa máquina sem a extensão. A profills-garimpo e a profills-radar invocam
+  antes da primeira página; a profills-setup, para o teste.
 metadata:
   version: 0.2.0
   author: othavio
