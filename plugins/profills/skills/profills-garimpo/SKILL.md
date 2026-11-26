@@ -23,7 +23,7 @@ O princípio que rege todo o catálogo: **separe o que foi medido do que foi inf
 
 ### 0. Localize a pasta de dados
 
-**Pasta de dados (`DADOS`)**: se o diretório atual está num repo git com `linkedin-data/` na raiz (`git rev-parse --show-toplevel`), `DADOS` é essa pasta; senão é `~/Profills LinkedIn/`. Se nenhuma das duas existe, ou se `DADOS/.profills.json` falta ou traz `versao_dados` menor que 2, invoque a skill `profills-setup` — ela cria ou atualiza a pasta e confere o resto da instalação.
+**Pasta de dados (`DADOS`)**: se o diretório atual está num repo git com `linkedin-data/` na raiz (`git rev-parse --show-toplevel`), `DADOS` é essa pasta; senão é `~/Profills LinkedIn/`. Se nenhuma das duas existe, ou se `DADOS/.profills.json` falta ou traz `versao_dados` menor que 3, invoque a skill `profills-setup` — ela cria ou atualiza a pasta e confere o resto da instalação.
 
 Concluído quando você tem o caminho de `DADOS` e ele existe em disco.
 
@@ -35,11 +35,11 @@ Leia `DADOS/selection.md`. Cada linha traz o nome, o slug entre crases e o id nu
 - [Nome da Empresa](refs/<slug>.md) — `<slug>` · id <id numérico ou —> · <setor> · <país>
 ```
 
-O **slug é a chave de todos os paths** que você escreve (`catalog/raw/<slug>/…`, `catalog/<slug>.md`, `refs/<slug>.md`); o id é o plano B quando o slug falha na navegação (`references/navegacao.md`).
+O **slug é a chave de todos os paths** que você escreve (`catalog/raw/linkedin/<slug>/…`, `catalog/<slug>.md`, `refs/<slug>.md`); o id é o plano B quando o slug falha na navegação (`references/navegacao.md`).
 
 Arquivo ausente ou vazio → **invoque a `profills-radar`**: é ela que decide as empresas, monta a rodada de até 12 e escreve a seleção.
 
-**Rodada em mais de uma sessão.** A data do cabeçalho (`# Seleção ativa — AAAA-MM-DD`) marca a rodada. Empresa que já tem `catalog/raw/<slug>/<data>/meta.json` com data entre a do cabeçalho e hoje, as duas inclusive, já foi coletada nesta rodada: tire-a da lista desta sessão e diga ao usuário, pelo nome, quais já estavam feitas. Só colete de novo se ele pedir. É essa regra que deixa coletar as de prioridade Alta numa sessão e o resto na seguinte sem repetir página. Pasta com data depois de hoje não conta: ela vem de relógio ou fuso adiantado, e a `profills-boletim` para e avisa o comercial antes de chamar esta skill.
+**Rodada em mais de uma sessão.** A data do cabeçalho (`# Seleção ativa — AAAA-MM-DD`) marca a rodada. Empresa que já tem `catalog/raw/linkedin/<slug>/<data>/meta.json` com `"concluida": true` e data entre a do cabeçalho e hoje, as duas inclusive, já foi coletada nesta rodada: tire-a da lista desta sessão e diga ao usuário, pelo nome, quais já estavam feitas. Só colete de novo se ele pedir. É essa regra que deixa coletar as de prioridade Alta numa sessão e o resto na seguinte sem repetir página. Pasta com data depois de hoje não conta: ela vem de relógio ou fuso adiantado, e a `profills-boletim` para e avisa o comercial antes de chamar esta skill.
 
 Concluído quando você tem nome, slug e id de cada empresa que falta coletar nesta rodada.
 
@@ -83,11 +83,13 @@ Processe **uma empresa de cada vez** e salve o bruto em disco antes de passar à
 Para cada empresa, siga `references/navegacao.md` (como dirigir o `claude-in-chrome`, ordenar por Recentes, rolar o feed, authwall e erros) e salve:
 
 ```
-DADOS/catalog/raw/<slug>/<AAAA-MM-DD>/
+DADOS/catalog/raw/linkedin/<slug>/<AAAA-MM-DD>/
 ├── posts.json        # array de posts (dado estruturado — o artefato primário)
-├── meta.json         # seguidores, janela, nº de posts e o status da coleta
+├── meta.json         # seguidores, janela, nº de posts, o status e se a coleta terminou
 └── screenshots/      # uma imagem (.png ou .jpg) por post com mídia
 ```
+
+**O `meta.json` diz se a coleta terminou.** Antes de abrir a página da empresa, crie a pasta do dia e grave o `meta.json` com `slug`, `coletado_em`, `janela_dias` e `"concluida": false`. Ao terminar a empresa, regrave-o inteiro com os campos de `references/schema-post.md` e `"concluida": true`. Sessão que cai no meio deixa `false`, e é por ele que a próxima sessão e a `profills-boletim` sabem que a empresa falta.
 
 Cada execução cria a pasta do dia; pasta de data anterior fica intacta — é isso que permite comparar cadência semana a semana. Segunda rodada no mesmo dia sobrescreve só a pasta de hoje.
 
@@ -99,14 +101,14 @@ Cada execução cria a pasta do dia; pasta de data anterior fica intacta — é 
 
 **Empresa sem posts na janela é dado, não erro.** Grave o `meta.json` com `"status"` diferente de `ok` e a `"nota"` de uma frase (valores em `references/schema-post.md`), pule o perfil dela e siga para a próxima.
 
-Concluído quando cada empresa da seleção tem `posts.json` + `meta.json` na pasta do dia, com `status` preenchido.
+Concluído quando cada empresa da seleção tem `posts.json` + `meta.json` na pasta do dia, com `status` preenchido e `"concluida": true`.
 
 ### 6. Rode as métricas e sintetize o perfil
 
 Antes de escrever qualquer número, rode o script **uma vez por empresa**, sobre a pasta que você acabou de gravar:
 
 ```bash
-node "<pasta desta skill>/scripts/metricas.js" "<DADOS>/catalog/raw/<slug>/<AAAA-MM-DD>"
+node "<pasta desta skill>/scripts/metricas.js" "<DADOS>/catalog/raw/linkedin/<slug>/<AAAA-MM-DD>"
 ```
 
 "Pasta desta skill" é o diretório onde este `SKILL.md` está. Janela ampliada é detectada pelo `janela_dias` do `meta.json`; se precisar forçar, `--janela padrao|ampliada`.

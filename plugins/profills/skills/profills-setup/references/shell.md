@@ -10,11 +10,11 @@ A ferramenta de shell do Claude Code depende do sistema: Linux e Mac usam Bash; 
 | É o repo-fonte? | `test -f "$(git rev-parse --show-toplevel)/plugins/profills/skills/profills-setup/SKILL.md"` | `Test-Path "$(git rev-parse --show-toplevel)\plugins\profills\skills\profills-setup\SKILL.md"` |
 | npx existe? | `command -v npx` | `Get-Command npx` |
 | humanize-pt-br instalada? | `ls ~/.claude/skills/humanize-pt-br/SKILL.md ~/.agents/skills/humanize-pt-br/SKILL.md 2>/dev/null` (uma linha basta) | `Test-Path "$env:USERPROFILE\.claude\skills\humanize-pt-br\SKILL.md","$env:USERPROFILE\.agents\skills\humanize-pt-br\SKILL.md"` |
-| `DADOS` existe com as subpastas? | `ls -d "<DADOS>/refs" "<DADOS>/catalog/raw" "<DADOS>/drafts" "<DADOS>/boletins"` | `Test-Path "<DADOS>\refs","<DADOS>\catalog\raw","<DADOS>\drafts","<DADOS>\boletins"` |
+| `DADOS` existe com as subpastas? | `ls -d "<DADOS>/refs" "<DADOS>/catalog/raw/linkedin" "<DADOS>/drafts" "<DADOS>/boletins"` | `Test-Path "<DADOS>\refs","<DADOS>\catalog\raw\linkedin","<DADOS>\drafts","<DADOS>\boletins"` |
 | Versão da pasta? | `cat "<DADOS>/.profills.json"` (erro = versão 1) | `Get-Content "<DADOS>\.profills.json"` (erro = versão 1) |
 | `voz.md` existe? | `test -f "<DADOS>/voz.md"` | `Test-Path "<DADOS>\voz.md"` |
-| Criar `DADOS` | `mkdir -p "<DADOS>/refs" "<DADOS>/catalog/raw" "<DADOS>/drafts" "<DADOS>/boletins"` | `New-Item -ItemType Directory -Force "<DADOS>\refs","<DADOS>\catalog\raw","<DADOS>\drafts","<DADOS>\boletins"` |
-| Marcar pasta nova como versão 2 | `printf '{"versao_dados": 2, "atualizado_em": "%s"}\n' "$(date +%F)" > "<DADOS>/.profills.json"` | `Set-Content -Path "<DADOS>\.profills.json" -Value ('{"versao_dados": 2, "atualizado_em": "' + (Get-Date -Format yyyy-MM-dd) + '"}')` |
+| Criar `DADOS` | `mkdir -p "<DADOS>/refs" "<DADOS>/catalog/raw/linkedin" "<DADOS>/drafts" "<DADOS>/boletins"` | `New-Item -ItemType Directory -Force "<DADOS>\refs","<DADOS>\catalog\raw\linkedin","<DADOS>\drafts","<DADOS>\boletins"` |
+| Marcar pasta nova como versão 3 | `printf '{"versao_dados": 3, "atualizado_em": "%s"}\n' "$(date +%F)" > "<DADOS>/.profills.json"` | `Set-Content -Path "<DADOS>\.profills.json" -Value ('{"versao_dados": 3, "atualizado_em": "' + (Get-Date -Format yyyy-MM-dd) + '"}')` |
 
 O marcador vale só para pasta **criada agora**, vazia. Pasta que já existia passa pelo `scripts/migrar.js` (passo 4 do `SKILL.md`), que converte o que precisa e grava o marcador por último.
 

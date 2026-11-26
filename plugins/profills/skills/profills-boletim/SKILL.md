@@ -34,10 +34,10 @@ node "<pasta desta skill>/scripts/boletim.js" "<DADOS>"
 |---|---|
 | `empresas[].cobertura` | o balde de cada empresa, um só: `com_novidade`, `sem_novidade`, `indisponivel`, `sem_linkedin`, `fora_desta_rodada` |
 | `empresas[].motivo`, `nota` | por que a empresa está no balde (`erro_navegacao`, `coleta_com_erro`, `nao_coletada_nesta_rodada`, `sem_posts`…), e a frase da coleta |
-| `empresas[].novos[]` | os posts da coleta desta rodada que não estavam na coleta anterior: `data`, `url`, `formato`, `hook`, `angulo`, `idioma`, `estrangeiro`, `resumo_pt`, `engajamento`, `destaque_da_coleta`. O script compara por `post_id` e, sem ele, pela `url`; post repetido na mesma coleta conta uma vez, e a pasta da rodada sem `meta.json` (coleta interrompida) não serve de anterior |
+| `empresas[].novos[]` | os posts da coleta desta rodada que não estavam na coleta anterior: `data`, `url`, `formato`, `hook`, `angulo`, `idioma`, `estrangeiro`, `resumo_pt`, `engajamento`, `destaque_da_coleta`. O script compara por `post_id` e, sem ele, pela `url`; post repetido na mesma coleta conta uma vez, e coleta interrompida (`"concluida": false` no `meta.json`, ou pasta da rodada sem `meta.json`) não serve de anterior |
 | `empresas[].primeira_coleta` | `true` quando não há coleta anterior: todos os posts da janela contam como novos |
 | `empresas[].cadencia` | `posts_por_semana` da coleta anterior e da atual e a `diferenca`; `mesma_janela: false` quer dizer que não se compara |
-| `rodada` | `data` do cabeçalho, `situacao` (passo 1), `coletadas`, `faltam_coletar` (nome, slug e a `nota`: antes da rodada, nunca coletada ou coleta interrompida sem `meta.json`), `boletim_da_rodada_existe` e o caminho em `boletim_da_rodada`. Coletada nesta rodada é a mesma regra da garimpo: `meta.json` numa pasta com data entre a do cabeçalho do `selection.md` e hoje. Pasta com data depois de hoje vira o problema `coleta_no_futuro`, que para o boletim antes da garimpo: sem essa parada, a garimpo daria a empresa por coletada e o boletim a mostraria faltando de novo, em laço |
+| `rodada` | `data` do cabeçalho, `situacao` (passo 1), `coletadas`, `faltam_coletar` (nome, slug e a `nota`: antes da rodada, nunca coletada ou coleta interrompida, sem `meta.json` ou sem `"concluida": true`), `boletim_da_rodada_existe` e o caminho em `boletim_da_rodada`. Coletada nesta rodada é a mesma regra da garimpo: `meta.json` com `"concluida": true` em `catalog/raw/linkedin/<slug>/<data>/`, com data entre a do cabeçalho do `selection.md` e hoje. Pasta com data depois de hoje vira o problema `coleta_no_futuro`, que para o boletim antes da garimpo: sem essa parada, a garimpo daria a empresa por coletada e o boletim a mostraria faltando de novo, em laço |
 | `cobertura`, `totais` | a matriz e o total de posts novos, cada post contado uma vez |
 | `voz_existe`, `boletim_do_dia_existe` | se há `voz.md` para ler; se o arquivo de hoje vai ser sobrescrito |
 | `avisos[]` | `resumo_pt_ausente` (leia o texto no `posts.json` da pasta indicada e resuma você, com o rótulo "(inferido)"), `janelas_diferentes`, `post_sem_chave`, `post_repetido` (o mesmo post duas vezes na coleta: o script já o conta uma vez), `selecao_fora_do_indice` |
@@ -46,7 +46,7 @@ node "<pasta desta skill>/scripts/boletim.js" "<DADOS>"
 
 ### 0. Resolva os dados
 
-**Pasta de dados (`DADOS`)**: se o diretório atual está num repo git com `linkedin-data/` na raiz (`git rev-parse --show-toplevel`), `DADOS` é essa pasta; senão é `~/Profills LinkedIn/`. Se nenhuma das duas existe, ou se `DADOS/.profills.json` falta ou traz `versao_dados` menor que 2, invoque a skill `profills-setup` — ela cria ou atualiza a pasta e confere o resto da instalação.
+**Pasta de dados (`DADOS`)**: se o diretório atual está num repo git com `linkedin-data/` na raiz (`git rev-parse --show-toplevel`), `DADOS` é essa pasta; senão é `~/Profills LinkedIn/`. Se nenhuma das duas existe, ou se `DADOS/.profills.json` falta ou traz `versao_dados` menor que 3, invoque a skill `profills-setup` — ela cria ou atualiza a pasta e confere o resto da instalação.
 
 Concluído quando você tem o caminho absoluto de `DADOS` e ele existe no disco.
 
