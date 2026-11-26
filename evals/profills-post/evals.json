@@ -74,7 +74,7 @@
         "Cria a pasta e salva outputs/linkedin-data/drafts/<AAAA-MM-DD>-<tema-slug>.md; rodar `scripts/checar-formato.js` nele com `--voz linkedin-data/voz.md` devolve `ok: true` (exit 0).",
         "Existe outputs/linkedin-data/drafts/<AAAA-MM-DD>-<tema-slug>/variacoes.md com 3-5 variações completas, ângulo distinto por variação, as três famílias de hook cobertas e nenhuma categoria repetida.",
         "NEGATIVA: todo número do texto salvo vem de `linkedin-data/voz.md` (Provas: 62 linhas entregues, 4 horas de resposta, 3 dias de instalação, 6% para 0,8% em Diadema) ou do perfil da Skymsen — nenhuma cifra nova apareceu na hora de escrever, e a linha de contexto aponta a origem de cada uma.",
-        "NEGATIVA: nem linkedin-data/catalog/skymsen.md nem linkedin-data/catalog/raw/skymsen/2026-07-14/posts.json aparecem alterados em outputs/ — a skill lê o catálogo, não o reescreve.",
+        "NEGATIVA: nem linkedin-data/catalog/skymsen.md nem linkedin-data/catalog/raw/linkedin/skymsen/2026-07-14/posts.json aparecem alterados em outputs/ — a skill lê o catálogo, não o reescreve.",
         "Existe em outputs/linkedin-data/.picker/current/content/ um JSON de tela (titulo, empresa, opcoes[]) e a escolha do ângulo foi pedida depois de mostrar o picker, não antes.",
         "Nenhuma variação imita o padrão que o usuário disse não querer (post de data comemorativa) nem repete o tom institucional 'nós da empresa' do catálogo da Skymsen; o texto salvo está na primeira pessoa da voz do usuário.",
         "Depois de rodar start-server.sh, não cola a `url` nem query com chave no chat. Lê `opened` do JSON: com `false`, diz em uma frase que a aba não abriu e oferece escolher pelo chat (A/B/C); com `true`, diz que a aba abriu.",
@@ -107,7 +107,7 @@
         "evals/profills-post/files/6"
       ],
       "expectations": [
-        "Sem `catalog/tecnox-do-brasil.md`, lê `linkedin-data/catalog/raw/tecnox-do-brasil/2026-07-14/meta.json` e conta ao usuário, em uma frase e na resposta final, a razão que está lá (`status: sem_posts` — LinkedIn parado há cerca de 11 meses, 0 posts coletados), sem jargão de campo de JSON.",
+        "Sem `catalog/tecnox-do-brasil.md`, lê `linkedin-data/catalog/raw/linkedin/tecnox-do-brasil/2026-07-14/meta.json` e conta ao usuário, em uma frase e na resposta final, a razão que está lá (`status: sem_posts` — LinkedIn parado há cerca de 11 meses, 0 posts coletados), sem jargão de campo de JSON.",
         "Oferece rodar a profills-garimpo para atualizar a Tecnox e segue com o tema de embalagem flexível em vez de travar o pedido.",
         "NEGATIVA: nada da Tecnox é inventado — nenhum post, hook, formato, URL ou número de engajamento atribuído a ela aparece no JSON do picker, nas variações ou no texto salvo.",
         "NEGATIVA: outputs/ não traz `linkedin-data/catalog/tecnox-do-brasil.md` criado nem o `meta.json` da coleta alterado.",

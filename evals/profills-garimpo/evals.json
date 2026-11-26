@@ -4,15 +4,15 @@
     {
       "id": 1,
       "prompt": "Analisa os posts da Cetro Máquinas no LinkedIn. (Contexto: o navegador está logado e a página abre normal; nesta máquina a captura de tela do claude-in-chrome está indisponível — o save_to_disk não devolve arquivo nenhum.)",
-      "expected_output": "Lê DADOS/selection.md da fixture, pega Cetro Máquinas + slug `cetromaquinas` + id 66792350 e fixa a janela padrão (7 dias, até 5 posts) sem invocar a profills-radar. Avisa em linguagem simples que vai só ler o LinkedIn no navegador do usuário, confirma com AskUserQuestion e invoca a profills-navegador. Coleta na tab do handoff e grava raw/cetromaquinas/2026-08-24/posts.json + meta.json (seguidores, janela_dias 7, status ok). Como a captura falhou, grava `screenshot: null` e `descricao_visual` em cada post — não fabrica PNG placeholder. Roda scripts/metricas.js na pasta da coleta e escreve o perfil, o _summary.md, o INDEX.md e o dashboard copiando os números do JSON do script (taxa normalizada = média por post ÷ seguidores × 100), sem recalcular nada em prosa. O perfil sai limpo, sem o bloco de instrução nem comentário HTML do template. Fecha perguntando o que da Cetro não imitar e gravando em `## Do Not Copy`.",
+      "expected_output": "Lê DADOS/selection.md da fixture, pega Cetro Máquinas + slug `cetromaquinas` + id 66792350 e fixa a janela padrão (7 dias, até 5 posts) sem invocar a profills-radar. Avisa em linguagem simples que vai só ler o LinkedIn no navegador do usuário, confirma com AskUserQuestion e invoca a profills-navegador. Coleta na tab do handoff e grava raw/linkedin/cetromaquinas/2026-08-24/posts.json + meta.json (seguidores, janela_dias 7, status ok). Como a captura falhou, grava `screenshot: null` e `descricao_visual` em cada post — não fabrica PNG placeholder. Roda scripts/metricas.js na pasta da coleta e escreve o perfil, o _summary.md, o INDEX.md e o dashboard copiando os números do JSON do script (taxa normalizada = média por post ÷ seguidores × 100), sem recalcular nada em prosa. O perfil sai limpo, sem o bloco de instrução nem comentário HTML do template. Fecha perguntando o que da Cetro não imitar e gravando em `## Do Not Copy`.",
       "files": [
         "evals/profills-garimpo/files/1"
       ],
       "expectations": [
-        "Usa a seleção da fixture (slug `cetromaquinas`, id 66792350) sem invocar a profills-radar, e o meta.json gravado em catalog/raw/cetromaquinas/2026-08-24/ traz janela_dias 7, seguidores e status ok, com no máximo 5 posts, todos datados entre 2026-08-18 e 2026-08-24",
+        "Usa a seleção da fixture (slug `cetromaquinas`, id 66792350) sem invocar a profills-radar, e o meta.json gravado em catalog/raw/linkedin/cetromaquinas/2026-08-24/ traz janela_dias 7, seguidores, status ok e `\"concluida\": true`, com no máximo 5 posts, todos datados entre 2026-08-18 e 2026-08-24",
         "Avisa em linguagem simples que só vai ler (nada de curtir, comentar ou publicar), confirma com AskUserQuestion e só então invoca a profills-navegador, trabalhando na tab do handoff",
         "NEGATIVA: nenhum screenshot fabricado — todo campo `screenshot` do posts.json é null com `descricao_visual` preenchida, e a pasta da coleta não contém nenhum arquivo de imagem (nem 1×1, nem vazio, nem menor que 1 KB)",
-        "ARTEFATO: `node scripts/metricas.js` rodado sobre outputs/linkedin-data/catalog/raw/cetromaquinas/2026-08-24 devolve JSON cujos `posts_por_semana`, `formato_dominante`, `engajamento_medio` e `taxa_normalizada` aparecem com o mesmo valor em catalog/cetromaquinas.md — nenhum número do perfil sem correspondente no JSON do script",
+        "ARTEFATO: `node scripts/metricas.js` rodado sobre outputs/linkedin-data/catalog/raw/linkedin/cetromaquinas/2026-08-24 devolve JSON cujos `posts_por_semana`, `formato_dominante`, `engajamento_medio` e `taxa_normalizada` aparecem com o mesmo valor em catalog/cetromaquinas.md — nenhum número do perfil sem correspondente no JSON do script",
         "A taxa de engajamento normalizada citada no perfil, no _summary.md, no dashboard e na resposta final é a mesma e bate com ((soma de likes+comentários+reposts ÷ n_posts) ÷ seguidores × 100) recalculado do posts.json + meta.json da própria rodada",
         "NEGATIVA: a taxa não é a soma da janela dividida pelos seguidores — o número publicado é a média por post, e nenhum número do dashboard está ausente da saída do metricas.js",
         "catalog/cetromaquinas.md tem as seções do perfil-template com marcação [medido] vs [inferido], cada tema com post-recibo (link + data), só o bloco de janela padrão, e nenhum comentário HTML `<!--` nem o bloco 'Como usar este template'",
@@ -29,7 +29,7 @@
       "expectations": [
         "Invoca a profills-radar em vez de montar ou cortar a lista sozinha; a radar pergunta a prioridade das fichas `a definir` antes de montar a rodada, e DADOS/selection.md sai com as empresas que o usuário aprovou (até 12; nenhuma das 8 pedidas é cortada pelo teto), cada linha com nome, slug e id",
         "Antes de abrir o navegador, diz em texto quantas empresas a rodada tem, quantas são de prioridade Alta e o tempo aproximado chamado de estimativa, e confirma com AskUserQuestion oferecendo seguir com tudo, coletar só as Alta agora e o resto depois, ou deixar para depois (a opção das Alta some quando nenhuma ou todas são Alta)",
-        "Cada empresa da seleção tem catalog/raw/<slug>/2026-08-24/posts.json + meta.json (janela_dias 7, ≤5 posts dentro da janela), gravados um a um antes de passar à próxima",
+        "Cada empresa da seleção tem catalog/raw/linkedin/<slug>/2026-08-24/posts.json + meta.json (janela_dias 7, ≤5 posts dentro da janela), gravados um a um antes de passar à próxima",
         "Toda empresa com status ok tem o perfil catalog/<slug>.md gerado pelo perfil-template — é ele o insumo da profills-post, e nenhum deles carrega comentário HTML `<!--` do template",
         "Os números do _summary.md (posts/semana, formato dominante, taxa normalizada) são os campos `posts_por_semana`, `formato_dominante` e `taxa_normalizada` da saída do metricas.js de cada empresa, e a taxa confere ao ser recalculada como média por post ÷ seguidores × 100",
         "NEGATIVA: nenhuma empresa é comparada por likes brutos, e empresa sem seguidores no meta.json entra com a taxa em branco e a razão declarada — não com o engajamento absoluto na coluna da taxa",
@@ -41,14 +41,14 @@
     {
       "id": 3,
       "prompt": "Atualiza o catálogo da Cetro Máquinas — já rodei semana passada.",
-      "expected_output": "A fixture tem a coleta de 2026-08-17 (5 posts, todos artigo, 19.200 seguidores) e o perfil catalog/cetromaquinas.md escrito sobre ela. Cria a pasta raw/cetromaquinas/2026-08-24/ nova sem tocar na de 17/08, roda o metricas.js nas DUAS pastas e compara os dois JSON. Edita o perfil existente (não reescreve do zero), atualiza o cabeçalho para a coleta de hoje e anexa uma entrada `## Change Log` datada de 2026-08-24 com cadência, formato dominante e taxa normalizada — cada par de números vindo dos dois JSON (o de 17/08 é 5 posts/semana, artigo 100%, taxa 0,015%). Carimba 'catálogo 2026-08-24' só na linha da Cetro no INDEX.md e entrega o perfil sem comentário HTML.",
+      "expected_output": "A fixture tem a coleta de 2026-08-17 (5 posts, todos artigo, 19.200 seguidores) e o perfil catalog/cetromaquinas.md escrito sobre ela. Cria a pasta raw/linkedin/cetromaquinas/2026-08-24/ nova sem tocar na de 17/08, roda o metricas.js nas DUAS pastas e compara os dois JSON. Edita o perfil existente (não reescreve do zero), atualiza o cabeçalho para a coleta de hoje e anexa uma entrada `## Change Log` datada de 2026-08-24 com cadência, formato dominante e taxa normalizada — cada par de números vindo dos dois JSON (o de 17/08 é 5 posts/semana, artigo 100%, taxa 0,015%). Carimba 'catálogo 2026-08-24' só na linha da Cetro no INDEX.md e entrega o perfil sem comentário HTML.",
       "files": [
         "evals/profills-garimpo/files/3"
       ],
       "expectations": [
-        "Existe catalog/raw/cetromaquinas/2026-08-24/ com posts.json e meta.json próprios, e a pasta 2026-08-17/ da fixture segue byte a byte idêntica (posts.json e meta.json inalterados)",
+        "Existe catalog/raw/linkedin/cetromaquinas/2026-08-24/ com posts.json e meta.json próprios, e a pasta 2026-08-17/ da fixture segue byte a byte idêntica (posts.json e meta.json inalterados)",
         "Roda o metricas.js também sobre a pasta 2026-08-17 da fixture: os números 'antes' do Change Log vêm dessa saída, não de leitura do perfil em prosa",
-        "catalog/cetromaquinas.md é o mesmo arquivo editado — as seções da fixture (Formatos, Temas recorrentes, Hooks e ângulos, Destaque, Tom de voz) continuam lá e o cabeçalho passa a apontar para raw/cetromaquinas/2026-08-24/posts.json",
+        "catalog/cetromaquinas.md é o mesmo arquivo editado — as seções da fixture (Formatos, Temas recorrentes, Hooks e ângulos, Destaque, Tom de voz) continuam lá e o cabeçalho passa a apontar para raw/linkedin/cetromaquinas/2026-08-24/posts.json",
         "O arquivo ganha uma seção `## Change Log` (inexistente na fixture) com entrada datada 2026-08-24 comparando as três dimensões: cadência, formato dominante e taxa normalizada",
         "Os valores 'antes' do Change Log são exatamente os da coleta de 17/08 — 5 posts/semana, formato dominante artigo (5/5) e taxa normalizada 0,015% — e os 'agora' conferem com o metricas.js da coleta de hoje",
         "NEGATIVA: o perfil entregue não contém nenhum comentário HTML `<!--` nem instrução de preenchimento do template, incluindo a linha 'Só ao re-catalogar' da seção Change Log",
@@ -76,12 +76,12 @@
     {
       "id": 5,
       "prompt": "Cataloga a Sulpack. (Contexto: a página existe e está logada, mas não tem nenhuma publicação nos últimos 7 dias — a última é de março.)",
-      "expected_output": "Trata o silêncio como dado: grava raw/sulpack-industria-de-maquinas-para-embalagens/2026-08-24/ com posts.json `[]` e meta.json com \"status\": \"sem_posts\" e uma \"nota\" de uma frase, sem abortar. Não gera perfil por empresa. Edita o _summary.md que já existe na fixture: acrescenta a Sulpack numa linha 'sem dados: <nota>' e deixa as linhas das outras cinco empresas como estavam. No INDEX.md a linha da Sulpack mantém 'sem catálogo'. Não amplia a janela por conta própria — oferece a janela ampliada como opção ao usuário. O dashboard existe como arquivo e mostra a empresa em estado 'sem dados', sem gráfico forçado. Fecha explicando em linguagem de comercial que silêncio não é erro e oferecendo o próximo passo.",
+      "expected_output": "Trata o silêncio como dado: grava raw/linkedin/sulpack-industria-de-maquinas-para-embalagens/2026-08-24/ com posts.json `[]` e meta.json com \"status\": \"sem_posts\" e uma \"nota\" de uma frase, sem abortar. Não gera perfil por empresa. Edita o _summary.md que já existe na fixture: acrescenta a Sulpack numa linha 'sem dados: <nota>' e deixa as linhas das outras cinco empresas como estavam. No INDEX.md a linha da Sulpack mantém 'sem catálogo'. Não amplia a janela por conta própria — oferece a janela ampliada como opção ao usuário. O dashboard existe como arquivo e mostra a empresa em estado 'sem dados', sem gráfico forçado. Fecha explicando em linguagem de comercial que silêncio não é erro e oferecendo o próximo passo.",
       "files": [
         "evals/profills-garimpo/files/5"
       ],
       "expectations": [
-        "catalog/raw/sulpack-industria-de-maquinas-para-embalagens/2026-08-24/meta.json existe com \"status\": \"sem_posts\", \"janela_dias\": 7 e uma \"nota\" de uma frase; posts.json na mesma pasta é `[]` e a rodada termina sem erro",
+        "catalog/raw/linkedin/sulpack-industria-de-maquinas-para-embalagens/2026-08-24/meta.json existe com \"status\": \"sem_posts\", \"janela_dias\": 7, \"concluida\": true e uma \"nota\" de uma frase; posts.json na mesma pasta é `[]` e a rodada termina sem erro",
         "O metricas.js roda mesmo assim sobre a pasta e a resposta usa o que ele devolve (n_posts 0, posts_por_semana 0, aviso de status diferente de ok) em vez de improvisar a leitura",
         "NEGATIVA: nenhum catalog/sulpack-industria-de-maquinas-para-embalagens.md é gerado e a linha da Sulpack no refs/INDEX.md continua 'sem catálogo' — no diff contra a fixture, o INDEX.md não muda em nenhuma linha",
         "catalog/_summary.md é editado, não recriado: a Sulpack entra numa linha 'sem dados: <nota>' e as cinco empresas da fixture (Skymsen, Cetro Máquinas, Maqinox, Tecnox do Brasil, Tecnoenvase) mantêm exatamente os mesmos valores de posts/semana, formato dominante e engajamento do arquivo original",
@@ -98,7 +98,7 @@
         "evals/profills-garimpo/files/6"
       ],
       "expectations": [
-        "Coleta só a Maqinox: existe catalog/raw/maqinox-ind-stria-de-maquinas/2026-08-24/ com posts.json + meta.json, e nenhuma outra empresa ganha pasta de coleta nova",
+        "Coleta só a Maqinox: existe catalog/raw/linkedin/maqinox-ind-stria-de-maquinas/2026-08-24/ com posts.json + meta.json, e nenhuma outra empresa ganha pasta de coleta nova",
         "NEGATIVA: catalog/_summary.md é editado, não recriado do zero — as linhas de Skymsen, Cetro Máquinas, Tecnox do Brasil e Tecnoenvase seguem com os mesmos números da fixture (Skymsen 5 posts/semana e vídeo 5/5; Cetro 5 e artigo/link 5/5; Tecnox e Tecnoenvase em 0)",
         "A linha da Maqinox no _summary.md traz os valores da rodada de hoje, copiados dos campos `posts_por_semana`, `formato_dominante` e `taxa_normalizada` da saída do metricas.js",
         "A data do cabeçalho do _summary.md passa a refletir esta rodada, e a tabela ganha uma coluna de data por empresa (2026-07-14 nas quatro antigas, 2026-08-24 na Maqinox), sem a qual a comparação entre linhas seria falsa",
@@ -127,12 +127,12 @@
     {
       "id": 8,
       "prompt": "Cataloga a Zeta Sealing. (Contexto: o navegador está logado; a página tem 4.200 seguidores e 3 posts nos últimos 7 dias, todos em inglês. 22/08: \"We spent 3 years redesigning one sealing jaw. Here is what changed on the line.\" (carrossel, 85 likes, 9 comentários, 3 reposts). 23/08: \"Meet us at stand B12 next week. Live demo of the new pouch sealer every hour.\" (imagem, 40 likes, 2 comentários, 1 repost). 24/08: \"Most leaks start before the seal. Three checks your operators can do today.\" (texto, 120 likes, 15 comentários, 8 reposts). A captura de tela funciona.)",
-      "expected_output": "Lê a seleção da fixture (Zeta Sealing Systems, slug `zeta-sealing`, prioridade Alta), avisa o tamanho da rodada e o tempo como estimativa, confirma e invoca a profills-navegador. Grava raw/zeta-sealing/2026-08-24/posts.json com os 3 posts: `texto` e `hook` no inglês original, `idioma: \"en\"` em cada um e um `resumo_pt` de uma ou duas frases fiéis ao post. As classificações inferidas usam os valores fechados de taxonomias.md, sem valor novo por idioma. Roda o metricas.js, que devolve `idiomas: {\"en\": 3}` sem o aviso `resumo_pt_ausente`, e escreve catalog/zeta-sealing.md com a seção 'Posts em outro idioma' listando o resumo em pt-BR de cada post, copiado do posts.json.",
+      "expected_output": "Lê a seleção da fixture (Zeta Sealing Systems, slug `zeta-sealing`, prioridade Alta), avisa o tamanho da rodada e o tempo como estimativa, confirma e invoca a profills-navegador. Grava raw/linkedin/zeta-sealing/2026-08-24/posts.json com os 3 posts: `texto` e `hook` no inglês original, `idioma: \"en\"` em cada um e um `resumo_pt` de uma ou duas frases fiéis ao post. As classificações inferidas usam os valores fechados de taxonomias.md, sem valor novo por idioma. Roda o metricas.js, que devolve `idiomas: {\"en\": 3}` sem o aviso `resumo_pt_ausente`, e escreve catalog/zeta-sealing.md com a seção 'Posts em outro idioma' listando o resumo em pt-BR de cada post, copiado do posts.json.",
       "files": [
         "evals/profills-garimpo/files/8"
       ],
       "expectations": [
-        "Todo post de outputs/linkedin-data/catalog/raw/zeta-sealing/2026-08-24/posts.json tem `idioma` igual a \"en\" (minúsculo) e `resumo_pt` com uma ou duas frases em pt-BR",
+        "Todo post de outputs/linkedin-data/catalog/raw/linkedin/zeta-sealing/2026-08-24/posts.json tem `idioma` igual a \"en\" (minúsculo) e `resumo_pt` com uma ou duas frases em pt-BR",
         "Cada `resumo_pt` é fiel ao post: o do dia 22/08 fala dos 3 anos de redesenho da mandíbula de selagem, o do 23/08 do estande B12 e da demonstração da seladora de pouch, o do 24/08 das três checagens contra vazamento; nenhum traz dado que o texto não tem",
         "NEGATIVA: `texto` e `hook` ficam no inglês original no posts.json, sem tradução no lugar do texto medido",
         "NEGATIVA: `hook_categoria`, `angulo`, `formato` e `gatilho_psicologico` usam só valores de references/taxonomias.md (ou null), sem valor criado para post estrangeiro",
