@@ -508,9 +508,10 @@ function principal(argv) {
   dados = path.resolve(dados);
   if (!fs.existsSync(dados) || !fs.statSync(dados).isDirectory()) morrer(`A pasta de dados ${dados} não existe.`);
 
+  // exitCode, e não process.exit: num pipe o stdout é assíncrono, e sair na hora cortaria o JSON nos 64 KB.
   const fim = (saida) => {
     process.stdout.write(JSON.stringify(saida, null, 2) + '\n');
-    process.exit(saida.ok ? 0 : 1);
+    process.exitCode = saida.ok ? 0 : 1;
   };
   if (!nodeSuportado(process.versions.node)) {
     return fim({

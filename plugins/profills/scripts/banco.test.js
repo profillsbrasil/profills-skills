@@ -60,7 +60,7 @@ function montarDados() {
 }
 
 function rodar(dados, ...args) {
-  const r = spawnSync(process.execPath, [BANCO, dados, ...args], { encoding: 'utf8' });
+  const r = spawnSync(process.execPath, [BANCO, dados, ...args], { encoding: 'utf8', maxBuffer: 64 * 1024 * 1024 });
   let json = null;
   try {
     json = JSON.parse(r.stdout);
@@ -247,6 +247,13 @@ caso('--limite corta as linhas e avisa que cortou', () => {
   assert.deepStrictEqual([r.ok, r.n_linhas, r.truncado, r.linhas.length], [true, 6, true, 2]);
   const inteiro = rodar(dados, '--consultar', 'SELECT id_externo FROM post');
   assert.deepStrictEqual([inteiro.n_linhas, inteiro.truncado], [6, false]);
+});
+
+caso('saída grande chega inteira pelo pipe, sem cortar o JSON', () => {
+  const dados = montarDados();
+  const sql = "WITH RECURSIVE n(i) AS (SELECT 1 UNION ALL SELECT i + 1 FROM n WHERE i < 20000) SELECT i, 'linha para passar dos 64 KB do pipe' AS t FROM n";
+  const r = rodar(dados, '--consultar', sql, '--limite', '20000');
+  assert.deepStrictEqual([r.ok, r.n_linhas, r.linhas.length, r.linhas[19999].i], [true, 20000, 20000, 20000]);
 });
 
 caso('banco de outra versão do schema é refeito', () => {
