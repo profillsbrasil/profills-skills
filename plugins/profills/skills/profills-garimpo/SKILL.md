@@ -135,16 +135,16 @@ Concluído quando cada empresa com `status: ok` tem `catalog/<slug>.md` com toda
 
 ### 7. Compare e feche
 
-Depois de todas as empresas, dois arquivos:
+Depois de todas as empresas, um arquivo:
 
 1. `DADOS/catalog/_summary.md` — tabela comparativa (cadência, formato dominante, taxa de engajamento por empresa) + o eixo de mercado de `references/benchmark-mercado.md`: "esta empresa posta 1×/semana vs. o padrão B2B de 3-5×". Cada célula numérica é `posts_por_semana`, `formato_dominante` e `taxa_normalizada` do JSON do `metricas.js` — entre empresas só a taxa normalizada compara, porque audiências diferentes não se comparam em bruto. Empresa sem dados entra numa linha `sem dados: <nota do meta.json>`; empresa sem `seguidores` entra com a taxa em branco e a razão ("sem seguidores no meta.json"), nunca com likes brutos na coluna da taxa.
 
    **Rodada com parte das empresas**: se o `_summary.md` já existe, **edite-o** — atualize a data do cabeçalho e só as linhas das empresas desta rodada, preservando as demais como estão (elas são o retrato da coleta delas, com a data delas). Criar do zero só quando o arquivo não existe. Se a tabela antiga não tiver uma coluna de data por empresa, acrescente-a ao migrar: sem ela, linhas de rodadas diferentes viram um comparativo falso.
-2. `DADOS/refs/INDEX.md` — na linha de cada empresa com `status: ok`, troque o campo `sem catálogo` ou `catálogo …` pela data desta rodada (`catálogo AAAA-MM-DD`), no mesmo lugar e sem mexer nos outros campos da linha (o formato é da `profills-radar`); empresa com outro status mantém o campo como estava — sem perfil, sem carimbo. É esse campo que a `profills-radar` lê para não mandar re-catalogar quem acabou de sair.
+O `DADOS/refs/INDEX.md` não muda: a data do último catálogo de cada empresa sai das coletas, da pasta mais recente com `status: ok` e `"concluida": true` (a regra está em `scripts/coleta.js` do plugin), e é ela que a `profills-radar` lê para não mandar re-catalogar quem acabou de sair. O `meta.json` do passo 5 já é o carimbo.
 
-Com os dois gravados, rode `node "<pasta desta skill>/../profills-setup/scripts/mapa.js" "<DADOS>"`, que atualiza o resumo da pasta em `<DADOS>/CLAUDE.md`; se ele não voltar `ok: true`, avise em uma frase que o resumo não foi atualizado e siga.
+Com o `_summary.md` gravado, rode `node "<pasta desta skill>/../profills-setup/scripts/mapa.js" "<DADOS>"`, que atualiza o resumo da pasta em `<DADOS>/CLAUDE.md`; se ele não voltar `ok: true`, avise em uma frase que o resumo não foi atualizado e siga.
 
-Concluído quando o `_summary.md` cobre todas as empresas coletadas nesta sessão (as com dados e as sem) com os números do `metricas.js`, as linhas de empresas fora desta rodada continuam como estavam, e, no `INDEX.md`, só as linhas das empresas com `status: ok` mostram a data de hoje.
+Concluído quando o `_summary.md` cobre todas as empresas coletadas nesta sessão (as com dados e as sem) com os números do `metricas.js`, as linhas de empresas fora desta rodada continuam como estavam, e o `INDEX.md` está como estava antes da coleta.
 
 ### 8. Monte o dashboard visual
 
