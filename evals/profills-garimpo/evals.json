@@ -4,7 +4,7 @@
     {
       "id": 1,
       "prompt": "Analisa os posts da Cetro Máquinas no LinkedIn. (Contexto: o navegador está logado e a página abre normal; nesta máquina a captura de tela do claude-in-chrome está indisponível — o save_to_disk não devolve arquivo nenhum.)",
-      "expected_output": "Lê DADOS/selection.md da fixture, pega Cetro Máquinas + slug `cetromaquinas` + id 66792350 e fixa a janela padrão (7 dias, até 5 posts) sem invocar a profills-radar. Avisa em linguagem simples que vai só ler o LinkedIn no navegador do usuário, confirma com AskUserQuestion e invoca a profills-navegador. Coleta na tab do handoff e grava raw/linkedin/cetromaquinas/2026-08-24/posts.json + meta.json (seguidores, janela_dias 7, status ok). Como a captura falhou, grava `screenshot: null` e `descricao_visual` em cada post — não fabrica PNG placeholder. Roda scripts/metricas.js na pasta da coleta e escreve o perfil, o _summary.md, o INDEX.md e o dashboard copiando os números do JSON do script (taxa normalizada = média por post ÷ seguidores × 100), sem recalcular nada em prosa. O perfil sai limpo, sem o bloco de instrução nem comentário HTML do template. Fecha perguntando o que da Cetro não imitar e gravando em `## Do Not Copy`.",
+      "expected_output": "Lê DADOS/selection.md da fixture, pega Cetro Máquinas + slug `cetromaquinas` + id 66792350 e fixa a janela padrão (7 dias, até 5 posts) sem invocar a profills-radar. Avisa em linguagem simples que vai só ler o LinkedIn no navegador do usuário, confirma com AskUserQuestion e invoca a profills-navegador. Coleta na tab do handoff e grava raw/linkedin/cetromaquinas/2026-08-24/posts.json + meta.json (seguidores, janela_dias 7, status ok). Como a captura falhou, grava `screenshot: null` e `descricao_visual` em cada post — não fabrica PNG placeholder. Roda scripts/metricas.js na pasta da coleta e escreve o perfil, o _summary.md e o dashboard copiando os números do JSON do script (taxa normalizada = média por post ÷ seguidores × 100), sem recalcular nada em prosa. O INDEX.md não muda: a coleta nova, com status ok e concluida true, já é o catálogo. O perfil sai limpo, sem o bloco de instrução nem comentário HTML do template. Fecha perguntando o que da Cetro não imitar e gravando em `## Do Not Copy`.",
       "files": [
         "evals/profills-garimpo/files/1"
       ],
@@ -16,13 +16,13 @@
         "A taxa de engajamento normalizada citada no perfil, no _summary.md, no dashboard e na resposta final é a mesma e bate com ((soma de likes+comentários+reposts ÷ n_posts) ÷ seguidores × 100) recalculado do posts.json + meta.json da própria rodada",
         "NEGATIVA: a taxa não é a soma da janela dividida pelos seguidores — o número publicado é a média por post, e nenhum número do dashboard está ausente da saída do metricas.js",
         "catalog/cetromaquinas.md tem as seções do perfil-template com marcação [medido] vs [inferido], cada tema com post-recibo (link + data), só o bloco de janela padrão, e nenhum comentário HTML `<!--` nem o bloco 'Como usar este template'",
-        "No diff contra a fixture, refs/INDEX.md só muda na linha da Cetro Máquinas (passa a 'catálogo 2026-08-24'); as outras 5 linhas seguem idênticas, e o placeholder de `## Do Not Copy` em refs/cetromaquinas.md foi substituído pela resposta do usuário datada, perguntada com AskUserQuestion"
+        "No diff contra a fixture, refs/INDEX.md não muda em nenhuma linha (a data do catálogo sai do meta.json da coleta nova), e o placeholder de `## Do Not Copy` em refs/cetromaquinas.md foi substituído pela resposta do usuário datada, perguntada com AskUserQuestion"
       ]
     },
     {
       "id": 2,
       "prompt": "Quero monitorar o que essas 8 empresas de embalagem andam postando: Cetro, Maqinox, Sulpack, Tecnoenvase, Tecnox, Skymsen, Selopack e Pratipack.",
-      "expected_output": "Não monta nem corta a lista sozinha: invoca a profills-radar. As 6 fichas da fixture estão com `prioridade a definir`, então a radar pergunta a prioridade de cada uma antes de montar a rodada; Selopack e Pratipack não têm dossiê e entram pelo cadastro da radar. O teto de 12 não corta nenhuma das 8, e o DADOS/selection.md sai com as empresas que o usuário aprovou. Ao voltar, a garimpo lê a seleção, mantém a janela padrão e, antes de abrir o navegador, diz quantas empresas a rodada tem, quantas são de prioridade Alta e o tempo aproximado como estimativa; oferece seguir com tudo, coletar só as Alta agora e o resto depois, ou deixar para depois. Com o 'pode ir', invoca a profills-navegador e coleta uma empresa por vez, salvando posts.json + meta.json antes da próxima. Roda o metricas.js por empresa, gera catalog/<slug>.md para cada uma com status ok, o _summary.md comparando pela taxa normalizada (média por post) mais o eixo de mercado, atualiza o campo catálogo só das empresas com status ok no INDEX.md e publica o dashboard de verdade, entregando o link.",
+      "expected_output": "Não monta nem corta a lista sozinha: invoca a profills-radar. As 6 fichas da fixture estão com `prioridade a definir`, então a radar pergunta a prioridade de cada uma antes de montar a rodada; Selopack e Pratipack não têm dossiê e entram pelo cadastro da radar. O teto de 12 não corta nenhuma das 8, e o DADOS/selection.md sai com as empresas que o usuário aprovou. Ao voltar, a garimpo lê a seleção, mantém a janela padrão e, antes de abrir o navegador, diz quantas empresas a rodada tem, quantas são de prioridade Alta e o tempo aproximado como estimativa; oferece seguir com tudo, coletar só as Alta agora e o resto depois, ou deixar para depois. Com o 'pode ir', invoca a profills-navegador e coleta uma empresa por vez, salvando posts.json + meta.json antes da próxima. Roda o metricas.js por empresa, gera catalog/<slug>.md para cada uma com status ok, o _summary.md comparando pela taxa normalizada (média por post) mais o eixo de mercado, não carimba data de catálogo no INDEX.md (ela sai das coletas) e publica o dashboard de verdade, entregando o link.",
       "files": [
         "evals/profills-garimpo/files/2"
       ],
@@ -33,7 +33,7 @@
         "Toda empresa com status ok tem o perfil catalog/<slug>.md gerado pelo perfil-template — é ele o insumo da profills-post, e nenhum deles carrega comentário HTML `<!--` do template",
         "Os números do _summary.md (posts/semana, formato dominante, taxa normalizada) são os campos `posts_por_semana`, `formato_dominante` e `taxa_normalizada` da saída do metricas.js de cada empresa, e a taxa confere ao ser recalculada como média por post ÷ seguidores × 100",
         "NEGATIVA: nenhuma empresa é comparada por likes brutos, e empresa sem seguidores no meta.json entra com a taxa em branco e a razão declarada — não com o engajamento absoluto na coluna da taxa",
-        "NEGATIVA: empresa com status diferente de ok não ganha catalog/<slug>.md nem carimbo de data no INDEX.md; no diff contra a fixture, as linhas dessas empresas seguem idênticas",
+        "NEGATIVA: empresa com status diferente de ok não ganha catalog/<slug>.md, e nenhuma linha do INDEX.md ganha campo ou data de catálogo — a única mudança nele é a prioridade que a profills-radar gravou",
         "O dashboard existe como artefato verificável (arquivo HTML em disco ou URL de Artifact publicada) com as 7 seções de dashboard.md e é entregue na resposta final — alegar publicação sem deixar prova não conta",
         "Fecha perguntando, uma empresa por vez, o que não imitar, e grava a resposta datada na seção `## Do Not Copy` dos dossiês em refs/, no lugar do comentário placeholder"
       ]
@@ -41,7 +41,7 @@
     {
       "id": 3,
       "prompt": "Atualiza o catálogo da Cetro Máquinas — já rodei semana passada.",
-      "expected_output": "A fixture tem a coleta de 2026-08-17 (5 posts, todos artigo, 19.200 seguidores) e o perfil catalog/cetromaquinas.md escrito sobre ela. Cria a pasta raw/linkedin/cetromaquinas/2026-08-24/ nova sem tocar na de 17/08, roda o metricas.js nas DUAS pastas e compara os dois JSON. Edita o perfil existente (não reescreve do zero), atualiza o cabeçalho para a coleta de hoje e anexa uma entrada `## Change Log` datada de 2026-08-24 com cadência, formato dominante e taxa normalizada — cada par de números vindo dos dois JSON (o de 17/08 é 5 posts/semana, artigo 100%, taxa 0,015%). Carimba 'catálogo 2026-08-24' só na linha da Cetro no INDEX.md e entrega o perfil sem comentário HTML.",
+      "expected_output": "A fixture tem a coleta de 2026-08-17 (5 posts, todos artigo, 19.200 seguidores) e o perfil catalog/cetromaquinas.md escrito sobre ela. Cria a pasta raw/linkedin/cetromaquinas/2026-08-24/ nova sem tocar na de 17/08, roda o metricas.js nas DUAS pastas e compara os dois JSON. Edita o perfil existente (não reescreve do zero), atualiza o cabeçalho para a coleta de hoje e anexa uma entrada `## Change Log` datada de 2026-08-24 com cadência, formato dominante e taxa normalizada — cada par de números vindo dos dois JSON (o de 17/08 é 5 posts/semana, artigo 100%, taxa 0,015%). Não mexe no INDEX.md: o meta.json da coleta de hoje, com status ok e concluida true, já faz dela o último catálogo. Entrega o perfil sem comentário HTML.",
       "files": [
         "evals/profills-garimpo/files/3"
       ],
@@ -52,13 +52,13 @@
         "O arquivo ganha uma seção `## Change Log` (inexistente na fixture) com entrada datada 2026-08-24 comparando as três dimensões: cadência, formato dominante e taxa normalizada",
         "Os valores 'antes' do Change Log são exatamente os da coleta de 17/08 — 5 posts/semana, formato dominante artigo (5/5) e taxa normalizada 0,015% — e os 'agora' conferem com o metricas.js da coleta de hoje",
         "NEGATIVA: o perfil entregue não contém nenhum comentário HTML `<!--` nem instrução de preenchimento do template, incluindo a linha 'Só ao re-catalogar' da seção Change Log",
-        "NEGATIVA: no diff contra a fixture, refs/INDEX.md muda só na linha da Cetro Máquinas ('catálogo 2026-08-17' → 'catálogo 2026-08-24'); as outras 5 linhas seguem idênticas"
+        "NEGATIVA: no diff contra a fixture, refs/INDEX.md não muda em nenhuma linha, e o meta.json de raw/linkedin/cetromaquinas/2026-08-24/ traz status ok e concluida true"
       ]
     },
     {
       "id": 4,
       "prompt": "Quero uma leitura de tendência da Skymsen: como o conteúdo dela evoluiu nos últimos meses.",
-      "expected_output": "Reconhece o gatilho de leitura de tendência, combina os dias com o usuário via AskUserQuestion (90 é a recomendada), avisa que a navegação fica mais longa e grava janela_dias 90 no meta.json. Coleta mais de 5 posts, usa o campo `outlier` (nunca destaque_semana) e roda o metricas.js, que devolve `outliers` com media, desvio_padrao e limiar — os três vão para o perfil copiados do JSON. A taxa normalizada continua sendo média por post ÷ seguidores × 100, não a soma dos 90 dias. Cada número de evolução citado sai de uma rodada do script por subperíodo; sem isso, a evolução é descrita em palavras, sem número inventado. Fecha o passo 7 (INDEX.md + _summary.md) e o dashboard com os números do script.",
+      "expected_output": "Reconhece o gatilho de leitura de tendência, combina os dias com o usuário via AskUserQuestion (90 é a recomendada), avisa que a navegação fica mais longa e grava janela_dias 90 no meta.json. Coleta mais de 5 posts, usa o campo `outlier` (nunca destaque_semana) e roda o metricas.js, que devolve `outliers` com media, desvio_padrao e limiar — os três vão para o perfil copiados do JSON. A taxa normalizada continua sendo média por post ÷ seguidores × 100, não a soma dos 90 dias. Cada número de evolução citado sai de uma rodada do script por subperíodo; sem isso, a evolução é descrita em palavras, sem número inventado. Fecha o passo 7 (_summary.md, com o INDEX.md intacto) e o dashboard com os números do script.",
       "files": [
         "evals/profills-garimpo/files/4"
       ],
@@ -70,20 +70,20 @@
         "A taxa de engajamento normalizada publicada é a média por post ÷ seguidores × 100 (a soma dos 90 dias dividida por seguidores daria um número muito maior e não é a taxa)",
         "NEGATIVA: todo número da leitura de evolução (engajamento do primeiro subperíodo vs. do último) sai de uma rodada do metricas.js sobre o subperíodo e confere com o posts.json — nenhuma média estimada de cabeça",
         "catalog/skymsen.md declara 'janela ampliada (90 dias)' com o período real e usa só o bloco ampliado do perfil-template (média ± desvio e tabela de outlier), sem o bloco da janela padrão e sem comentário HTML",
-        "Fecha o passo 7 e o passo 8: refs/INDEX.md com 'catálogo 2026-08-24' só na linha da Skymsen (as outras linhas da fixture idênticas) e dashboard entregue como artefato verificável"
+        "Fecha o passo 7 e o passo 8: refs/INDEX.md idêntico ao da fixture (a data do catálogo sai da coleta nova) e dashboard entregue como artefato verificável"
       ]
     },
     {
       "id": 5,
       "prompt": "Cataloga a Sulpack. (Contexto: a página existe e está logada, mas não tem nenhuma publicação nos últimos 7 dias — a última é de março.)",
-      "expected_output": "Trata o silêncio como dado: grava raw/linkedin/sulpack-industria-de-maquinas-para-embalagens/2026-08-24/ com posts.json `[]` e meta.json com \"status\": \"sem_posts\" e uma \"nota\" de uma frase, sem abortar. Não gera perfil por empresa. Edita o _summary.md que já existe na fixture: acrescenta a Sulpack numa linha 'sem dados: <nota>' e deixa as linhas das outras cinco empresas como estavam. No INDEX.md a linha da Sulpack mantém 'sem catálogo'. Não amplia a janela por conta própria — oferece a janela ampliada como opção ao usuário. O dashboard existe como arquivo e mostra a empresa em estado 'sem dados', sem gráfico forçado. Fecha explicando em linguagem de comercial que silêncio não é erro e oferecendo o próximo passo.",
+      "expected_output": "Trata o silêncio como dado: grava raw/linkedin/sulpack-industria-de-maquinas-para-embalagens/2026-08-24/ com posts.json `[]` e meta.json com \"status\": \"sem_posts\" e uma \"nota\" de uma frase, sem abortar. Não gera perfil por empresa. Edita o _summary.md que já existe na fixture: acrescenta a Sulpack numa linha 'sem dados: <nota>' e deixa as linhas das outras cinco empresas como estavam. O INDEX.md não muda. Não amplia a janela por conta própria — oferece a janela ampliada como opção ao usuário. O dashboard existe como arquivo e mostra a empresa em estado 'sem dados', sem gráfico forçado. Fecha explicando em linguagem de comercial que silêncio não é erro e oferecendo o próximo passo.",
       "files": [
         "evals/profills-garimpo/files/5"
       ],
       "expectations": [
         "catalog/raw/linkedin/sulpack-industria-de-maquinas-para-embalagens/2026-08-24/meta.json existe com \"status\": \"sem_posts\", \"janela_dias\": 7, \"concluida\": true e uma \"nota\" de uma frase; posts.json na mesma pasta é `[]` e a rodada termina sem erro",
         "O metricas.js roda mesmo assim sobre a pasta e a resposta usa o que ele devolve (n_posts 0, posts_por_semana 0, aviso de status diferente de ok) em vez de improvisar a leitura",
-        "NEGATIVA: nenhum catalog/sulpack-industria-de-maquinas-para-embalagens.md é gerado e a linha da Sulpack no refs/INDEX.md continua 'sem catálogo' — no diff contra a fixture, o INDEX.md não muda em nenhuma linha",
+        "NEGATIVA: nenhum catalog/sulpack-industria-de-maquinas-para-embalagens.md é gerado e no diff contra a fixture o refs/INDEX.md não muda em nenhuma linha",
         "catalog/_summary.md é editado, não recriado: a Sulpack entra numa linha 'sem dados: <nota>' e as cinco empresas da fixture (Skymsen, Cetro Máquinas, Maqinox, Tecnox do Brasil, Tecnoenvase) mantêm exatamente os mesmos valores de posts/semana, formato dominante e engajamento do arquivo original",
         "NEGATIVA: a janela não é ampliada por conta própria — a janela ampliada aparece só como opção oferecida ao usuário, e nenhum post fora dos 7 dias entra na coleta",
         "O dashboard existe como artefato verificável (arquivo HTML em disco ou URL de Artifact publicada) e mostra a Sulpack em estado 'sem dados' nas seções, sem nenhum gráfico montado a partir de zero posts",
@@ -93,7 +93,7 @@
     {
       "id": 6,
       "prompt": "Roda de novo só a Maqinox, o resto do catálogo eu já vi semana passada.",
-      "expected_output": "Rodada de uma empresa só com catalog/_summary.md já existente na fixture (snapshot de 2026-07-08 a 2026-07-14, com Skymsen, Cetro, Maqinox, Tecnox e Tecnoenvase). Coleta só a Maqinox, roda o metricas.js na pasta de hoje e EDITA o _summary.md: atualiza a data do cabeçalho e só a linha da Maqinox, preservando as outras quatro como estão — elas são o retrato da coleta delas. Como a tabela da fixture não tem coluna de data por empresa, acrescenta a coluna ao migrar, senão linhas de rodadas diferentes viram comparativo falso. No INDEX.md, só a linha da Maqinox ganha 'catálogo 2026-08-24'.",
+      "expected_output": "Rodada de uma empresa só com catalog/_summary.md já existente na fixture (snapshot de 2026-07-08 a 2026-07-14, com Skymsen, Cetro, Maqinox, Tecnox e Tecnoenvase). Coleta só a Maqinox, roda o metricas.js na pasta de hoje e EDITA o _summary.md: atualiza a data do cabeçalho e só a linha da Maqinox, preservando as outras quatro como estão — elas são o retrato da coleta delas. Como a tabela da fixture não tem coluna de data por empresa, acrescenta a coluna ao migrar, senão linhas de rodadas diferentes viram comparativo falso. O INDEX.md não muda: a data do catálogo da Maqinox sai da coleta nova.",
       "files": [
         "evals/profills-garimpo/files/6"
       ],
@@ -103,7 +103,7 @@
         "A linha da Maqinox no _summary.md traz os valores da rodada de hoje, copiados dos campos `posts_por_semana`, `formato_dominante` e `taxa_normalizada` da saída do metricas.js",
         "A data do cabeçalho do _summary.md passa a refletir esta rodada, e a tabela ganha uma coluna de data por empresa (2026-07-14 nas quatro antigas, 2026-08-24 na Maqinox), sem a qual a comparação entre linhas seria falsa",
         "O texto do _summary.md continua comparando pela taxa normalizada e pelo eixo de mercado (3-5 posts/semana, âncora de ~2%), e as seções em prosa das outras empresas não são reescritas",
-        "NEGATIVA: no diff contra a fixture, refs/INDEX.md muda só na linha da Maqinox ('sem catálogo' → 'catálogo 2026-08-24'); as outras 5 linhas, incluindo a da Cetro com 'catálogo parcial 2026-07-14 (smoke test)', seguem idênticas",
+        "NEGATIVA: no diff contra a fixture, refs/INDEX.md não muda em nenhuma linha, a da Cetro com o ⚠ de catálogo parcial inclusive",
         "A resposta final diz ao usuário, em uma frase, que só a linha da Maqinox foi atualizada e que os números das outras empresas continuam sendo os da coleta de 14/07"
       ]
     },
@@ -138,7 +138,7 @@
         "NEGATIVA: `hook_categoria`, `angulo`, `formato` e `gatilho_psicologico` usam só valores de references/taxonomias.md (ou null), sem valor criado para post estrangeiro",
         "ARTEFATO: `node scripts/metricas.js` rodado na pasta da coleta devolve `idiomas` com {\"en\": 3} e nenhum aviso `resumo_pt_ausente`",
         "catalog/zeta-sealing.md tem a seção 'Posts em outro idioma' com um item por post (link, data, idioma, hook original e o resumo em pt-BR igual ao `resumo_pt` do posts.json), e nenhum comentário HTML `<!--` nem o bloco 'Como usar este template'",
-        "Os números do perfil (`posts_por_semana`, `formato_dominante`, `engajamento_medio`, `taxa_normalizada`) são os da saída do metricas.js, e refs/INDEX.md muda só no campo catálogo da Zeta ('sem catálogo' para 'catálogo 2026-08-24')"
+        "Os números do perfil (`posts_por_semana`, `formato_dominante`, `engajamento_medio`, `taxa_normalizada`) são os da saída do metricas.js, e refs/INDEX.md fica idêntico ao da fixture"
       ]
     }
   ]

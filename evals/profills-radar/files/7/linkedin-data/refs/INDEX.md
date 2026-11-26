@@ -4,7 +4,7 @@ O índice é um mapa, não um armazém: cada linha aponta para o dossiê que gua
 
 ## Empresas
 
-- [Cetro Máquinas](cetromaquinas.md) — `cetromaquinas` · id — · setor máquinas de embalagem/processamento · país BR · prioridade a definir · linkedin sim · instagram — · pesquisa 2026-07-14 · catálogo parcial 2026-07-14 (smoke test)
+- [Cetro Máquinas](cetromaquinas.md) — `cetromaquinas` · id — · setor máquinas de embalagem/processamento · país BR · prioridade a definir · linkedin sim · instagram — · pesquisa 14/07/2026 · ⚠ catálogo parcial (smoke test)
 - [Maqinox indústria de Máquinas](maqinox-ind-stria-de-maquinas.md) — `maqinox-ind-stria-de-maquinas` · id — · setor máquinas de envase/Doypack · país BR · prioridade a definir · linkedin sim · instagram — · pesquisa 2026-07-14
 - [Tecnoenvase Máquinas e Equipamentos](tecnoenvase.md) — `tecnoenvase-maquinas-e-equipamentos-ltda` · id — · setor envasadoras/dosadoras · país BR · prioridade a definir · linkedin sim · instagram — · pesquisa 2026-07-14
 - [Tecnox do Brasil](tecnox-do-brasil.md) — `tecnox-do-brasil` · id — · setor embalagem flexível/Doypack · país BR · prioridade a definir · linkedin sim · instagram — · pesquisa 2026-07-14
