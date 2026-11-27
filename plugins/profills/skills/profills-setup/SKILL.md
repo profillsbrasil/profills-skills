@@ -2,7 +2,7 @@
 name: profills-setup
 description: >-
   Instala, atualiza e confere o ambiente profills: plugin de skills,
-  humanize-pt-br, Node e a pasta de dados DADOS. Use para instalar ou
+  humanize-pt-br, Node, a extensão do navegador e a pasta de dados DADOS. Use para instalar ou
   configurar as skills da Profills numa máquina nova, "atualizar as
   skills", "o que está faltando", ou quando outra skill não encontra
   DADOS ou a encontra numa versão antiga.
@@ -14,41 +14,42 @@ metadata:
 
 # profills-setup
 
+**Harness.** Antes do primeiro passo, leia uma vez por sessão o adaptador do harness em que você roda: `../../docs/harness/claude-code.md` no Claude Code, `../../docs/harness/codex.md` no Codex (os caminhos são relativos a este arquivo; na dúvida, leia os dois e use o que descreve as ferramentas que você tem). Cada intenção citada aqui, como `perguntar` ou `invocar-skill`, está lá com a ferramenta, o jeito de ver que ela falta e o que fazer sem ela.
+
 Deixa o ambiente pronto antes de qualquer skill do pipeline rodar. O usuário final é o comercial, não dev: **conduza pela mão, uma instalação por vez**: explique em uma frase o que o comando faz, rode, confirme pelo critério e só então passe para a próxima. As checagens do passo 1 rodam em silêncio.
 
 ## Pasta de dados (`DADOS`)
 
 Esta skill é a dona da regra; as outras cinco (radar, garimpo, post, voz, boletim) carregam o texto abaixo, literal, na linha que começa por `**Pasta de dados (`DADOS`)**`:
 
-> se o diretório atual está num repo git com `linkedin-data/` na raiz (`git rev-parse --show-toplevel`), `DADOS` é essa pasta; senão é `~/Profills LinkedIn/`. Se nenhuma das duas existe, ou se `DADOS/.profills.json` falta ou traz `versao_dados` menor que 3, invoque a skill `profills-setup` — ela cria ou atualiza a pasta e confere o resto da instalação.
+> se o diretório atual está num repo git com `linkedin-data/` na raiz (`git rev-parse --show-toplevel`), `DADOS` é essa pasta; senão é `~/Profills LinkedIn/`. Se nenhuma das duas existe, ou se `DADOS/.profills.json` falta ou traz `versao_dados` menor que 4, invoque a skill `profills-setup` — ela cria ou atualiza a pasta e confere o resto da instalação.
 
-**Versão da pasta.** `DADOS/.profills.json` guarda `{"versao_dados": 3, "atualizado_em": "AAAA-MM-DD"}`. Pasta sem esse arquivo é da versão 1: foi criada antes de as skills mudarem o formato da lista de empresas. Na versão 2 as coletas ficavam em `catalog/raw/<empresa>/`; na 3 elas ficam numa pasta por rede social, `catalog/raw/linkedin/<empresa>/`, e a lista ganha o campo do Instagram. Quem leva uma pasta antiga até a versão atual, sem perder nada, é o passo 4.
+**Versão da pasta.** `DADOS/.profills.json` guarda `{"versao_dados": 4, "atualizado_em": "AAAA-MM-DD"}`. Pasta sem esse arquivo é da versão 1: foi criada antes de as skills mudarem o formato da lista de empresas. Na versão 2 as coletas ficavam em `catalog/raw/<empresa>/`; na 3 elas ficam numa pasta por rede social, `catalog/raw/linkedin/<empresa>/`, e a lista ganha o campo do Instagram; na 4 as instruções da pasta ficam no `AGENTS.md`, que o Claude Code e o Codex leem, e o `CLAUDE.md` só traz a linha que o importa. Quem leva uma pasta antiga até a versão atual, sem perder nada, é o passo 4.
 
-**Dois shells**: Linux e Mac usam Bash, Windows usa Git Bash ou PowerShell. Cada checagem e cada criação de pasta tem as duas formas em `references/shell.md` — use a coluna do shell que você tem. Os comandos `claude plugin …` e `npx …` são iguais nos dois.
+**Dois shells**: Linux e Mac usam Bash, Windows usa Git Bash ou PowerShell. Cada checagem e cada criação de pasta tem as duas formas em `references/shell.md` — use a coluna do shell que você tem. Os comandos de instalação do plugin (intenção `instalar-plugin`) e os do `npx` são iguais nos dois.
 
 ## Fluxo
 
 Comece pela porta de entrada:
 
 - **Outra skill invocou você** (radar, garimpo, post, voz ou boletim). O diagnóstico completo fica para quando o usuário chamar a skill por nome; aqui você resolve só a pasta:
-  - **`DADOS` não existia**: vá direto ao item **`DADOS` ❌** do passo 3, crie a pasta já com `boletins/` e o marcador da versão 3, anuncie o caminho e siga para o passo 6.
-  - **`DADOS` existe, mas é antiga** (sem `.profills.json`, com `versao_dados` menor que 3, ou a skill que chamou recebeu `formato_antigo` do `indice.js`): faça o passo 4 inteiro e siga para o passo 6. Sem Node, conduza o item **Node/npx ❌** do passo 3 antes do passo 4. Com **Node pendente** ou o `migrar.js` sem `ok: true`, o passo 6 manda ficar com o usuário, não devolver o controle.
+  - **`DADOS` não existia**: vá direto ao item **`DADOS` ❌** do passo 3, crie a pasta já com `boletins/` e o marcador da versão 4, anuncie o caminho e siga para o passo 6.
+  - **`DADOS` existe, mas é antiga** (sem `.profills.json`, com `versao_dados` menor que 4, ou a skill que chamou recebeu `formato_antigo` do `indice.js`): faça o passo 4 inteiro e siga para o passo 6. Sem Node, conduza o item **Node/npx ❌** do passo 3 antes do passo 4. Com **Node pendente** ou o `migrar.js` sem `ok: true`, o passo 6 manda ficar com o usuário, não devolver o controle.
 - **O usuário chamou você** ("instala", "configura", "atualiza", "o que está faltando"): passo 1.
 
 ### 1. Diagnóstico silencioso
 
-Rode as checagens de `references/shell.md` — cada comando de fato executado, com a saída dele registrada, porque é essa saída que sustenta cada ✅/❌ da tabela — e monte o quadro inteiro antes de falar com o usuário — ele recebe um quadro pronto, em vez de acompanhar oito comandos passando. Concluído quando você sabe o estado de cada uma das oito peças:
+Rode as checagens de `references/shell.md` — cada comando de fato executado, com a saída dele registrada, porque é essa saída que sustenta cada ✅/❌ da tabela — e monte o quadro inteiro antes de falar com o usuário — ele recebe um quadro pronto, em vez de acompanhar oito comandos passando. Concluído quando você sabe o estado de cada uma das nove peças:
 
-- **Plugin `profills-skills`** — `claude plugin list` mostra `profills-skills`. **Exceção "via repo"**: se o toplevel git do diretório atual tem `plugins/profills/skills/profills-setup/SKILL.md`, você está dentro do repo-fonte, as skills já vêm dos symlinks de `.claude/skills` e o plugin não é necessário — marque ✅ com a nota "via repo" e não instale nada. Esse mesmo sinal decide onde criar a pasta de dados, no passo 3.
+- **Plugin `profills-skills`** — a linha "Conferir" da intenção `instalar-plugin` do adaptador. **Exceção "via repo"**: se o toplevel git do diretório atual tem `plugins/profills/skills/profills-setup/SKILL.md`, você está dentro do repo-fonte, as skills já vêm dos symlinks de `.claude/skills` e o plugin não é necessário — marque ✅ com a nota "via repo" e não instale nada. Esse mesmo sinal decide onde criar a pasta de dados, no passo 3.
 - **humanize-pt-br** — `~/.claude/skills/humanize-pt-br/SKILL.md` ou `~/.agents/skills/humanize-pt-br/SKILL.md` existe.
 - **Node/npx** — `command -v npx` (Bash) ou `Get-Command npx` (PowerShell), e a versão, `node -p process.versions.node`. ✅ só com `npx` presente e Node 22.13 ou mais novo: o banco de consultas das skills (`scripts/banco.js` do plugin) usa o SQLite que vem no Node, e ele só existe a partir da 22.13 (na linha 23, a partir da 23.4). Versão menor é ❌, com a versão na nota: "Node 20.11, precisa da 22.13 ou mais nova".
 - **Pasta `DADOS`** — resolvida pela regra acima, com `refs/`, `catalog/raw/linkedin/`, `drafts/` e `boletins/` dentro.
-- **Versão da pasta** — `versao_dados` lido de `DADOS/.profills.json`: 3 é ✅; arquivo ausente ou número menor é ❌. Sem pasta `DADOS`, fica ❌ e se resolve junto com ela.
+- **Versão da pasta** — `versao_dados` lido de `DADOS/.profills.json`: 4 é ✅; arquivo ausente ou número menor é ❌. Sem pasta `DADOS`, fica ❌ e se resolve junto com ela.
 - **Lista de empresas** — `node "<pasta desta skill>/../profills-radar/scripts/indice.js" "<DADOS>/refs"`: o `n_empresas` da saída diz quantas empresas o índice tem. Índice ausente ou sem linha conta como 0. Lista vazia não é falta, é o começo. Sem Node ou sem pasta `DADOS`, fica `—` e se resolve junto com eles.
 - **`DADOS/voz.md`** — existe ou não.
+- **Extensão do navegador** — só a detecção da intenção `navegador-pronto`, sem abrir aba: ferramenta ausente, que não responde, ou nenhum navegador conectado é ❌; extensão respondendo com navegador conectado é `a testar`. ✅ só vem do teste real do passo 3, que abre uma aba no navegador dele e por isso não roda em silêncio.
 - **unslop** — opcional, entra como `—` até o usuário pedir por nome.
-
-A extensão do Chrome fica de fora do diagnóstico: quem a confere é a `profills-navegador`, na hora de coletar.
 
 ### 2. Uma tabela só
 
@@ -63,33 +64,28 @@ Mostre exatamente uma tabela, com **estas nove linhas, nesta ordem e com este te
 | Versão da pasta | Deixa a pasta no formato que estas skills leem | ✅/❌ |
 | Lista de empresas | As empresas que você acompanha no LinkedIn | N empresas / vazia / — |
 | Arquivo de voz | O que você vende, para quem e como você fala | ✅/❌ |
-| Extensão do Chrome | Deixa o Claude ler o LinkedIn no seu navegador | conferida na hora de coletar |
+| Extensão do navegador | Deixa as skills lerem o LinkedIn e o Instagram no seu navegador, com o seu login | ✅/❌/a testar |
 | unslop (opcional) | Corta clichês de IA — redundante com a humanize-pt-br | ✅/— |
 
-Concluído quando as oito linhas diagnosticadas estão preenchidas (a da extensão fica com a nota fixa). A lista de empresas não entra no "tudo ✅": vazia não é falta. Com 0 empresas, diga na mesma resposta, em uma frase, que dá para começar a lista por uma planilha de concorrentes, se ele tiver uma, pedindo à `profills-radar` "importa minha planilha de concorrentes". Tudo ✅: diga isso em uma frase e vá para o passo 6, sem rodar comando de instalação. Só a versão da pasta em ❌: vá direto ao passo 4.
+Concluído quando as nove linhas estão preenchidas. A lista de empresas não entra no "tudo ✅": vazia não é falta. Com 0 empresas, diga na mesma resposta, em uma frase, que dá para começar a lista por uma planilha de concorrentes, se ele tiver uma, pedindo à `profills-radar` "importa minha planilha de concorrentes". Tudo ✅: diga isso em uma frase e vá para o passo 6, sem rodar comando de instalação. Tudo ✅ menos a extensão em `a testar`: vá direto ao item **Extensão do navegador** do passo 3. Só a versão da pasta em ❌: vá direto ao passo 4.
 
 ### 3. Instalar o que falta
 
 Nesta ordem, um item por vez:
 
 - **Plugin ❌** (fora do caso "via repo" — instalação que parou no meio, ou pasta copiada na mão): explique que isso baixa e ativa as 7 skills.
-  ```
-  claude plugin marketplace add https://github.com/profillsbrasil/profills-skills
-  claude plugin install profills-skills@profills-skills
-  ```
-  Instalado quando `claude plugin list` volta a mostrar `profills-skills`. Se um dos comandos falhar, a causa está na tabela de sintomas no fim deste arquivo. Depois de instalar, avise: "pode ser preciso reabrir o Claude Code para as skills novas aparecerem" (não dá para confirmar isso ao vivo nesta sessão).
-- **Node/npx ❌**: o Node.js é o motor dos scripts que a radar, a garimpo e a post rodam (índice, métricas, checagem de formato, banco de consultas) e do `npx` que instala a `humanize-pt-br` — sem ele o pipeline não anda. Com Node instalado e versão abaixo da 22.13, diga a versão que ele tem e que as skills precisam de uma mais nova; o caminho é o mesmo, instalar a LTS por cima da antiga. Pergunte com `AskUserQuestion`, duas opções — **"Instalar o Node agora"** (ou **"Atualizar o Node agora"**, com Node antigo; recomendada: passo a passo por sistema em `references/instalacao.md`, ~3 min) ou **"Deixar para depois"**. Instalou: peça para abrir um terminal novo, refaça a checagem de `npx` e da versão e siga para o item seguinte. Deixou para depois: o Node fica pendente, e você diz em uma frase que radar, garimpo e post só vão funcionar depois de instalar.
-  **Node pendente** quer dizer: a `humanize-pt-br` fica de fora, a versão da pasta fica pendente (o passo 4 não roda), o `CLAUDE.md` da pasta não é criado, e o fecho segue a **Pendência aberta** do passo 6.
+  Os comandos estão na linha "Instalar" da intenção `instalar-plugin` do adaptador, sempre com a URL completa do repositório. Instalado quando a linha "Conferir" volta a mostrar `profills-skills`. Se um dos comandos falhar, a causa está na tabela de sintomas no fim deste arquivo. Depois de instalar, avise o que o adaptador manda avisar sobre reabrir o harness (não dá para confirmar isso ao vivo nesta sessão).
+- **Node/npx ❌**: o Node.js é o motor dos scripts que a radar, a garimpo e a post rodam (índice, métricas, checagem de formato, banco de consultas) e do `npx` que instala a `humanize-pt-br` — sem ele o pipeline não anda. Com Node instalado e versão abaixo da 22.13, diga a versão que ele tem e que as skills precisam de uma mais nova; o caminho é o mesmo, instalar a LTS por cima da antiga. Pergunte com opções (intenção `perguntar`), duas opções — **"Instalar o Node agora"** (ou **"Atualizar o Node agora"**, com Node antigo; recomendada: passo a passo por sistema em `references/instalacao.md`, ~3 min) ou **"Deixar para depois"**. Instalou: peça para abrir um terminal novo, refaça a checagem de `npx` e da versão e siga para o item seguinte. Deixou para depois: o Node fica pendente, e você diz em uma frase que radar, garimpo e post só vão funcionar depois de instalar.
+  **Node pendente** quer dizer: a `humanize-pt-br` fica de fora, a versão da pasta fica pendente (o passo 4 não roda), o `AGENTS.md` da pasta (e o `CLAUDE.md` que o importa) não é criado, e o fecho segue a **Pendência aberta** do passo 6.
 - **humanize-pt-br ❌** (com npx disponível): explique que isso traz a skill que tira as marcas de IA dos rascunhos.
-  ```
-  npx skills add othavi0/skills --skill humanize-pt-br -g -y -a claude-code
-  ```
-  Instalada quando `~/.claude/skills/humanize-pt-br/SKILL.md` existe.
-- **`DADOS` ❌**: crie onde o sinal do passo 1 mandar — dentro do repo-fonte (`plugins/profills/skills/profills-setup/SKILL.md` no toplevel), a pasta é `linkedin-data/` na raiz do repo; fora dele, é `~/Profills LinkedIn/` (no Windows, `C:\Users\NOME\Profills LinkedIn`). O comando por shell, o marcador da versão e o `.gitignore` do caso repo-fonte estão em `references/shell.md`; pasta nova nasce já na versão 3, sem passar pelo passo 4. Com o Node presente, rode em seguida `node "<pasta desta skill>/scripts/mapa.js" "<DADOS>"`: ele cria `<DADOS>/CLAUDE.md`, o arquivo que o Claude lê quando é aberto dentro da pasta, com as regras, o papel de cada skill e o estado da pasta. Pronta quando o `ls` (ou `Get-ChildItem`) da pasta, rodado depois de criar, mostra `refs/`, `catalog/raw/linkedin/`, `drafts/`, `boletins/`, `.profills.json` e, com Node, `CLAUDE.md` — "já resolvi" só depois de ver essa saída —, o usuário ouviu o caminho no formato do sistema dele e — no repo-fonte — `git check-ignore linkedin-data/selection.md` responde o caminho.
+  O comando e o arquivo que prova a instalação estão na intenção `instalar-skill-externa` do adaptador. Instalada quando esse arquivo existe.
+- **`DADOS` ❌**: crie onde o sinal do passo 1 mandar — dentro do repo-fonte (`plugins/profills/skills/profills-setup/SKILL.md` no toplevel), a pasta é `linkedin-data/` na raiz do repo; fora dele, é `~/Profills LinkedIn/` (no Windows, `C:\Users\NOME\Profills LinkedIn`). O comando por shell, o marcador da versão e o `.gitignore` do caso repo-fonte estão em `references/shell.md`; pasta nova nasce já na versão 4, sem passar pelo passo 4. Com o Node presente, rode em seguida `node "<pasta desta skill>/scripts/mapa.js" "<DADOS>"`: ele cria `<DADOS>/AGENTS.md`, o arquivo de instruções que o assistente lê quando é aberto dentro da pasta (intenção `instrucoes-da-pasta`), com as regras, o papel de cada skill e o estado da pasta, e o `<DADOS>/CLAUDE.md`, que só o importa. Pronta quando o `ls` (ou `Get-ChildItem`) da pasta, rodado depois de criar, mostra `refs/`, `catalog/raw/linkedin/`, `drafts/`, `boletins/`, `.profills.json` e, com Node, `AGENTS.md` e `CLAUDE.md` — "já resolvi" só depois de ver essa saída —, o usuário ouviu o caminho no formato do sistema dele e — no repo-fonte — `git check-ignore linkedin-data/selection.md` responde o caminho.
 - **Versão da pasta ❌** com a pasta já existente: é o passo 4, logo a seguir.
-- **unslop**: só entra quando o usuário pedir por nome. Aí `AskUserQuestion` com o conflito na mesa — **"Seguir só com a humanize-pt-br"** (recomendada: as duas brigam na regra de travessão) ou **"Instalar a unslop mesmo assim"** (comandos e o aviso em `references/instalacao.md`).
+- **unslop**: só entra quando o usuário pedir por nome. Aí uma pergunta com opções (`perguntar`) com o conflito na mesa — **"Seguir só com a humanize-pt-br"** (recomendada: as duas brigam na regra de travessão) ou **"Instalar a unslop mesmo assim"** (comandos e o aviso em `references/instalacao.md`).
 
-Concluído quando cada linha ❌ da tabela virou ✅, virou uma decisão do usuário ("deixar o Node para depois") ou ficou **pendente** com a causa da tabela de sintomas dita ao usuário e o comando que ele repete depois de resolver (instalar o Git e rodar de novo os dois comandos do plugin).
+- **Extensão do navegador** (❌ ou `a testar`, por último, porque é o único item que abre o navegador dele). Diga antes, em uma frase, o que vai acontecer: "agora vou conferir se eu consigo ler páginas no seu navegador; vou abrir o LinkedIn numa aba, ler só o título e fechar". Invoque a `profills-navegador` (intenção `invocar-skill`) pedindo o teste real: ela detecta a extensão do harness em que você roda, conduz a instalação de `references/instalacao.md` dela quando falta (Claude in Chrome no Claude Code, extensão ChatGPT no Codex Desktop) e termina no "teste real" desse arquivo. Marque ✅ **só** quando ela devolver o teste que passou: o título lido por dado estruturado e a URL ainda em `linkedin.com/feed`. LinkedIn deslogado nesse navegador fica ❌ com a nota "extensão funciona, falta entrar no LinkedIn neste navegador"; teste que falhou fica ❌ com o passo que travou. Se ele quiser deixar para depois, a linha fica ❌ "fica para depois" e você diz em uma frase que a voz e os posts funcionam sem ela, mas coletar o que as empresas postam precisa dela. Extensão para depois não é **Pendência aberta**: o fecho segue normal.
+
+Concluído quando cada linha ❌ ou `a testar` da tabela virou ✅, virou uma decisão do usuário ("deixar o Node para depois", "a extensão fica para depois") ou ficou **pendente** com a causa da tabela de sintomas dita ao usuário e o comando que ele repete depois de resolver (instalar o Git e rodar de novo os dois comandos do plugin).
 
 ### 4. Atualizar a pasta
 
@@ -107,6 +103,7 @@ A pasta de dados guarda o trabalho do comercial: empresas, catálogos, rascunhos
    | `converter_status` | "umas anotações antigas de coleta viram o arquivo que as skills leem hoje; a anotação original continua lá" |
    | `marcar_concluida` | "cada coleta antiga ganha a anotação de que terminou, para o boletim não confundi-la com uma coleta que parou no meio" |
    | `ignorar_banco` | "anoto que o banco de consultas da pasta fica fora do git: ele é refeito das coletas a qualquer hora" |
+   | `mover_instrucoes` | "as instruções desta pasta passam para um arquivo que o Claude e o Codex leem igual; as notas da equipe vão junto, sem mudar uma letra, e o arquivo antigo fica só apontando para o novo" |
    | `gravar_marcador` | "anoto na pasta que ela já está na versão nova, para não refazer isso" |
 
    Diga também que uma cópia da lista e das anotações de coleta fica guardada antes da mudança. Com `avisos[]` cheio, diga em uma frase qual coleta tem a anotação ilegível: ela fica como está, e a migração segue. É atualização do que já é dele, dentro do pedido: siga sem pedir licença. Com `problemas[]` cheio, não aplique; vá ao item 5.
@@ -121,6 +118,7 @@ A pasta de dados guarda o trabalho do comercial: empresas, catálogos, rascunhos
    - Outro tipo (`campo_desconhecido`, `prioridade_invalida`, `campo_ausente`…): o `detalhe` diz o campo e o valor esperado. Mostre a empresa e o valor que veio, e pergunte o certo.
    - `campo_ausente` de `prioridade` e `linkedin` numa linha que já tem `setor …` e `país …` costuma ser linha antiga cujo setor começa pela palavra "setor" ou o país pela palavra "país": pergunte o setor e o país ao comercial em vez de só acrescentar os dois campos.
    - `slug_reservado`: uma empresa da lista tem o endereço `linkedin` ou `instagram`, o mesmo nome da pasta de uma rede. O `detalhe` diz para onde mover as pastas de data dela; mova você, diga ao comercial em uma frase o que mudou e volte ao item 1.
+   - `instrucoes_em_dois_arquivos`: a pasta tem o `CLAUDE.md` antigo e um `AGENTS.md` com outro texto. Mostre ao comercial o que só existe no `CLAUDE.md` (em geral as Notas da equipe), junte isso no fim do `AGENTS.md` com a concordância dele, deixe no `CLAUDE.md` só a linha `@AGENTS.md` e volte ao item 1.
    - `destino_existe`: a mesma empresa tem coletas no lugar antigo e no novo. Mova as pastas de data do lugar antigo para o novo (o `detalhe` diz os dois), sem sobrescrever nenhuma data que exista nos dois: essa você mostra ao comercial antes. Depois volte ao item 1.
 
    Corrija só aquela linha ou pasta, no formato em que ela já está, e volte ao item 1.
@@ -131,12 +129,7 @@ Concluído quando a linha "Versão da pasta" da tabela virou ✅.
 
 ### 5. Atualizar o plugin
 
-Quando o pedido é atualizar, e não instalar do zero, rode explicando cada comando:
-
-```
-claude plugin marketplace update profills-skills
-claude plugin update profills-skills@profills-skills
-```
+Quando o pedido é atualizar, e não instalar do zero, rode explicando cada comando os da linha "Atualizar" da intenção `instalar-plugin` do adaptador, na ordem em que estão lá.
 
 Se a `humanize-pt-br` estiver instalada, atualize-a também:
 
@@ -144,16 +137,16 @@ Se a `humanize-pt-br` estiver instalada, atualize-a também:
 npx skills update humanize-pt-br -g -y
 ```
 
-Se a saída disser `No installed skills found matching`, a skill foi instalada por outro caminho e o `update` não a enxerga; rode o comando de instalação do passo 3, que traz a versão atual e deixa o próximo `update` funcionar (detalhe em `references/instalacao.md`). Plugin novo pode trazer formato novo de pasta: termine rodando o passo 4. Sem nada a migrar, o `migrar.js` devolve `acoes: []` e não toca nos arquivos do comercial; o `mapa.js` do fim do passo 4 ainda reescreve o `<DADOS>/CLAUDE.md` quando o estado da pasta mudou desde a última rodada (um `voz.md` novo, uma coleta nova). Não conte isso ao comercial como mudança na pasta. Concluído quando você refez o passo 2 e a tabela mostra o que de fato mudou.
+Se a saída disser `No installed skills found matching`, a skill foi instalada por outro caminho e o `update` não a enxerga; rode o comando de instalação do passo 3, que traz a versão atual e deixa o próximo `update` funcionar (detalhe em `references/instalacao.md`). Plugin novo pode trazer formato novo de pasta: termine rodando o passo 4. Sem nada a migrar, o `migrar.js` devolve `acoes: []` e não toca nos arquivos do comercial; o `mapa.js` do fim do passo 4 ainda reescreve o `<DADOS>/AGENTS.md` quando o estado da pasta mudou desde a última rodada (um `voz.md` novo, uma coleta nova). Não conte isso ao comercial como mudança na pasta. Concluído quando você refez o passo 2 e a tabela mostra o que de fato mudou.
 
 ### 6. Fecho
 
 - **Outra skill invocou você**: assim que a pasta existe e está na versão atual, devolva o controle a ela — o pedido original do usuário continua de onde parou. Com a versão da pasta pendente (**Node pendente**, ou `migrar.js` sem `ok: true`), não devolva: a skill que chamou leria a lista antiga, daria `formato_antigo` e chamaria você de novo, em laço. Fique com o usuário, diga em uma frase que o pedido original espera a pasta ficar pronta e conduza o que falta: a instalação do Node (passo 3) ou o conserto da linha (passo 4, item 5).
 - **O usuário chamou você**: termine com exatamente **uma** sugestão.
-  - **Pendência aberta** (Node pendente, Git ausente, plugin que não instalou) → a única sugestão é a ação que destrava o pendente, com o comando a repetir depois. Com mais de uma pendência, vale a primeira desta ordem: Git ausente (bloqueia o plugin; instalar o Git e repetir os dois comandos do plugin), plugin que não instalou, Node pendente. Não diga que o setup está pronto nem sugira `/profills-voz`, `/profills-radar` ou `/profills-post`.
-  - Antes dela, quando `DADOS` é `~/Profills LinkedIn/` e o `<DADOS>/CLAUDE.md` existe, diga em uma frase que, daqui em diante, ele deve abrir o Claude dentro dessa pasta, para o Claude já começar sabendo o fluxo das skills e o estado da pasta. Mostre o caminho e o comando no formato do sistema dele: `cd "<caminho da pasta>"` e depois `claude`, com o caminho como `/home/nome/Profills LinkedIn` no Linux, `/Users/nome/Profills LinkedIn` no Mac e `C:\Users\NOME\Profills LinkedIn` no Windows. Isso é orientação, não segunda sugestão. Quando `DADOS` é a `linkedin-data/` de um repo, como no repo-fonte, não diga nada disso.
-  - `DADOS/voz.md` não existe → `/profills-voz`. Uma frase: é a conversa da voz dele neste PC.
-  - `DADOS/voz.md` existe → `/profills-post`. Uma frase: o setup deste PC está pronto, agora a gente faz um post pra ele ver como funciona. Sem catálogo a post segue só com o tema.
+  - **Pendência aberta** (Node pendente, Git ausente, plugin que não instalou) → a única sugestão é a ação que destrava o pendente, com o comando a repetir depois. Com mais de uma pendência, vale a primeira desta ordem: Git ausente (bloqueia o plugin; instalar o Git e repetir os dois comandos do plugin), plugin que não instalou, Node pendente. Não diga que o setup está pronto nem sugira a `profills-voz`, a `profills-radar` ou a `profills-post`.
+  - Antes dela, quando `DADOS` é `~/Profills LinkedIn/` e o `<DADOS>/AGENTS.md` existe, diga em uma frase que, daqui em diante, ele deve abrir o assistente dentro dessa pasta, para ele já começar sabendo o fluxo das skills e o estado da pasta. Mostre o caminho no formato do sistema dele e o jeito de abrir que a intenção `instrucoes-da-pasta` dá para este harness, com o caminho como `/home/nome/Profills LinkedIn` no Linux, `/Users/nome/Profills LinkedIn` no Mac e `C:\Users\NOME\Profills LinkedIn` no Windows. Isso é orientação, não segunda sugestão. Quando `DADOS` é a `linkedin-data/` de um repo, como no repo-fonte, não diga nada disso.
+  - `DADOS/voz.md` não existe → a `profills-voz`, chamada pelo nome como a intenção `chamar-skill-pelo-nome` diz. Uma frase: é a conversa da voz dele neste PC.
+  - `DADOS/voz.md` existe → a `profills-post`, chamada do mesmo jeito. Uma frase: o setup deste PC está pronto, agora a gente faz um post pra ele ver como funciona. Sem catálogo a post segue só com o tema.
 
 Concluído quando o usuário recebeu uma sugestão só (ou o controle voltou à skill que chamou) e nenhuma pergunta ficou aberta.
 
@@ -161,10 +154,11 @@ Concluído quando o usuário recebeu uma sugestão só (ou o controle voltou à 
 
 | Sintoma | Causa | Ação |
 |---|---|---|
-| `claude: command not found` (ou `'claude' não é reconhecido`) | Claude Code não está instalado nesta máquina | Instalação por sistema em `references/instalacao.md` |
+| O comando do harness não existe no terminal (`command not found`, `não é reconhecido`) | O harness não está instalado nesta máquina | Seção "ausente" do adaptador do harness |
 | `plugin marketplace add` falha com `git`/`spawn` não encontrado | Git ausente (comum no Windows) | Instalar Git for Windows — `references/instalacao.md` |
 | `plugin marketplace add` falha com `Permission denied (publickey)` | Usou a forma curta `owner/repo`, que clona por SSH | Repetir com a URL completa do passo 3 |
 | `plugin marketplace add` falha com 404 / `marketplace.json` não encontrado | Sem internet, URL digitada errada, ou o repo ficou privado | Conferir rede e a URL; se privado, `references/instalacao.md` |
 | `npx: command not found` (ou `'npx' não é reconhecido`) | Node.js ausente | Instalar LTS em nodejs.org, abrir terminal novo, repetir |
 | `command -v`/`mkdir -p` dá erro de sintaxe | A ferramenta de shell é PowerShell, não Bash | Usar a forma PowerShell de `references/shell.md` |
-| Skill nova não aparece em `/help` depois de instalar | Sessão atual não recarregou o plugin | Reabrir o Claude Code; se persistir, `claude plugin uninstall profills-skills@profills-skills` e instalar de novo (passo 3) |
+| Skill nova não aparece depois de instalar | Sessão atual não recarregou o plugin | Linha "Skill nova não aparece" da intenção `instalar-plugin` do adaptador |
+| Extensão instalada, mas o teste real não lê a página | Extensão em outro navegador, desligada, ou não conectada a esta conversa | "Se travar" da parte do harness em `profills-navegador/references/instalacao.md` |

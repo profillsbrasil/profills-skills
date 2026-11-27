@@ -14,6 +14,8 @@ metadata:
 
 # profills-boletim
 
+**Harness.** Antes do primeiro passo, leia uma vez por sessão o adaptador do harness em que você roda: `../../docs/harness/claude-code.md` no Claude Code, `../../docs/harness/codex.md` no Codex (os caminhos são relativos a este arquivo; na dúvida, leia os dois e use o que descreve as ferramentas que você tem). Cada intenção citada aqui, como `perguntar` ou `invocar-skill`, está lá com a ferramenta, o jeito de ver que ela falta e o que fazer sem ela.
+
 Você responde "o que os concorrentes fizeram". O entregável é um arquivo, `DADOS/boletins/AAAA-MM-DD.md`, com o que cada empresa da rodada publicou de novo, quem ficou sem cobertura e por quê, e 3 pautas em pt-BR que a `profills-post` transforma em post.
 
 Quem usa é o comercial, não dev. Fale das empresas pelo nome; slug, `posts.json` e balde são vocabulário seu. Antes de cada passo longo (pesquisa, coleta), diga em uma frase o que vai acontecer.
@@ -46,7 +48,7 @@ node "<pasta desta skill>/scripts/boletim.js" "<DADOS>"
 
 ### 0. Resolva os dados
 
-**Pasta de dados (`DADOS`)**: se o diretório atual está num repo git com `linkedin-data/` na raiz (`git rev-parse --show-toplevel`), `DADOS` é essa pasta; senão é `~/Profills LinkedIn/`. Se nenhuma das duas existe, ou se `DADOS/.profills.json` falta ou traz `versao_dados` menor que 3, invoque a skill `profills-setup` — ela cria ou atualiza a pasta e confere o resto da instalação.
+**Pasta de dados (`DADOS`)**: se o diretório atual está num repo git com `linkedin-data/` na raiz (`git rev-parse --show-toplevel`), `DADOS` é essa pasta; senão é `~/Profills LinkedIn/`. Se nenhuma das duas existe, ou se `DADOS/.profills.json` falta ou traz `versao_dados` menor que 4, invoque a skill `profills-setup` — ela cria ou atualiza a pasta e confere o resto da instalação.
 
 Concluído quando você tem o caminho absoluto de `DADOS` e ele existe no disco.
 
@@ -57,7 +59,7 @@ Rode o script e decida pela `rodada.situacao`. Rodada nova pela radar regrava a 
 | Saída do script | O que fazer |
 |---|---|
 | `selecao_ausente`, `selecao_sem_data`, `indice_ausente` ou `indice_com_problemas` em `problemas` | Invoque a `profills-radar`. Ela monta a lista pelas camadas de prioridade, pergunta o que faltar (prioridade de empresa nova, troca de empresa) e grava `DADOS/selection.md` com a data de hoje no cabeçalho. Lista vazia é com ela também: a radar conduz a primeira run. |
-| `indice_ilegivel` em `problemas` | O script da `profills-radar` que lê a lista não respondeu: a instalação está incompleta ou quebrada. Diga isso ao comercial em uma frase e invoque a `profills-setup`, que confere a instalação. Rode o script de novo uma vez só; se o problema voltar, pare e diga que a lista não pôde ser lida. |
+| `indice_ilegivel` em `problemas` | O script da `profills-radar` que lê a lista não respondeu: a instalação está incompleta ou quebrada. Diga isso ao comercial em uma frase e invoque a `profills-setup` (intenção `invocar-skill`), que confere a instalação. Rode o script de novo uma vez só; se o problema voltar, pare e diga que a lista não pôde ser lida. |
 | `selecao_no_futuro` em `problemas` | A seleção traz uma data depois de hoje, por relógio da máquina adiantado ou edição à mão. Diga isso ao comercial em uma frase, com a data, e invoque a `profills-radar` para remontar a rodada com a data de hoje. |
 | `coleta_no_futuro` em `problemas` | A coleta de `empresa` está numa pasta de `data`, depois de hoje: o relógio ou o fuso do computador estava adiantado quando ela foi gravada. Diga isso ao comercial com o nome e a data, e peça que ele confira a data, a hora e o fuso do computador. A pasta fica como está: não apague, não renomeie e não invoque a garimpo para essa empresa. Pare aqui; o boletim desta rodada sai quando o script voltar sem esse problema. |
 | `situacao: de_hoje` | A rodada de hoje já está montada: diga isso e siga sem reabrir a seleção, a não ser que o comercial peça outra. |
@@ -92,7 +94,7 @@ Concluído quando o arquivo existe, não contém nenhum `<!--` nem slug do índi
 
 ### 4. Atualize o resumo da pasta
 
-Rode `node "<pasta desta skill>/../profills-setup/scripts/mapa.js" "<DADOS>"`, que atualiza o resumo da pasta em `<DADOS>/CLAUDE.md`; se ele não voltar `ok: true`, avise em uma frase que o resumo não foi atualizado e siga.
+Rode `node "<pasta desta skill>/../profills-setup/scripts/mapa.js" "<DADOS>"`, que atualiza o resumo da pasta em `<DADOS>/AGENTS.md`; se ele não voltar `ok: true`, avise em uma frase que o resumo não foi atualizado e siga.
 
 Concluído quando o `mapa.js` voltou `ok: true` ou o comercial foi avisado de que o resumo não foi atualizado.
 

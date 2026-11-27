@@ -13,13 +13,15 @@ metadata:
 
 # profills-voz
 
+**Harness.** Antes do primeiro passo, leia uma vez por sessão o adaptador do harness em que você roda: `../../docs/harness/claude-code.md` no Claude Code, `../../docs/harness/codex.md` no Codex (os caminhos são relativos a este arquivo; na dúvida, leia os dois e use o que descreve as ferramentas que você tem). Cada intenção citada aqui, como `perguntar` ou `invocar-skill`, está lá com a ferramenta, o jeito de ver que ela falta e o que fazer sem ela.
+
 Você monta o **arquivo de voz**: `DADOS/voz.md`, o retrato de quem o usuário é por escrito — o que vende, para quem, e como fala. É o insumo que faz a `profills-post` soar como ele, e não como a empresa de referência. O princípio que rege tudo aqui: **voz se mostra, não se descreve**. Ninguém sabe descrever a própria voz ("sou informal mas profissional" não diz nada); mas qualquer mensagem de WhatsApp que a pessoa mandou para um cliente mostra a voz inteira.
 
 Quem usa isto é o **comercial, não dev**: ele não sabe que esse arquivo existe nem por que importa. Diga em uma frase o que você vai fazer ("é o que faz os posts saírem com a sua cara, monto em 10 minutos"), conduza um passo por vez e peça sempre o exemplo concreto — o áudio, a mensagem, o print.
 
 ## 0. Localize os dados e escolha a branch
 
-**Pasta de dados (`DADOS`)**: se o diretório atual está num repo git com `linkedin-data/` na raiz (`git rev-parse --show-toplevel`), `DADOS` é essa pasta; senão é `~/Profills LinkedIn/`. Se nenhuma das duas existe, ou se `DADOS/.profills.json` falta ou traz `versao_dados` menor que 3, invoque a skill `profills-setup` — ela cria ou atualiza a pasta e confere o resto da instalação.
+**Pasta de dados (`DADOS`)**: se o diretório atual está num repo git com `linkedin-data/` na raiz (`git rev-parse --show-toplevel`), `DADOS` é essa pasta; senão é `~/Profills LinkedIn/`. Se nenhuma das duas existe, ou se `DADOS/.profills.json` falta ou traz `versao_dados` menor que 4, invoque a skill `profills-setup` — ela cria ou atualiza a pasta e confere o resto da instalação.
 
 Confira se o arquivo já existe antes de decidir o que fazer: `test -f "<DADOS>/voz.md"` no Bash, `Test-Path "<DADOS>\voz.md"` no PowerShell (`<DADOS>` é o caminho que a regra acima resolveu).
 
@@ -33,7 +35,7 @@ Concluído quando você sabe se o arquivo existe e qual das três branches está
 
 ### 1. Peça o material bruto
 
-Peça o mais bruto que ele tiver: quanto menos editado, mais voz. A escala das fontes, da mais forte à mais fraca, e a frase pronta para pedir cada uma estão em `references/extracao-voz.md` — um áudio de 1 minuto resolve a maioria dos casos, e dois ou três exemplos bastam. Ofereça as opções com `AskUserQuestion`, em linguagem simples, com a recomendada e o porquê. Resolva a linha de autoria por [Autoria dos posts](#autoria-dos-posts): se o pedido já traz ou cita posts, a pergunta vai no mesmo `AskUserQuestion`; se os posts só chegam na resposta, pergunte antes de tirar qualquer marcador deles; sem post no material, não há pergunta.
+Peça o mais bruto que ele tiver: quanto menos editado, mais voz. A escala das fontes, da mais forte à mais fraca, e a frase pronta para pedir cada uma estão em `references/extracao-voz.md` — um áudio de 1 minuto resolve a maioria dos casos, e dois ou três exemplos bastam. Ofereça as opções numa pergunta com opções (intenção `perguntar`), em linguagem simples, com a recomendada e o porquê. Resolva a linha de autoria por [Autoria dos posts](#autoria-dos-posts): se o pedido já traz ou cita posts, a pergunta vai na mesma chamada de `perguntar`; se os posts só chegam na resposta, pergunte antes de tirar qualquer marcador deles; sem post no material, não há pergunta.
 
 Concluído quando a linha de autoria está decidida e você tem em mãos 2-3 amostras do material dele. Se ele não tiver nada agora, peça que grave o áudio de 1 minuto na hora; se nem isso der, siga com o que ele contar, avise que a voz sai inferida e marque cada traço como hipótese a confirmar no passo 5.
 
@@ -49,7 +51,7 @@ Pergunte só o que o material não mostrou:
 
 - **Identidade** — o que vende, quem decide a compra, as dores desse comprador, o diferencial.
 - **Provas** — pergunte "quantos?" e "desde quando?" até virar número. "40 clientes desde 2023" entra; sem número confirmado, o campo fica `[a confirmar]` e a `profills-post` pede depois.
-- **Eixos de tom** (sério↔leve, formal↔casual, reverente↔irreverente, entusiasmado↔direto) — um `AskUserQuestion` por eixo, com **duas frases-exemplo concretas** como opções (uma de cada extremo, escritas com o vocabulário dele) e a recomendação que você inferiu do material, com o porquê. Voz reconhecível mora perto dos extremos; se ele ficar no meio nos quatro, mostre o par de frases de novo e pergunte qual delas ele mandaria hoje para um cliente.
+- **Eixos de tom** (sério↔leve, formal↔casual, reverente↔irreverente, entusiasmado↔direto) — uma pergunta com opções (`perguntar`) por eixo, com **duas frases-exemplo concretas** como opções (uma de cada extremo, escritas com o vocabulário dele) e a recomendação que você inferiu do material, com o porquê. Voz reconhecível mora perto dos extremos; se ele ficar no meio nos quatro, mostre o par de frases de novo e pergunte qual delas ele mandaria hoje para um cliente.
 - **Tom por contexto e linguagem do cliente** — preencha do próprio material; o que ele não mostrar vira uma pergunta concreta ("como você comemora uma entrega no grupo do WhatsApp?"). A linguagem do cliente sai do mesmo áudio de venda: como o **cliente** chama o produto, a dor e o resultado.
 
 Concluído quando as oito seções do template têm resposta real ou um `[a confirmar]` declarado e, com posts de voz construída, cada traço tirado deles foi confirmado ou recusado por ele.
@@ -82,7 +84,7 @@ Pedido sobre *voz*, e não sobre fato → [Calibrar](#calibrar).
 
 Um rascunho foi rejeitado por voz. Essa rejeição é o único pedaço medido do arquivo — o resto é inferido do material —, então grave-a inteira.
 
-1. Pergunte **qual palavra ou frase** doeu, específico ("foi 'solução robusta' ou o tom da abertura?"). Se o cabeçalho do arquivo ainda não tem a linha `Quem escreve os posts:`, ou ela diz `sem posts no material` e o pedido traz um post, resolva-a por [Autoria dos posts](#autoria-dos-posts); com post no arquivo ou no pedido, a pergunta vai no mesmo `AskUserQuestion`.
+1. Pergunte **qual palavra ou frase** doeu, específico ("foi 'solução robusta' ou o tom da abertura?"). Se o cabeçalho do arquivo ainda não tem a linha `Quem escreve os posts:`, ou ela diz `sem posts no material` e o pedido traz um post, resolva-a por [Autoria dos posts](#autoria-dos-posts); com post no arquivo ou no pedido, a pergunta vai na mesma chamada de `perguntar`.
 2. Grave: palavra rejeitada em **Palavras banidas** com a data; construção ou tom em **Isso não sou eu** com o exemplo rejeitado e a data; traço "X, mas nunca Y" que se mostrou errado, reescrito. Se a resposta de autoria dá voz construída, marque agora com `(post, voz construída)` todo traço cujo recibo é post e avise em uma frase: "como os posts não são escritos por você, marquei os traços que vieram deles; o resto continua vindo da sua fala". Traço com recibo de áudio ou mensagem fica como está.
 3. Atualize o cabeçalho com a data de hoje e mostre a ele a linha que entrou, dizendo que é isso que faz o próximo rascunho errar menos.
 
@@ -90,10 +92,10 @@ Concluído quando a rejeição está gravada em `DADOS/voz.md`, o cabeçalho reg
 
 ## Próximo passo
 
-Antes de fechar, rode `node "<pasta desta skill>/../profills-setup/scripts/mapa.js" "<DADOS>"`, que atualiza o resumo da pasta em `<DADOS>/CLAUDE.md`; se ele não voltar `ok: true`, avise em uma frase que o resumo não foi atualizado e siga.
+Antes de fechar, rode `node "<pasta desta skill>/../profills-setup/scripts/mapa.js" "<DADOS>"`, que atualiza o resumo da pasta em `<DADOS>/AGENTS.md`; se ele não voltar `ok: true`, avise em uma frase que o resumo não foi atualizado e siga.
 
 - **Outra skill invocou você** (a `profills-post`, porque `DADOS/voz.md` não existia): diga em uma frase onde salvou e devolva o controle — o rascunho que ele pediu continua de onde parou, sem sugestão sua.
-- **O usuário chamou você**: feche com **uma** sugestão só — "salvei em `<caminho>`; agora, quando eu escrever um post, ele já sai com a sua cara — quer testar com `/profills-post`?".
+- **O usuário chamou você**: feche com **uma** sugestão só — "salvei em `<caminho>`; agora, quando eu escrever um post, ele já sai com a sua cara — quer testar com <a profills-post chamada pelo nome>?", com a chamada que a intenção `chamar-skill-pelo-nome` dá para este harness.
 
 ## Autoria dos posts
 

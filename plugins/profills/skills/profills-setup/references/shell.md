@@ -1,6 +1,6 @@
 # Mesma checagem, dois shells
 
-A ferramenta de shell do Claude Code depende do sistema: Linux e Mac usam Bash; Windows usa Git Bash quando o Git for Windows está instalado e **PowerShell quando não está** (doc oficial: code.claude.com/docs/en/setup, "Set up on Windows"). Descubra qual você tem pelo primeiro comando que rodar — erro de sintaxe em `command -v` significa PowerShell. A partir daí, use a coluna certa.
+A ferramenta de shell depende do sistema e do harness (a seção Shell do adaptador diz o que se sabe de cada um): Linux e Mac usam Bash; no Windows pode ser Git Bash ou PowerShell. Descubra qual você tem pelo primeiro comando que rodar — erro de sintaxe em `command -v` significa PowerShell. A partir daí, use a coluna certa.
 
 `<DADOS>` é placeholder: **resolva o caminho antes de rodar** qualquer linha que o contenha (`linkedin-data/` na raiz do repo-fonte; senão `$HOME/Profills LinkedIn` no Bash e `$env:USERPROFILE\Profills LinkedIn` no PowerShell). O caminho mostrado ao usuário é sempre no formato do sistema dele: `/home/nome/Profills LinkedIn` ou `C:\Users\NOME\Profills LinkedIn`.
 
@@ -15,7 +15,7 @@ A ferramenta de shell do Claude Code depende do sistema: Linux e Mac usam Bash; 
 | Versão da pasta? | `cat "<DADOS>/.profills.json"` (erro = versão 1) | `Get-Content "<DADOS>\.profills.json"` (erro = versão 1) |
 | `voz.md` existe? | `test -f "<DADOS>/voz.md"` | `Test-Path "<DADOS>\voz.md"` |
 | Criar `DADOS` | `mkdir -p "<DADOS>/refs" "<DADOS>/catalog/raw/linkedin" "<DADOS>/drafts" "<DADOS>/boletins"` | `New-Item -ItemType Directory -Force "<DADOS>\refs","<DADOS>\catalog\raw\linkedin","<DADOS>\drafts","<DADOS>\boletins"` |
-| Marcar pasta nova como versão 3 | `printf '{"versao_dados": 3, "atualizado_em": "%s"}\n' "$(date +%F)" > "<DADOS>/.profills.json"` | `Set-Content -Path "<DADOS>\.profills.json" -Value ('{"versao_dados": 3, "atualizado_em": "' + (Get-Date -Format yyyy-MM-dd) + '"}')` |
+| Marcar pasta nova como versão 4 | `printf '{"versao_dados": 4, "atualizado_em": "%s"}\n' "$(date +%F)" > "<DADOS>/.profills.json"` | `Set-Content -Path "<DADOS>\.profills.json" -Value ('{"versao_dados": 4, "atualizado_em": "' + (Get-Date -Format yyyy-MM-dd) + '"}')` |
 
 O marcador vale só para pasta **criada agora**, vazia. Pasta que já existia passa pelo `scripts/migrar.js` (passo 4 do `SKILL.md`), que converte o que precisa e grava o marcador por último.
 
@@ -41,8 +41,8 @@ indice.db-wal
 indice.db-shm
 ```
 
-Versionados de propósito: `refs/`, `catalog/*.md`, `catalog/raw/**/*.json`, `drafts/`, `voz.md` e `.profills.json`. Ignorado de verdade quando `git check-ignore linkedin-data/selection.md linkedin-data/indice.db` responde os dois caminhos. Fora do repo-fonte (`~/Profills LinkedIn/`) não há git — nada a ignorar.
+Versionados de propósito: `refs/`, `catalog/*.md`, `catalog/raw/**/*.json`, `drafts/`, `voz.md`, `AGENTS.md`, `CLAUDE.md` e `.profills.json`. Ignorado de verdade quando `git check-ignore linkedin-data/selection.md linkedin-data/indice.db` responde os dois caminhos. Fora do repo-fonte (`~/Profills LinkedIn/`) não há git — nada a ignorar.
 
 ## cmd.exe
 
-Os comandos de instalação (`claude plugin …`, `npx skills add …`) são idênticos nos dois shells — e também no `cmd.exe`, caso o usuário os digite por conta própria. O `cmd.exe` é a exceção para caminhos: ele **não** expande `~`; para mandar o usuário abrir a pasta, dê o caminho completo `C:\Users\NOME\Profills LinkedIn`.
+Os comandos de instalação (o do plugin e o `npx skills add …`) são idênticos nos dois shells — e também no `cmd.exe`, caso o usuário os digite por conta própria. O `cmd.exe` é a exceção para caminhos: ele **não** expande `~`; para mandar o usuário abrir a pasta, dê o caminho completo `C:\Users\NOME\Profills LinkedIn`.

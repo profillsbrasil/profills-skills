@@ -15,6 +15,8 @@ metadata:
 
 # profills-garimpo
 
+**Harness.** Antes do primeiro passo, leia uma vez por sessão o adaptador do harness em que você roda: `../../docs/harness/claude-code.md` no Claude Code, `../../docs/harness/codex.md` no Codex (os caminhos são relativos a este arquivo; na dúvida, leia os dois e use o que descreve as ferramentas que você tem). Cada intenção citada aqui, como `perguntar` ou `invocar-skill`, está lá com a ferramenta, o jeito de ver que ela falta e o que fazer sem ela.
+
 ## Medido vs inferido
 
 O princípio que rege todo o catálogo: **separe o que foi medido do que foi inferido.** Data, texto, formato e engajamento (likes/comentários) são fatos lidos da página. Tema, tom, ângulo e "hook forte" são leituras suas. Rotular os dois deixa o usuário — e a `profills-post` — sabendo o que é dado e o que é palpite. Um pico de engajamento é fato; *por que* ele engajou é hipótese.
@@ -23,7 +25,7 @@ O princípio que rege todo o catálogo: **separe o que foi medido do que foi inf
 
 ### 0. Localize a pasta de dados
 
-**Pasta de dados (`DADOS`)**: se o diretório atual está num repo git com `linkedin-data/` na raiz (`git rev-parse --show-toplevel`), `DADOS` é essa pasta; senão é `~/Profills LinkedIn/`. Se nenhuma das duas existe, ou se `DADOS/.profills.json` falta ou traz `versao_dados` menor que 3, invoque a skill `profills-setup` — ela cria ou atualiza a pasta e confere o resto da instalação.
+**Pasta de dados (`DADOS`)**: se o diretório atual está num repo git com `linkedin-data/` na raiz (`git rev-parse --show-toplevel`), `DADOS` é essa pasta; senão é `~/Profills LinkedIn/`. Se nenhuma das duas existe, ou se `DADOS/.profills.json` falta ou traz `versao_dados` menor que 4, invoque a skill `profills-setup` — ela cria ou atualiza a pasta e confere o resto da instalação.
 
 Concluído quando você tem o caminho de `DADOS` e ele existe em disco.
 
@@ -37,7 +39,7 @@ Leia `DADOS/selection.md`. Cada linha traz o nome, o slug entre crases e o id nu
 
 O **slug é a chave de todos os paths** que você escreve (`catalog/raw/linkedin/<slug>/…`, `catalog/<slug>.md`, `refs/<slug>.md`); o id é o plano B quando o slug falha na navegação (`references/navegacao.md`).
 
-Arquivo ausente ou vazio → **invoque a `profills-radar`**: é ela que decide as empresas, monta a rodada de até 12 e escreve a seleção.
+Arquivo ausente ou vazio → **invoque a `profills-radar`** (intenção `invocar-skill`): é ela que decide as empresas, monta a rodada de até 12 e escreve a seleção.
 
 **Rodada em mais de uma sessão.** A data do cabeçalho (`# Seleção ativa — AAAA-MM-DD`) marca a rodada. Empresa que já tem `catalog/raw/linkedin/<slug>/<data>/meta.json` com `"concluida": true` e data entre a do cabeçalho e hoje, as duas inclusive, já foi coletada nesta rodada: tire-a da lista desta sessão e diga ao usuário, pelo nome, quais já estavam feitas. Só colete de novo se ele pedir. É essa regra que deixa coletar as de prioridade Alta numa sessão e o resto na seguinte sem repetir página. Pasta com data depois de hoje não conta: ela vem de relógio ou fuso adiantado, e a `profills-boletim` para e avisa o comercial antes de chamar esta skill.
 
@@ -64,7 +66,7 @@ Concluído quando `janela_dias` e o teto de posts por empresa estão escritos pa
 
 O usuário está emprestando a conta real dele. Antes da primeira empresa, conte em texto o tamanho real da rodada: quantas empresas faltam coletar, quantas delas são de prioridade Alta (o campo `prioridade` da linha de cada slug em `DADOS/refs/INDEX.md`) e o tempo aproximado pela conta de `references/compliance.md`, dito como estimativa. Explique em uma frase o que vai fazer: "vou abrir o LinkedIn no seu navegador e ler as páginas das empresas devagar, como se você estivesse rolando o feed. Nada é curtido, comentado nem publicado."
 
-Então confirme com `AskUserQuestion`, com três saídas:
+Então confirme numa pergunta com opções (intenção `perguntar`), com três saídas:
 
 - **seguir com a rodada inteira**, a recomendada quando a rodada cabe numa sessão pela seção "Tamanho da rodada" de `references/compliance.md`;
 - **coletar só as de prioridade Alta agora e o resto depois**, a recomendada quando aquela seção manda dividir. Sem nenhuma Alta, ou com todas Alta, a opção não aparece;
@@ -72,15 +74,15 @@ Então confirme com `AskUserQuestion`, com três saídas:
 
 Escolhendo só as Alta, colete-as e diga pelo nome quais ficaram para a próxima sessão. O `selection.md` não muda, e a retomada segue a regra do passo 1.
 
-Com o "pode ir", **invoque a skill `profills-navegador`**: é ela que garante o navegador certo (o usuário tem a extensão em várias máquinas) e trata máquina sem extensão. A coleta começa no handoff dela — navegador selecionado + tab pronta, com as tools já carregadas.
+Com o "pode ir", **invoque a skill `profills-navegador`**: é ela que garante o navegador certo (intenção `navegador-pronto`: no Claude in Chrome o usuário pode ter a extensão em várias máquinas) e trata máquina sem extensão. A coleta começa no handoff dela: navegador selecionado e aba pronta, com o que o adaptador manda declarar.
 
-Concluído quando o usuário ouviu o tamanho da rodada e o tempo estimado, confirmou quais empresas entram nesta sessão, e você tem o id da tab entregue pelo handoff.
+Concluído quando o usuário ouviu o tamanho da rodada e o tempo estimado, confirmou quais empresas entram nesta sessão, e você tem o id da aba entregue pelo handoff.
 
 ### 5. Colete — uma empresa por vez
 
 Processe **uma empresa de cada vez** e salve o bruto em disco antes de passar à próxima. Screenshots enchem o contexto rápido; terminar uma empresa e liberar o material antes da próxima mantém a sessão viável numa lista grande.
 
-Para cada empresa, siga `references/navegacao.md` (como dirigir o `claude-in-chrome`, ordenar por Recentes, rolar o feed, authwall e erros) e salve:
+Para cada empresa, siga `references/navegacao.md` (como dirigir o navegador do usuário pelas intenções do adaptador, ordenar por Recentes, rolar o feed, authwall e erros) e salve:
 
 ```
 DADOS/catalog/raw/linkedin/<slug>/<AAAA-MM-DD>/
@@ -95,7 +97,7 @@ Cada execução cria a pasta do dia; pasta de data anterior fica intacta — é 
 
 **Screenshot só existe quando a captura aconteceu.** Se a tool não devolveu o PNG (save indisponível, falha, post que não abriu), grave `screenshot: null` e descreva a imagem em `descricao_visual` — a descrição é o fallback documentado. **Arquivo placeholder é proibido**: PNG de 1×1, arquivo vazio ou imagem que você gerou não é captura, é dado falso. O `metricas.js` do passo 6 acusa (aviso de screenshot inexistente ou com menos de 1 KB).
 
-**5a. Extraia o medido.** Rode o JS de `references/navegacao.md` e preencha, a partir do retorno dele e do texto literal do post, os campos da tabela **Medido** de `references/schema-post.md`. Para `formato`, quando o JS devolve só `texto`/`imagem`, confira a coluna "Como reconhecer" de `references/taxonomias.md` com `read_page` (ou o screenshot do post) — enquete, newsletter, evento, documento e reshare só aparecem assim. Concluído quando cada post da janela tem todo campo medido preenchido ou `null` explícito.
+**5a. Extraia o medido.** Rode o JS de `references/navegacao.md` e preencha, a partir do retorno dele e do texto literal do post, os campos da tabela **Medido** de `references/schema-post.md`. Para `formato`, quando o JS devolve só `texto`/`imagem`, confira a coluna "Como reconhecer" de `references/taxonomias.md` lendo o card na página (intenção `ler-pagina`, ou o screenshot do post) — enquete, newsletter, evento, documento e reshare só aparecem assim. Concluído quando cada post da janela tem todo campo medido preenchido ou `null` explícito.
 
 **5b. Classifique o inferido.** Leia o texto de cada post e preencha a tabela **Inferido** do mesmo arquivo, usando sempre um valor das taxonomias fechadas de `references/taxonomias.md`; sem sinal claro, `null`. Grave o `idioma` de todo post e, quando ele não for `pt`, o `resumo_pt`: uma ou duas frases fiéis ao texto, sem traduzir `texto` nem `hook`, que ficam no original. Post estrangeiro usa as mesmas taxonomias. Concluído quando todo campo inferido de todo post está preenchido com valor da taxonomia ou `null` explícito, e todo post fora do português tem `resumo_pt`.
 
@@ -142,19 +144,19 @@ Depois de todas as empresas, um arquivo:
    **Rodada com parte das empresas**: se o `_summary.md` já existe, **edite-o** — atualize a data do cabeçalho e só as linhas das empresas desta rodada, preservando as demais como estão (elas são o retrato da coleta delas, com a data delas). Criar do zero só quando o arquivo não existe. Se a tabela antiga não tiver uma coluna de data por empresa, acrescente-a ao migrar: sem ela, linhas de rodadas diferentes viram um comparativo falso.
 O `DADOS/refs/INDEX.md` não muda: a data do último catálogo de cada empresa sai das coletas, da pasta mais recente com `status: ok` e `"concluida": true` (a regra está em `scripts/coleta.js` do plugin), e é ela que a `profills-radar` lê para não mandar re-catalogar quem acabou de sair. O `meta.json` do passo 5 já é o carimbo.
 
-Com o `_summary.md` gravado, rode `node "<pasta desta skill>/../profills-setup/scripts/mapa.js" "<DADOS>"`, que atualiza o resumo da pasta em `<DADOS>/CLAUDE.md`; se ele não voltar `ok: true`, avise em uma frase que o resumo não foi atualizado e siga.
+Com o `_summary.md` gravado, rode `node "<pasta desta skill>/../profills-setup/scripts/mapa.js" "<DADOS>"`, que atualiza o resumo da pasta em `<DADOS>/AGENTS.md`; se ele não voltar `ok: true`, avise em uma frase que o resumo não foi atualizado e siga.
 
 Concluído quando o `_summary.md` cobre todas as empresas coletadas nesta sessão (as com dados e as sem) com os números do `metricas.js`, as linhas de empresas fora desta rodada continuam como estavam, e o `INDEX.md` está como estava antes da coleta.
 
 ### 8. Monte o dashboard visual
 
-Renderize o catálogo como um artefato visual seguindo `references/dashboard.md`. O dado estruturado fica em disco para rastreabilidade; o dashboard é a camada visual para o humano digerir cadência, formatos, hooks e destaques de relance. Todo valor plotado vem do JSON do `metricas.js` de cada empresa — o painel é vitrine da conta, não uma segunda conta.
+Renderize o catálogo como uma página visual seguindo `references/dashboard.md` e mostre-a ao comercial (intenção `mostrar-pagina`). O dado estruturado fica em disco para rastreabilidade; o dashboard é a camada visual para o humano digerir cadência, formatos, hooks e destaques de relance. Todo valor plotado vem do JSON do `metricas.js` de cada empresa — o painel é vitrine da conta, não uma segunda conta.
 
-Concluído quando as 7 seções de `dashboard.md` existem no artefato publicado, cada número bate com o JSON do `metricas.js` e o link está na conversa.
+Concluído quando as 7 seções de `dashboard.md` existem na página, cada número bate com o JSON do `metricas.js` e o link (ou, onde o adaptador manda gravar em arquivo, o caminho do HTML) está na conversa.
 
 ## Conduza pela mão
 
-Depois do dashboard, guie — com `AskUserQuestion`, opções concretas e a recomendada com o porquê:
+Depois do dashboard, guie com perguntas com opções (`perguntar`), opções concretas e a recomendada com o porquê:
 
 1. **Aponte o que salta**: quem lidera, o formato que engaja, o espaço aberto.
 2. **Pergunte o que não copiar**, uma empresa por vez: "tem algo do jeito da <Empresa> que você não quer imitar?", com opções tiradas dos posts que você acabou de ler ("o tom institucional", "os posts de vaga", "o excesso de emoji", "nada a evitar"). Grave a resposta em `DADOS/refs/<slug>.md`, na seção `## Do Not Copy`, no lugar do comentário que estiver lá. Critério: mesmo **tema** pode; mesma estrutura, ordem de argumentos ou estilo de frase, não. A `profills-post` lê essa seção antes de escrever, e seção vazia significa "ninguém perguntou ainda".

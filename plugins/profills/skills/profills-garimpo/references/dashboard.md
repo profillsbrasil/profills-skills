@@ -5,9 +5,9 @@ O dado estruturado vive em disco para rastreabilidade; o dashboard é a camada v
 ## Antes de desenhar
 
 - Tenha em mãos o JSON do **`scripts/metricas.js`** de cada empresa da rodada (passo 6 do `SKILL.md`). **Todo número do painel é copiado de lá** — cadência, taxa normalizada, distribuição de formato, hooks, destaque/outlier. O dashboard não faz conta nenhuma.
-- Carregue a skill **`artifact-design`** para calibrar quanto investimento de design o caso pede.
-- Carregue a skill **`dataviz`** antes de escrever qualquer gráfico (cadência, distribuição de formato, engajamento) — ela define paleta acessível em claro/escuro e specs de marca.
-- Publique com a tool **Artifact** (página HTML autocontida, tudo inline).
+- Mostre a página pela intenção `mostrar-pagina` do adaptador do harness: ele diz onde ela é publicada ou gravada e as skills de design e de gráfico que o harness oferece para carregar antes de desenhar.
+- A página é HTML autocontido, tudo inline: nada de arquivo externo nem chamada de rede, para abrir igual publicada ou do disco.
+- Gráfico com paleta legível em claro e escuro, e cada série com rótulo, não só cor.
 
 ## O que o dashboard mostra
 

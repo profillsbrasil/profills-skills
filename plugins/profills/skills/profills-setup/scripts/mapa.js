@@ -1,15 +1,18 @@
 #!/usr/bin/env node
-// mapa.js — mantém DADOS/CLAUDE.md, o arquivo que o Claude lê ao abrir a pasta de dados (Node >= 18, sem dependência).
-// O arquivo tem três partes: o bloco fixo (regras e mapa das skills, copiado sempre de
-// assets/claude-dados-template.md), o bloco do mapa (o estado da pasta, lido dos arquivos) e as
-// "Notas da equipe", que ficam fora dos marcadores e nunca são reescritas. Sem CLAUDE.md, cria do
-// template; com um CLAUDE.md sem marcadores, põe os dois blocos no topo e mantém o texto abaixo.
+// mapa.js — mantém DADOS/AGENTS.md, o arquivo de instruções que o Claude Code e o Codex leem ao abrir a
+// pasta de dados (Node >= 18, sem dependência). O AGENTS.md tem três partes: o bloco fixo (regras e mapa
+// das skills, copiado sempre de assets/agents-dados-template.md), o bloco do mapa (o estado da pasta, lido
+// dos arquivos) e as "Notas da equipe", que ficam fora dos marcadores e nunca são reescritas. Sem
+// AGENTS.md, cria do template; com um AGENTS.md sem marcadores, põe os dois blocos no topo e mantém o
+// texto abaixo. O DADOS/CLAUDE.md é só a linha "@AGENTS.md", que faz o Claude Code ler o AGENTS.md: o
+// script cria essa linha quando falta. CLAUDE.md com outro texto é o formato antigo, e aí o script não
+// grava nada (nem o AGENTS.md) e manda rodar o migrar.js, que leva o texto para o AGENTS.md.
 // Idempotente: no mesmo estado não grava nada, e a data "Estado em" só muda quando o mapa muda.
 // Uso:     node scripts/mapa.js <DADOS> [--hoje AAAA-MM-DD]
 // Exemplo: node scripts/mapa.js "$HOME/Profills LinkedIn"
-//          → {"arquivo":".../CLAUDE.md","criado":false,"fixo_atualizado":false,"mapa_atualizado":true,"mapa":{...},"ok":true}
+//          → {"arquivo":".../AGENTS.md","criado":false,"fixo_atualizado":false,"mapa_atualizado":true,"import_claude":"ok","mapa":{...},"ok":true}
 // Saída: JSON em stdout. Exit 0 = ok (problema no índice entra no mapa, não falha) · 1 = não deu
-// para gravar ou os marcadores estão quebrados (campo erro) · 2 = erro de uso.
+// para gravar, os marcadores estão quebrados ou o CLAUDE.md está no formato antigo (campo erro) · 2 = erro de uso.
 
 const fs = require('fs');
 const path = require('path');
@@ -17,7 +20,10 @@ const { spawnSync } = require('child_process');
 
 // O índice é da profills-radar: o mapa usa a validação dela em vez de reler o formato da linha.
 const INDICE = path.join(__dirname, '..', '..', 'profills-radar', 'scripts', 'indice.js');
-const TEMPLATE = path.join(__dirname, '..', 'assets', 'claude-dados-template.md');
+const TEMPLATE = path.join(__dirname, '..', 'assets', 'agents-dados-template.md');
+// O CLAUDE.md da pasta só importa o AGENTS.md: o Codex lê o AGENTS.md direto, o Claude Code pelo import.
+const IMPORT_CLAUDE = '@AGENTS.md\n';
+const ehImport = (bruto) => bruto.replace(/^﻿/, '').replace(/\r\n/g, '\n').trim() === IMPORT_CLAUDE.trim();
 const MARCAS = {
   fixo: ['<!-- profills:fixo:inicio -->', '<!-- profills:fixo:fim -->'],
   mapa: ['<!-- profills:mapa:inicio -->', '<!-- profills:mapa:fim -->'],
@@ -322,21 +328,40 @@ function principal(argv) {
   dados = path.resolve(dados);
   if (!fs.existsSync(dados) || !fs.statSync(dados).isDirectory()) morrer(`Pasta de dados não encontrada: ${dados}. A profills-setup cria a pasta antes.`);
 
-  const arquivo = path.join(dados, 'CLAUDE.md');
+  const arquivo = path.join(dados, 'AGENTS.md');
+  const claude = path.join(dados, 'CLAUDE.md');
   const mapa = lerMapa(dados, hoje);
-  const saida = { arquivo, criado: false, fixo_atualizado: false, mapa_atualizado: false, mapa, ok: false };
+  const saida = { arquivo, criado: false, fixo_atualizado: false, mapa_atualizado: false, import_claude: null, mapa, ok: false };
   const terminar = () => {
     process.stdout.write(JSON.stringify(saida, null, 2) + '\n');
     process.exit(saida.ok ? 0 : 1);
   };
+  const ler = (caminho) => {
+    try {
+      return { bruto: fs.existsSync(caminho) ? fs.readFileSync(caminho, 'utf8') : null };
+    } catch (e) {
+      return { erro: `Não deu para ler "${caminho}": ${MOTIVOS[e.code] || e.message}.` };
+    }
+  };
 
-  let bruto = null;
-  try {
-    if (fs.existsSync(arquivo)) bruto = fs.readFileSync(arquivo, 'utf8');
-  } catch (e) {
-    saida.erro = `Não deu para ler "${arquivo}": ${MOTIVOS[e.code] || e.message}.`;
+  // O CLAUDE.md vem antes de qualquer gravação: com texto do formato antigo, gravar o AGENTS.md criaria
+  // uma segunda cópia das regras e deixaria as notas do comercial num arquivo que ninguém mais mantém.
+  const doClaude = ler(claude);
+  if (doClaude.erro) {
+    saida.erro = doClaude.erro;
     return terminar();
   }
+  if (doClaude.bruto !== null && !ehImport(doClaude.bruto)) {
+    saida.erro = `O "${claude}" ainda está no formato antigo, com as regras e as notas dentro dele. Nada foi gravado. O migrar.js da profills-setup passa esse texto para o AGENTS.md sem perder as notas; rode-o com --aplicar e depois rode este script de novo.`;
+    return terminar();
+  }
+
+  const doAgents = ler(arquivo);
+  if (doAgents.erro) {
+    saida.erro = doAgents.erro;
+    return terminar();
+  }
+  const bruto = doAgents.bruto;
   const template = lerTexto(TEMPLATE);
   const atual = bruto === null ? template : bruto.replace(/^﻿/, '').replace(/\r\n/g, '\n');
   const r = montar(atual, template, mapa, hoje);
@@ -362,6 +387,17 @@ function principal(argv) {
       return terminar();
     }
   }
+
+  // O AGENTS.md vai primeiro: se cair aqui, a próxima rodada encontra o AGENTS.md certo e só cria o import.
+  if (doClaude.bruto === null) {
+    try {
+      escreverInteiro(claude, IMPORT_CLAUDE);
+    } catch (e) {
+      saida.erro = explicar(e, claude);
+      return terminar();
+    }
+    saida.import_claude = 'criado';
+  } else saida.import_claude = 'ok';
   saida.ok = true;
   terminar();
 }

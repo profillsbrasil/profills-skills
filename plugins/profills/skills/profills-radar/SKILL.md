@@ -14,6 +14,8 @@ metadata:
 
 # profills-radar
 
+**Harness.** Antes do primeiro passo, leia uma vez por sessão o adaptador do harness em que você roda: `../../docs/harness/claude-code.md` no Claude Code, `../../docs/harness/codex.md` no Codex (os caminhos são relativos a este arquivo; na dúvida, leia os dois e use o que descreve as ferramentas que você tem). Cada intenção citada aqui, como `perguntar` ou `invocar-skill`, está lá com a ferramenta, o jeito de ver que ela falta e o que fazer sem ela.
+
 Você mantém a **memória de referências**: a lista de empresas que o usuário observa no LinkedIn para tirar ideias de conteúdo. O entregável é uma **seleção** de até 12 empresas em `DADOS/selection.md`, que a `profills-garimpo` coleta em seguida. Quem entra em cada rodada sai das camadas de prioridade, contadas pelo script.
 
 ## O índice é um mapa, não um armazém
@@ -78,11 +80,19 @@ Sai JSON em stdout; exit 0 = ok, 1 = alguma checagem falhou (leia `problemas`), 
 
 `scripts/importar.js` traz uma planilha de concorrentes para a lista; o uso e a saída dele estão em `references/importar-planilha.md`.
 
+## Buscar é uma coisa, ler uma página é outra
+
+**Buscar** (achar o site da empresa, a página dela no LinkedIn, o perfil no Instagram, uma notícia) é a intenção `buscar-web`: ela devolve o título, o trecho e o endereço de cada resultado, e muitas vezes isso já basta.
+
+**Abrir e ler uma página** (o site da empresa, uma notícia, a página da empresa no LinkedIn) passa sempre pela extensão do navegador do comercial, nunca por fetch. Antes da primeira página da sessão, invoque a skill `profills-navegador` (intenção `invocar-skill`) e espere o handoff dela, com o navegador e a aba prontos. Depois, cada página abre e se lê pelas intenções `abrir-pagina` e `ler-pagina`; quando a pesquisa acabar, feche as abas que você abriu (intenção `fechar-aba`). No LinkedIn e no Instagram é só leitura: nada de seguir, curtir ou comentar, e abra só a página da empresa, quando a busca não trouxe o que falta.
+
+Se o navegador não ficar pronto (a extensão falta e o comercial não quer instalar agora), siga só com o que a busca mostrou e diga em uma frase o que ficou sem ler: o id fica `—` e o que dependia da página fica `[a confirmar]` na ficha.
+
 ## Fluxo
 
 ### 0. Resolva os dados e escolha a branch
 
-**Pasta de dados (`DADOS`)**: se o diretório atual está num repo git com `linkedin-data/` na raiz (`git rev-parse --show-toplevel`), `DADOS` é essa pasta; senão é `~/Profills LinkedIn/`. Se nenhuma das duas existe, ou se `DADOS/.profills.json` falta ou traz `versao_dados` menor que 3, invoque a skill `profills-setup` — ela cria ou atualiza a pasta e confere o resto da instalação.
+**Pasta de dados (`DADOS`)**: se o diretório atual está num repo git com `linkedin-data/` na raiz (`git rev-parse --show-toplevel`), `DADOS` é essa pasta; senão é `~/Profills LinkedIn/`. Se nenhuma das duas existe, ou se `DADOS/.profills.json` falta ou traz `versao_dados` menor que 4, invoque a skill `profills-setup` — ela cria ou atualiza a pasta e confere o resto da instalação.
 
 Depois rode `node "<pasta desta skill>/scripts/indice.js" "<DADOS>/refs"` e decida pela saída:
 
@@ -126,13 +136,13 @@ Se ele disser que já tem uma planilha de concorrentes, a lista começa por ela:
 
 1. **Descubra o nicho dele.** Se `DADOS/voz.md` existir, leia: o que ele vende e para quem já está lá. Senão, pergunte em prosa, em uma frase, o que a empresa dele vende e para quem. Concluído quando você consegue nomear o setor e o público.
 
-2. **Pesquise 4-6 candidatas reais** desse setor via WebSearch/WebFetch: concorrentes, líderes do nicho, quem publica com regularidade no LinkedIn em pt-BR. Concluído quando cada candidata tem nome, o que faz e uma razão de uma frase para acompanhá-la.
+2. **Pesquise 4-6 candidatas reais** desse setor na web (intenção `buscar-web`; a página que precisar abrir vai pelo navegador, como diz [Buscar é uma coisa, ler uma página é outra](#buscar-é-uma-coisa-ler-uma-página-é-outra)): concorrentes, líderes do nicho, quem publica com regularidade no LinkedIn em pt-BR. Concluído quando cada candidata tem nome, o que faz e uma razão de uma frase para acompanhá-la.
 
-3. **Ofereça as candidatas** com `AskUserQuestion` (multiSelect): uma opção por empresa com a razão de uma frase, mais a opção "tenho outras em mente" — aí aceite nome ou URL (`linkedin.com/company/<slug>`). Diga que 3 a 5 empresas bastam para começar. Se ele hesitar ou disser que não sabe, proponha as três candidatas mais fortes com o porquê, em vez de repetir a pergunta. Concluído quando existe uma lista aprovada por ele, com pelo menos uma empresa.
+3. **Ofereça as candidatas** numa pergunta com opções e escolha de várias (intenção `perguntar`): uma opção por empresa com a razão de uma frase, mais a opção "tenho outras em mente" — aí aceite nome ou URL (`linkedin.com/company/<slug>`). Diga que 3 a 5 empresas bastam para começar. Se ele hesitar ou disser que não sabe, proponha as três candidatas mais fortes com o porquê, em vez de repetir a pergunta. Concluído quando existe uma lista aprovada por ele, com pelo menos uma empresa.
 
 4. **Faça cada empresa aprovada entrar** por [Como entra uma empresa nova](#como-entra-uma-empresa-nova), inteiro.
 
-5. **Ofereça as similares** que as pesquisas do passo 4 descobriram, com `AskUserQuestion` (multiSelect): "achei estas empresas parecidas — quer adicionar alguma?". As aprovadas entram pelo mesmo caminho do passo 4.
+5. **Ofereça as similares** que as pesquisas do passo 4 descobriram, numa pergunta com escolha de várias (`perguntar`): "achei estas empresas parecidas — quer adicionar alguma?". As aprovadas entram pelo mesmo caminho do passo 4.
 
 6. Escreva a [seleção](#a-seleção) com as empresas que ele quer catalogar agora.
 
@@ -146,14 +156,14 @@ Vale para a primeira run, para as similares aprovadas e para o "adiciona a empre
 
    Concluído quando o script rodou e, havendo candidato, o usuário disse se é a mesma.
 
-2. **Pesquise a empresa** via WebSearch/WebFetch: seu conhecimento tem corte temporal e setor muda. Três eixos:
+2. **Pesquise a empresa** na web (`buscar-web` para achar, o navegador para ler a página): seu conhecimento tem corte temporal e setor muda. Três eixos:
    - **Contexto**: setor, porte, o que faz, posicionamento, notícias recentes. É a moldura para interpretar os posts depois — saber que a empresa lançou produto semana passada explica uma leva de posts.
    - **Similares**: 2-4 empresas parecidas ou concorrentes que valem a pena acompanhar.
    - **Tendências do setor**: temas, formatos e pautas em alta no nicho agora.
 
-   Concluído quando os três eixos têm resposta vinda de uma busca desta sessão.
+   Concluído quando os três eixos têm resposta vinda de uma busca ou de uma página lida nesta sessão.
 
-3. **Resolva o endereço no LinkedIn**: o slug (`linkedin.com/company/<slug>`) e, quando a página mostrar, o id numérico — o slug muda em rebranding, o id não.
+3. **Resolva o endereço no LinkedIn**: o slug (`linkedin.com/company/<slug>`, que o endereço do resultado da busca já traz) e, quando a página da empresa aberta pelo navegador mostrar, o id numérico — o slug muda em rebranding, o id não.
    - Duas ou mais páginas plausíveis (homônimos, matriz e filial): mostre 2-3 candidatas com nome, seguidores e cidade, e peça ao usuário para confirmar qual é. **Espere a resposta dele.** Enquanto ela não vier, a ficha fica com `[a confirmar]` no campo de confirmação e você não segue como se ele tivesse escolhido.
    - Nenhuma candidata: diga que não achou a página dessa empresa no LinkedIn, escreva a ficha com `—` no endereço, dê a ela um slug feito do nome para o arquivo e a linha, marque `linkedin não` e ofereça seguir sem ela na seleção, porque a `profills-garimpo` só coleta quem tem página.
 
@@ -169,9 +179,9 @@ Vale para a primeira run, para as similares aprovadas e para o "adiciona a empre
 
 A memória já tem empresas: mostre o que você já conhece, em vez de pedir links de novo. Havendo `fichas_orfas`, ofereça-as antes do passo 1, como no passo 0.
 
-1. **Pergunte a prioridade que falta.** Empresa em `rodada.a_definir` não tem camada. Pergunte com `AskUserQuestion`, uma pergunta por empresa (até 4 por chamada), opções `Alta`, `Média`, `Adjacente` e `Validação`, cada uma com o que ela muda: Alta entra em toda rodada; Média, a cada 2 semanas; Adjacente e Validação, a cada 4. Grave a resposta no campo `prioridade` da linha do `INDEX.md` e no campo `Prioridade` da ficha (acrescente a linha abaixo do endereço quando a ficha não a tiver), e rode o script de novo. Se ele não quiser decidir agora ("deixa a definir"), a empresa fica `a definir` e entra no passo 2 como opção fora da rodada. Concluído quando `a_definir` está vazio ou ele disse que deixa para depois.
+1. **Pergunte a prioridade que falta.** Empresa em `rodada.a_definir` não tem camada. Pergunte com opções (`perguntar`), uma pergunta por empresa (até 4 por chamada), opções `Alta`, `Média`, `Adjacente` e `Validação`, cada uma com o que ela muda: Alta entra em toda rodada; Média, a cada 2 semanas; Adjacente e Validação, a cada 4. Grave a resposta no campo `prioridade` da linha do `INDEX.md` e no campo `Prioridade` da ficha (acrescente a linha abaixo do endereço quando a ficha não a tiver), e rode o script de novo. Se ele não quiser decidir agora ("deixa a definir"), a empresa fica `a definir` e entra no passo 2 como opção fora da rodada. Concluído quando `a_definir` está vazio ou ele disse que deixa para depois.
 
-2. **Ofereça a rodada calculada.** Mostre em texto as empresas de `rodada.devidas`, pelo nome, cada uma com a prioridade e o último catálogo ("catalogada em 12/08" ou "nunca catalogada"), e o `alerta` de quem tem. Elas já vêm marcadas: pergunte com `AskUserQuestion` se ele segue com essa rodada (opção recomendada), quer tirar ou trocar alguma, ou quer só as de prioridade Alta. Quem pediu ajuste diz os nomes; as opções de troca são as de `fora_do_limite`, `em_dia` e as `a definir` que ficaram. Diga quantas ficaram em `fora_do_limite` e cite pelo nome só as 3 primeiras, que entram primeiro na próxima rodada ("ficaram 15 para a próxima rodada, começando por A, B e C"); com 3 ou menos, cite todas. As de `sem_linkedin` não entram, porque não há página para coletar; diga isso uma vez, sem listá-las a cada rodada. Concluído quando ele aprovou a lista da rodada.
+2. **Ofereça a rodada calculada.** Mostre em texto as empresas de `rodada.devidas`, pelo nome, cada uma com a prioridade e o último catálogo ("catalogada em 12/08" ou "nunca catalogada"), e o `alerta` de quem tem. Elas já vêm marcadas: pergunte com opções (`perguntar`) se ele segue com essa rodada (opção recomendada), quer tirar ou trocar alguma, ou quer só as de prioridade Alta. Quem pediu ajuste diz os nomes; as opções de troca são as de `fora_do_limite`, `em_dia` e as `a definir` que ficaram. Diga quantas ficaram em `fora_do_limite` e cite pelo nome só as 3 primeiras, que entram primeiro na próxima rodada ("ficaram 15 para a próxima rodada, começando por A, B e C"); com 3 ou menos, cite todas. As de `sem_linkedin` não entram, porque não há página para coletar; diga isso uma vez, sem listá-las a cada rodada. Concluído quando ele aprovou a lista da rodada.
 
    **O teto é 12.** A `profills-garimpo` coleta no navegador logado dele, e cada empresa custa algumas páginas (a lista de posts, a rolagem, a página da empresa). Com 12 empresas a sessão já soma dezenas de páginas, o volume que a regra de coleta da garimpo aceita; passar disso vira rajada, que o LinkedIn pode ler como robô e travar a conta dele. Essa razão vai **em texto que o usuário lê**, na própria pergunta quando a rodada chega a 12 ou na resposta seguinte se ele pedir mais. Se ele pedir mais de 12, peça para escolher as 12 desta vez e diga que as outras entram na próxima; se ele mantiver o pedido depois de ouvir a razão, escreva as 12 primeiras na ordem da rodada e diga, pelo nome, quais ficaram de fora. Concluído quando o `selection.md` tem no máximo 12 empresas e o usuário leu por que esse é o teto.
 
@@ -212,7 +222,7 @@ Concluído quando o script voltou `ok: true`, cada empresa escolhida tem `refs/<
 
 ### Feche
 
-Antes de fechar, rode `node "<pasta desta skill>/../profills-setup/scripts/mapa.js" "<DADOS>"`, que atualiza o resumo da pasta em `<DADOS>/CLAUDE.md`; se ele não voltar `ok: true`, avise em uma frase que o resumo não foi atualizado e siga.
+Antes de fechar, rode `node "<pasta desta skill>/../profills-setup/scripts/mapa.js" "<DADOS>"`, que atualiza o resumo da pasta em `<DADOS>/AGENTS.md`; se ele não voltar `ok: true`, avise em uma frase que o resumo não foi atualizado e siga.
 
 - **A `profills-garimpo` invocou você**: assim que o `selection.md` estiver escrito, devolva o controle a ela — a coleta continua de onde parou, sem sugestão sua.
 - **O usuário chamou você**: termine com uma sugestão só — rodar a `profills-garimpo` para coletar as empresas escolhidas.

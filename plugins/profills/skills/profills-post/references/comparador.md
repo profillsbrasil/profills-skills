@@ -1,6 +1,6 @@
 # Preview realista de feed
 
-Cada opção é renderizada como um **post real do LinkedIn**: foto do perfil, nome, o texto com o corte do "…mais", o espaço da foto, a barra de reações, Copiar em cada card. Este arquivo é o contrato do JSON. O HTML mora no picker local (`scripts/picker/`), não no Artifact.
+Cada opção é renderizada como um **post real do LinkedIn**: foto do perfil, nome, o texto com o corte do "…mais", o espaço da foto, a barra de reações, Copiar em cada card. Este arquivo é o contrato do JSON. O HTML mora no picker local (`scripts/picker/`), não numa página publicada fora da máquina.
 
 ## Grave um JSON de tela — não desenhe HTML
 
@@ -11,7 +11,7 @@ O motor já existe em `scripts/picker/picker-frame.html`. Escrever HTML na mão 
 3. Grave `DADOS/.picker/current/content/<nome>.json` com o objeto abaixo. Nome novo a cada revisão.
 4. Depois que ele copia, leia `DADOS/.picker/current/state/events` (`choice` A/B/C, vale a última linha). O chat vale se ele digitar.
 
-Referência visual do card: abra `scripts/picker/picker-frame.html` cru no navegador (renderiza o `EXEMPLO`). Não publique Artifact neste passo.
+Referência visual do card: abra `scripts/picker/picker-frame.html` cru no navegador (renderiza o `EXEMPLO`). Não publique página fora da máquina neste passo.
 
 ### Campos do JSON de tela
 

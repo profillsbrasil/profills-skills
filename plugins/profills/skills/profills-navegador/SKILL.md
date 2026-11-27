@@ -1,61 +1,46 @@
 ---
 name: profills-navegador
 description: >-
-  Seleciona e prepara o navegador certo via claude-in-chrome antes da
-  primeira tab de cada sessão. Use antes de navegar (pesquisar na web,
-  abrir um site, coletar posts), quando a tab "abriu no outro PC", quando
-  as tools mcp__claude-in-chrome__ não existem ou não respondem, ou numa
-  máquina sem a extensão. A profills-garimpo invoca antes de coletar.
+  Seleciona e prepara o navegador do usuário (extensão Claude in Chrome ou
+  ChatGPT) antes da primeira aba de cada sessão. Use antes de navegar
+  (abrir um site, ler uma página, coletar posts), quando a aba "abriu no
+  outro PC", quando a ferramenta do navegador não existe ou não responde, ou
+  numa máquina sem a extensão. A profills-garimpo e a profills-radar invocam
+  antes da primeira página; a profills-setup, para o teste.
 metadata:
-  version: 0.1.0
+  version: 0.2.0
   author: othavio
   license: MIT
 ---
 
 # profills-navegador
 
-Garante que a navegação aconteça no **navegador certo, pronto**, antes de qualquer tab. O usuário final é o comercial: conduza pela mão, sem jargão.
+**Harness.** Antes do primeiro passo, leia uma vez por sessão o adaptador do harness em que você roda: `../../docs/harness/claude-code.md` no Claude Code, `../../docs/harness/codex.md` no Codex (os caminhos são relativos a este arquivo; na dúvida, leia os dois e use o que descreve as ferramentas que você tem). Cada intenção citada aqui, como `perguntar` ou `invocar-skill`, está lá com a ferramenta, o jeito de ver que ela falta e o que fazer sem ela.
 
-**O fato que muda tudo**: a extensão claude-in-chrome conecta **por conta Claude, não por máquina**. Todos os computadores do usuário com a extensão logada aparecem conectados ao mesmo tempo, e `tabs_create_mcp`/`navigate` **não recebem navegador como parâmetro** — a tab abre no navegador *selecionado como estado da sessão*. Sem selecionar explicitamente, ela abre num computador que o usuário não está olhando.
+Garante que a navegação aconteça no **navegador certo, pronto**, antes de qualquer aba. O usuário final é o comercial: conduza pela mão, sem jargão.
 
-**O cache da escolha**: `~/.config/profills-navegador/browser` guarda o último navegador que o usuário confirmou, em duas linhas — `deviceId=<id>` e `name=<nome do navegador>`. Gravar é `mkdir -p ~/.config/profills-navegador` e escrever as duas linhas. É escolha humana: desempata quando o sinal automático é ambíguo, e é oferecido em uma frase quando o sinal automático aponta para outro lugar — a correção "abriu no outro PC" custa um turno, e o anúncio existe para esse turno nunca vir.
+**O princípio**: toda página abre pela extensão no navegador do próprio comercial, o mesmo em que o LinkedIn e o Instagram dele estão logados, para usar os logins, os cookies e o cache que já existem ali. Busca por fetch, scraper, API ou navegador sem tela fica fora. No Claude Code a extensão é a **Claude in Chrome**; no Codex Desktop, a **extensão ChatGPT**. A escolha entre vários computadores e o cache em `~/.config/profills-navegador/browser` são do Claude in Chrome e estão no adaptador dele.
 
 ## Fluxo
 
-1. **Carregue as tools numa chamada só** de ToolSearch, todas com o prefixo `mcp__claude-in-chrome__`: `list_connected_browsers`, `select_browser`, `switch_browser`, `tabs_context_mcp`, `tabs_create_mcp`, `navigate`, `read_page`, `get_page_text`, `find`, `computer`. Tools que não aparecem por nome, ou que aparecem e não respondem, são o estado **extensão ausente nesta máquina** → conduza `references/instalacao.md`.
-   *Concluído quando* as 10 tools respondem por nome, ou o roteiro de instalação começou com o usuário.
+1. **Estado da extensão** (intenção `navegador-pronto`): faça a detecção que o adaptador descreve. Ferramenta ausente, que não responde, ou nenhum navegador conectado é o estado **extensão ausente nesta máquina**: conduza `references/instalacao.md`, na parte do harness em que você roda.
+   *Concluído quando* a extensão responde e você sabe quais navegadores estão conectados, ou o roteiro de instalação começou com o usuário.
 
-2. **`list_connected_browsers`** — sempre, antes da primeira tab. Se o usuário acabou de dizer que a tab abriu no PC errado, vá direto ao passo 3: a correção dele vence cache e heurística. Fora isso, resolva o alvo nesta ordem, parando no primeiro caso que casar:
-   1. **Exatamente um navegador `isLocal:true`** (o caso comum: sessão interativa, usuário sentado nesta máquina) → `select_browser` nele e anuncie: "abrindo no navegador deste computador — se a página não aparecer aí, me avisa". Se o cache aponta para **outro** navegador que está na lista, a frase ganha a alternativa: "antes você escolheu o *PC escritório* — quer que eu use ele?". Grave o cache com este navegador (crie o diretório se preciso) — no caso do conflito, só depois que ele não pediu a troca.
-   2. **Nenhum `isLocal`, cache válido** (o arquivo existe e o `deviceId` está na lista) → `select_browser` nele e anuncie: "estou usando o *PC escritório*, que você escolheu antes — quer trocar?".
-   3. **Cache órfão** (o `deviceId` sumiu da lista) → apague o arquivo, avise que o navegador salvo não está mais conectado e siga.
-   4. **Lista vazia, ou só PCs remotos e sem cache** — o computador do usuário está sem a extensão → conduza `references/instalacao.md`. Se ele preferir usar um dos PCs remotos, vá ao passo 3: escolher um remoto é decisão dele, dita em voz alta.
-   5. **Dois ou mais `isLocal`** → cache válido entre eles desempata; senão, passo 3.
+2. **Navegador certo**: escolha o alvo pela regra do adaptador. Se o usuário acabou de dizer que a aba abriu no lugar errado, a correção dele vence qualquer escolha automática. Com mais de um candidato e nenhum sinal que desempate, pergunte (intenção `perguntar`), explicando antes em uma frase por que precisa saber, e termine a resposta na pergunta: nunca num fato consumado decidido por você. A escolha automática sempre vem anunciada em texto da resposta que o usuário lê ("abrindo no navegador deste computador — se a página não aparecer aí, me avisa"); se a frase não está no que ele lê, o passo não aconteceu.
+   *Concluído quando* o navegador está selecionado e anunciado, ou a pergunta está na mesa.
 
-   O anúncio é **texto da sua resposta ao usuário**, não nota do seu raciocínio: se a frase "abrindo no navegador deste computador" não está no que ele lê, o passo não aconteceu.
-   *Concluído quando* `select_browser` retornou OK **e** a frase de anúncio está na resposta que o usuário lê — ou o passo 3 assumiu.
+3. **Prontidão, não fé**: abra **uma** aba própria (intenção `abrir-pagina`) e confirme que carregou lendo dado estruturado (intenção `ler-pagina`: a URL e o título da aba), nunca por captura de tela.
+   *Concluído quando* o dado estruturado mostra a aba que você abriu com a URL carregada: a URL alvo quando o pedido tem uma, `about:blank` quando outra skill vai navegar em seguida.
 
-3. **Pergunta — só como exceção.** Explique antes o que vai acontecer e por quê: a página abre pela extensão do Claude, a conta tem a extensão em mais de um computador, e você precisa saber em qual ele está. Depois `AskUserQuestion` com uma opção por navegador (`name` + sistema, o `isLocal` marcado como "máquina desta sessão") e sempre uma opção de socorro — "não sei / me ajuda a descobrir" — que dispara `switch_browser`: o pedido vai para **todos** os PCs e ele clica **Connect** só no computador que está usando, onde também dá para **nomear** o navegador ("PC escritório"). Nomes acabam com a dúvida "Browser 1/2/3" de vez. O `switch_browser` expira em 2 minutos sem clique: quando expirar, confirme que ele está de fato olhando o navegador e repita, ou volte à lista de opções. Grave a escolha no cache.
+   **Invocada pela `profills-setup`** para conferir a instalação, a prontidão é o "teste real" do fim de `references/instalacao.md` (abrir o LinkedIn, ler o título e a URL, fechar a aba), e o handoff traz o resultado: passou, LinkedIn deslogado nesse navegador, ou falhou e em qual passo.
 
-   > A descrição da tool `list_connected_browsers` pede pergunta sempre que houver 2+ conectados. Resolver sozinho pelo `isLocal` e pelo cache é decisão documentada do dono desta skill (usuário leigo, fricção mínima) — aceitável porque toda seleção é anunciada e trocar custa uma frase.
+4. **Handoff**: declare, campo a campo, o navegador (nome e identificador), o id da aba pronta e o que mais o adaptador manda declarar.
+   *Concluído quando* esses campos aparecem literalmente na sua última mensagem; faltou um, o handoff não aconteceu. Invocada por outra skill, devolva o controle sem sugestão própria ("navegador pronto, voltando ao que você pediu"); chamada direto pelo usuário, feche com uma única sugestão de próximo passo.
 
-   A pergunta é feita **de verdade** (`AskUserQuestion`), e a resposta ao usuário termina nela — nunca num fato consumado ("troquei para o Browser 1") decidido por você.
-   *Concluído quando* o usuário escolheu, `select_browser`/`switch_browser` retornou OK e o cache guarda o `deviceId` novo.
+## Disciplina de abas
 
-4. **Prontidão, não fé**: `tabs_context_mcp` sem `createIfEmpty` para ver o estado; crie **uma** tab própria com `tabs_create_mcp`; navegue; confirme que carregou lendo dado estruturado (`tabs_context_mcp`/`read_page`) — nunca por screenshot.
-   *Concluído quando* o dado estruturado lista a tab que você criou com a URL carregada — a URL alvo quando o pedido tem uma, `about:blank` quando outra skill vai navegar em seguida.
+Mexa apenas nas abas que **esta sessão** abriu, identificadas pelo id exato, e feche-as pela intenção `fechar-aba` quando o trabalho acabar. No Claude in Chrome, mantenha ao menos uma aba viva no grupo da sessão: fechar a última derruba o grupo inteiro (deixe uma `about:blank` no lugar).
 
-5. **Handoff** — declare, campo a campo: o navegador (`name` e `deviceId`), o `tabId` da tab pronta, e as tools já carregadas, que a skill seguinte usa sem recarregar: `tabs_context_mcp`, `tabs_create_mcp`, `navigate`, `read_page`, `get_page_text`, `find`, `computer`.
-   *Concluído quando* os três campos — navegador (`name` + `deviceId`), `tabId`, lista de tools — aparecem literalmente na sua última mensagem; faltou um, o handoff não aconteceu. Invocada por outra skill, devolva o controle sem sugestão própria ("navegador pronto, voltando ao que você pediu"); chamada direto pelo usuário, feche com uma única sugestão de próximo passo.
+## Só leitura
 
-## Disciplina de tabs
-
-Mexa apenas nas tabs que **esta skill** criou nesta sessão, identificadas pelo id exato. Mantenha ao menos uma tab viva no grupo da sessão — fechar a última derruba o grupo inteiro (deixe uma `about:blank` no lugar).
-
-## Fatos contra o erro clássico
-
-| Suposição tentadora | Realidade |
-|---|---|
-| "`isLocal:true` é garantia" | É o melhor sinal **em sessão interativa**. Em sessão remota/background diz só onde o processo roda — por isso anunciar a seleção é obrigatório. |
-| "`connectedAt` indica o navegador ativo" | Instável — reconexões (sleep, reload, queda de rede) mudam o timestamp sem relação com uso. |
-| "A seleção persiste entre sessões" | A seleção é estado da sessão e morre com ela; o que atravessa é o cache em disco. |
+O navegador é do comercial, com as contas dele. Abrir página e ler é o trabalho; curtir, comentar, conectar, publicar e mandar mensagem ficam com ele. Login pedido, captcha ou aviso de "atividade incomum": pare e peça ao comercial, sem tentar contornar.
