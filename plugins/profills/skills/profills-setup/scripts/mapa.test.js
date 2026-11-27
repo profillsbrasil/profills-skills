@@ -15,8 +15,8 @@ const TEMPLATE = fs.readFileSync(path.join(__dirname, '..', 'assets', 'claude-da
 const FIXO = TEMPLATE.slice(TEMPLATE.indexOf('<!-- profills:fixo:inicio -->'), TEMPLATE.indexOf('<!-- profills:fixo:fim -->') + '<!-- profills:fixo:fim -->'.length);
 const HOJE = '2026-11-06';
 
-const LINHA_A = '- [Alfa](alfa.md) — `alfa` · id 1 · setor s · país BR · prioridade Alta · linkedin sim · pesquisa 2026-11-01 · sem catálogo';
-const LINHA_B = '- [Beta](beta.md) — `beta` · id 2 · setor s · país BR · prioridade a definir · linkedin não · pesquisa 2026-11-01 · sem catálogo';
+const LINHA_A = '- [Alfa](alfa.md) — `alfa` · id 1 · setor s · país BR · prioridade Alta · linkedin sim · instagram — · pesquisa 2026-11-01 · sem catálogo';
+const LINHA_B = '- [Beta](beta.md) — `beta` · id 2 · setor s · país BR · prioridade a definir · linkedin não · instagram — · pesquisa 2026-11-01 · sem catálogo';
 const indexCom = (linhas) => ['# Índice de referências', '', '## Empresas', '', ...linhas, ''].join('\n');
 const FICHA_VAZIA = '# Alfa\n\n## Do Not Copy\n\n<!-- vazio = ainda não perguntado. -->\n\n## Contexto\n\nfaz máquina\n';
 const FICHA_RESPONDIDA = '# Beta\n\n## Do Not Copy\n\n- o tom de piada\n\n## Contexto\n\nfaz máquina\n';
@@ -24,7 +24,7 @@ const FICHA_RESPONDIDA = '# Beta\n\n## Do Not Copy\n\n- o tom de piada\n\n## Con
 function montar({ index, claude } = {}) {
   const dados = fs.mkdtempSync(path.join(os.tmpdir(), 'mapa-test-'));
   for (const sub of ['refs', 'catalog/raw', 'drafts', 'boletins']) fs.mkdirSync(path.join(dados, sub), { recursive: true });
-  fs.writeFileSync(path.join(dados, '.profills.json'), JSON.stringify({ versao_dados: 2, atualizado_em: HOJE }) + '\n');
+  fs.writeFileSync(path.join(dados, '.profills.json'), JSON.stringify({ versao_dados: 3, atualizado_em: HOJE }) + '\n');
   if (index !== undefined) {
     fs.writeFileSync(path.join(dados, 'refs', 'INDEX.md'), index);
     fs.writeFileSync(path.join(dados, 'refs', 'alfa.md'), FICHA_VAZIA);
@@ -85,7 +85,7 @@ const casos = [
 
   ['estado lido dos arquivos: empresas, sem LinkedIn, coleta, rascunho, boletim, voz e pendências', () => {
     const dados = montar({ index: indexCom([LINHA_A, LINHA_B]) });
-    for (const [slug, data] of [['alfa', '2026-10-01'], ['alfa', '2026-11-02'], ['beta', '2026-11-02'], ['beta', 'rascunho']]) fs.mkdirSync(path.join(dados, 'catalog', 'raw', slug, data), { recursive: true });
+    for (const [slug, data] of [['alfa', '2026-10-01'], ['alfa', '2026-11-02'], ['beta', '2026-11-02'], ['beta', 'rascunho']]) fs.mkdirSync(path.join(dados, 'catalog', 'raw', 'linkedin', slug, data), { recursive: true });
     novoRascunho(dados, '2026-10-30-a.md');
     novoRascunho(dados, '2026-11-03-b.md');
     fs.writeFileSync(path.join(dados, 'boletins', '2026-11-04.md'), 'b\n');

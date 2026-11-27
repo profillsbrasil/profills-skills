@@ -20,9 +20,9 @@ Deixa o ambiente pronto antes de qualquer skill do pipeline rodar. O usuário fi
 
 Esta skill é a dona da regra; as outras cinco (radar, garimpo, post, voz, boletim) carregam o texto abaixo, literal, na linha que começa por `**Pasta de dados (`DADOS`)**`:
 
-> se o diretório atual está num repo git com `linkedin-data/` na raiz (`git rev-parse --show-toplevel`), `DADOS` é essa pasta; senão é `~/Profills LinkedIn/`. Se nenhuma das duas existe, ou se `DADOS/.profills.json` falta ou traz `versao_dados` menor que 2, invoque a skill `profills-setup` — ela cria ou atualiza a pasta e confere o resto da instalação.
+> se o diretório atual está num repo git com `linkedin-data/` na raiz (`git rev-parse --show-toplevel`), `DADOS` é essa pasta; senão é `~/Profills LinkedIn/`. Se nenhuma das duas existe, ou se `DADOS/.profills.json` falta ou traz `versao_dados` menor que 3, invoque a skill `profills-setup` — ela cria ou atualiza a pasta e confere o resto da instalação.
 
-**Versão da pasta.** `DADOS/.profills.json` guarda `{"versao_dados": 2, "atualizado_em": "AAAA-MM-DD"}`. Pasta sem esse arquivo é da versão 1: foi criada antes de as skills mudarem o formato da lista de empresas. Quem leva uma pasta antiga até a versão atual, sem perder nada, é o passo 4.
+**Versão da pasta.** `DADOS/.profills.json` guarda `{"versao_dados": 3, "atualizado_em": "AAAA-MM-DD"}`. Pasta sem esse arquivo é da versão 1: foi criada antes de as skills mudarem o formato da lista de empresas. Na versão 2 as coletas ficavam em `catalog/raw/<empresa>/`; na 3 elas ficam numa pasta por rede social, `catalog/raw/linkedin/<empresa>/`, e a lista ganha o campo do Instagram. Quem leva uma pasta antiga até a versão atual, sem perder nada, é o passo 4.
 
 **Dois shells**: Linux e Mac usam Bash, Windows usa Git Bash ou PowerShell. Cada checagem e cada criação de pasta tem as duas formas em `references/shell.md` — use a coluna do shell que você tem. Os comandos `claude plugin …` e `npx …` são iguais nos dois.
 
@@ -31,8 +31,8 @@ Esta skill é a dona da regra; as outras cinco (radar, garimpo, post, voz, bolet
 Comece pela porta de entrada:
 
 - **Outra skill invocou você** (radar, garimpo, post, voz ou boletim). O diagnóstico completo fica para quando o usuário chamar a skill por nome; aqui você resolve só a pasta:
-  - **`DADOS` não existia**: vá direto ao item **`DADOS` ❌** do passo 3, crie a pasta já com `boletins/` e o marcador da versão 2, anuncie o caminho e siga para o passo 6.
-  - **`DADOS` existe, mas é antiga** (sem `.profills.json`, ou com `versao_dados` menor que 2): faça o passo 4 inteiro e siga para o passo 6. Sem Node, conduza o item **Node/npx ❌** do passo 3 antes do passo 4. Com **Node pendente** ou o `migrar.js` sem `ok: true`, o passo 6 manda ficar com o usuário, não devolver o controle.
+  - **`DADOS` não existia**: vá direto ao item **`DADOS` ❌** do passo 3, crie a pasta já com `boletins/` e o marcador da versão 3, anuncie o caminho e siga para o passo 6.
+  - **`DADOS` existe, mas é antiga** (sem `.profills.json`, ou com `versao_dados` menor que 3): faça o passo 4 inteiro e siga para o passo 6. Sem Node, conduza o item **Node/npx ❌** do passo 3 antes do passo 4. Com **Node pendente** ou o `migrar.js` sem `ok: true`, o passo 6 manda ficar com o usuário, não devolver o controle.
 - **O usuário chamou você** ("instala", "configura", "atualiza", "o que está faltando"): passo 1.
 
 ### 1. Diagnóstico silencioso
@@ -42,8 +42,8 @@ Rode as checagens de `references/shell.md` — cada comando de fato executado, c
 - **Plugin `profills-skills`** — `claude plugin list` mostra `profills-skills`. **Exceção "via repo"**: se o toplevel git do diretório atual tem `plugins/profills/skills/profills-setup/SKILL.md`, você está dentro do repo-fonte, as skills já vêm dos symlinks de `.claude/skills` e o plugin não é necessário — marque ✅ com a nota "via repo" e não instale nada. Esse mesmo sinal decide onde criar a pasta de dados, no passo 3.
 - **humanize-pt-br** — `~/.claude/skills/humanize-pt-br/SKILL.md` ou `~/.agents/skills/humanize-pt-br/SKILL.md` existe.
 - **Node/npx** — `command -v npx` (Bash) ou `Get-Command npx` (PowerShell).
-- **Pasta `DADOS`** — resolvida pela regra acima, com `refs/`, `catalog/raw/`, `drafts/` e `boletins/` dentro.
-- **Versão da pasta** — `versao_dados` lido de `DADOS/.profills.json`: 2 é ✅; arquivo ausente ou número menor é ❌. Sem pasta `DADOS`, fica ❌ e se resolve junto com ela.
+- **Pasta `DADOS`** — resolvida pela regra acima, com `refs/`, `catalog/raw/linkedin/`, `drafts/` e `boletins/` dentro.
+- **Versão da pasta** — `versao_dados` lido de `DADOS/.profills.json`: 3 é ✅; arquivo ausente ou número menor é ❌. Sem pasta `DADOS`, fica ❌ e se resolve junto com ela.
 - **Lista de empresas** — `node "<pasta desta skill>/../profills-radar/scripts/indice.js" "<DADOS>/refs"`: o `n_empresas` da saída diz quantas empresas o índice tem. Índice ausente ou sem linha conta como 0. Lista vazia não é falta, é o começo. Sem Node ou sem pasta `DADOS`, fica `—` e se resolve junto com eles.
 - **`DADOS/voz.md`** — existe ou não.
 - **unslop** — opcional, entra como `—` até o usuário pedir por nome.
@@ -85,7 +85,7 @@ Nesta ordem, um item por vez:
   npx skills add othavi0/skills --skill humanize-pt-br -g -y -a claude-code
   ```
   Instalada quando `~/.claude/skills/humanize-pt-br/SKILL.md` existe.
-- **`DADOS` ❌**: crie onde o sinal do passo 1 mandar — dentro do repo-fonte (`plugins/profills/skills/profills-setup/SKILL.md` no toplevel), a pasta é `linkedin-data/` na raiz do repo; fora dele, é `~/Profills LinkedIn/` (no Windows, `C:\Users\NOME\Profills LinkedIn`). O comando por shell, o marcador da versão e o `.gitignore` do caso repo-fonte estão em `references/shell.md`; pasta nova nasce já na versão 2, sem passar pelo passo 4. Com o Node presente, rode em seguida `node "<pasta desta skill>/scripts/mapa.js" "<DADOS>"`: ele cria `<DADOS>/CLAUDE.md`, o arquivo que o Claude lê quando é aberto dentro da pasta, com as regras, o papel de cada skill e o estado da pasta. Pronta quando o `ls` (ou `Get-ChildItem`) da pasta, rodado depois de criar, mostra `refs/`, `catalog/raw/`, `drafts/`, `boletins/`, `.profills.json` e, com Node, `CLAUDE.md` — "já resolvi" só depois de ver essa saída —, o usuário ouviu o caminho no formato do sistema dele e — no repo-fonte — `git check-ignore linkedin-data/selection.md` responde o caminho.
+- **`DADOS` ❌**: crie onde o sinal do passo 1 mandar — dentro do repo-fonte (`plugins/profills/skills/profills-setup/SKILL.md` no toplevel), a pasta é `linkedin-data/` na raiz do repo; fora dele, é `~/Profills LinkedIn/` (no Windows, `C:\Users\NOME\Profills LinkedIn`). O comando por shell, o marcador da versão e o `.gitignore` do caso repo-fonte estão em `references/shell.md`; pasta nova nasce já na versão 3, sem passar pelo passo 4. Com o Node presente, rode em seguida `node "<pasta desta skill>/scripts/mapa.js" "<DADOS>"`: ele cria `<DADOS>/CLAUDE.md`, o arquivo que o Claude lê quando é aberto dentro da pasta, com as regras, o papel de cada skill e o estado da pasta. Pronta quando o `ls` (ou `Get-ChildItem`) da pasta, rodado depois de criar, mostra `refs/`, `catalog/raw/linkedin/`, `drafts/`, `boletins/`, `.profills.json` e, com Node, `CLAUDE.md` — "já resolvi" só depois de ver essa saída —, o usuário ouviu o caminho no formato do sistema dele e — no repo-fonte — `git check-ignore linkedin-data/selection.md` responde o caminho.
 - **Versão da pasta ❌** com a pasta já existente: é o passo 4, logo a seguir.
 - **unslop**: só entra quando o usuário pedir por nome. Aí `AskUserQuestion` com o conflito na mesa — **"Seguir só com a humanize-pt-br"** (recomendada: as duas brigam na regra de travessão) ou **"Instalar a unslop mesmo assim"** (comandos e o aviso em `references/instalacao.md`).
 
@@ -95,18 +95,20 @@ Concluído quando cada linha ❌ da tabela virou ✅, virou uma decisão do usu�
 
 A pasta de dados guarda o trabalho do comercial: empresas, catálogos, rascunhos, voz. Quando as skills mudam o formato de um desses arquivos, `scripts/migrar.js` (nesta skill) leva a pasta até a versão atual e guarda uma cópia de tudo que reescreve. Ele precisa do Node (sem ele, vale o **Node pendente** do passo 3).
 
-1. **Veja o que vai mudar, sem mudar nada.** Rode `node "<pasta desta skill>/scripts/migrar.js" "<DADOS>"`. A saída é JSON: `versao_atual`, `acoes[]` (cada uma com `tipo`, `alvo` e `detalhe`), `problemas[]` e `ok`. Concluído quando você tem a lista de ações.
+1. **Veja o que vai mudar, sem mudar nada.** Rode `node "<pasta desta skill>/scripts/migrar.js" "<DADOS>"`. A saída é JSON: `versao_atual`, `acoes[]` (cada uma com `tipo`, `alvo` e `detalhe`; a `mover_coleta` traz também o `de`), `problemas[]`, `avisos[]` e `ok`. Uma execução leva a pasta da versão 1 ou 2 até a 3. Concluído quando você tem a lista de ações.
 
 2. **Explique em linguagem simples, antes de aplicar.** Uma frase por tipo de ação que apareceu, sem nome de arquivo técnico nem JSON:
 
    | `tipo` | O que dizer |
    |---|---|
-   | `criar_pasta` | "vou criar a pasta de <rascunhos, boletins…>, que ainda não existia" |
-   | `converter_indice` | "a lista das suas empresas ganha uma etiqueta em cada informação (setor, país, prioridade); nenhuma empresa sai da lista, e a prioridade fica 'a definir' até você me dizer" |
+   | `criar_pasta` | "vou criar a pasta de <rascunhos, boletins, coletas do LinkedIn…>, que ainda não existia" |
+   | `mover_coleta` | "as coletas de cada empresa vão para dentro de uma pasta do LinkedIn, para caber o Instagram depois; nenhum arquivo muda por dentro" |
+   | `converter_indice` | "a lista das suas empresas ganha um campo para o Instagram, vazio por enquanto" e, se a lista ainda era a mais antiga, "e uma etiqueta em cada informação (setor, país, prioridade); nenhuma empresa sai da lista, e a prioridade fica 'a definir' até você me dizer" |
    | `converter_status` | "umas anotações antigas de coleta viram o arquivo que as skills leem hoje; a anotação original continua lá" |
+   | `marcar_concluida` | "cada coleta antiga ganha a anotação de que terminou, para o boletim não confundi-la com uma coleta que parou no meio" |
    | `gravar_marcador` | "anoto na pasta que ela já está na versão nova, para não refazer isso" |
 
-   Diga também que uma cópia da lista fica guardada antes da mudança. É atualização do que já é dele, dentro do pedido: siga sem pedir licença. Com `problemas[]` cheio, não aplique; vá ao item 5.
+   Diga também que uma cópia da lista e das anotações de coleta fica guardada antes da mudança. Com `avisos[]` cheio, diga em uma frase qual coleta tem a anotação ilegível: ela fica como está, e a migração segue. É atualização do que já é dele, dentro do pedido: siga sem pedir licença. Com `problemas[]` cheio, não aplique; vá ao item 5.
 
 3. **Aplique.** Rode o mesmo comando com `--aplicar`. Concluído quando a saída volta `ok: true`. Saída com o campo `erro` quer dizer que a gravação parou no meio: o texto diz qual arquivo e por quê (falta de permissão, disco cheio, arquivo aberto em outro programa). Conte isso ao comercial em uma frase, conduza o conserto e rode de novo; a nova rodada termina o que faltou.
 
@@ -117,10 +119,12 @@ A pasta de dados guarda o trabalho do comercial: empresas, catálogos, rascunhos
    - `linha_fora_do_formato`: o começo da linha está quebrado, em geral um colchete dentro do nome (`[Foo [BR]]`). Mostre o nome como está e proponha a versão sem o colchete extra.
    - Outro tipo (`campo_desconhecido`, `prioridade_invalida`, `campo_ausente`…): o `detalhe` diz o campo e o valor esperado. Mostre a empresa e o valor que veio, e pergunte o certo.
    - `campo_ausente` de `prioridade` e `linkedin` numa linha que já tem `setor …` e `país …` costuma ser linha antiga cujo setor começa pela palavra "setor" ou o país pela palavra "país": pergunte o setor e o país ao comercial em vez de só acrescentar os dois campos.
+   - `slug_reservado`: uma empresa da lista tem o endereço `linkedin` ou `instagram`, o mesmo nome da pasta de uma rede. O `detalhe` diz para onde mover as pastas de data dela; mova você, diga ao comercial em uma frase o que mudou e volte ao item 1.
+   - `destino_existe`: a mesma empresa tem coletas no lugar antigo e no novo. Mova as pastas de data do lugar antigo para o novo (o `detalhe` diz os dois), sem sobrescrever nenhuma data que exista nos dois: essa você mostra ao comercial antes. Depois volte ao item 1.
 
-   Corrija só aquela linha, no formato em que ela já está, e volte ao item 1.
+   Corrija só aquela linha ou pasta, no formato em que ela já está, e volte ao item 1.
 
-6. **Diga onde ficou a cópia.** O campo `backup` da saída é a pasta `<DADOS>/.backup/<data>/`. Mostre o caminho no formato do sistema dele e diga que ali está a lista como era antes. Com `backup: null` nada foi reescrito, e não há cópia a mostrar.
+6. **Diga onde ficou a cópia.** O campo `backup` da saída é a pasta `<DADOS>/.backup/<data>/`. Mostre o caminho no formato do sistema dele e diga que ali está a lista como era antes. O `movidos.jsonl` dessa pasta lista, uma linha por pasta, de onde para onde cada coleta foi: para desfazer, mova cada `para` de volta ao `de`, da última linha para a primeira. Com `backup: null` nada foi reescrito, e não há cópia a mostrar.
 
 Concluído quando a linha "Versão da pasta" da tabela virou ✅.
 

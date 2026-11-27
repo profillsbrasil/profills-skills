@@ -94,9 +94,12 @@ Ao lado de `posts.json`, um `meta.json` com o contexto da página no dia:
   "seguidores_arredondado": false,
   "janela_dias": 7,
   "posts_coletados": 5,
-  "status": "ok"
+  "status": "ok",
+  "concluida": true
 }
 ```
+
+`concluida` é `false` do momento em que a pasta do dia nasce até a empresa terminar, e `true` depois (passo 5 do `SKILL.md`). Coleta com `false` parou no meio: ela não conta como coletada na rodada, não serve de base de comparação no boletim e não vira catálogo. As coletas de 2026-07-14 não têm `meta.json`; as da versão 2 da pasta ganharam `"concluida": true` na migração da `profills-setup`.
 
 `seguidores` vem do topo da página da empresa ("12.400 seguidores"), pelo retorno do JS de `navegacao.md`, e é o denominador da **taxa de engajamento normalizada** (`benchmark-mercado.md`) — sem ele, comparar likes brutos entre uma página de 30k e uma de 1,9k seguidores é enganoso. O LinkedIn arredonda o número em página maior ("6 mil", "52 mil", "1,1 mi"): grave o valor convertido (`6000`) com `"seguidores_arredondado": true`, e diga no perfil que a taxa dessa empresa é aproximada. `0` não é um valor válido aqui: o `metricas.js` avisa ("taxa impossível") e devolve `taxa_normalizada: null` em vez de dividir por zero.
 

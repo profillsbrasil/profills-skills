@@ -2,7 +2,7 @@
 
 - **Slug**: `cetromaquinas` · **Coletado em**: 2026-08-17
 - **Seguidores**: 19200 · **Janela**: padrão (7 dias) — 5 posts, de 2026-08-11 a 2026-08-17
-- **Fonte bruta**: `raw/cetromaquinas/2026-08-17/posts.json`
+- **Fonte bruta**: `raw/linkedin/cetromaquinas/2026-08-17/posts.json`
 
 > Neste relatório, [medido] = lido da página (fato); [inferido] = leitura da IA (hipótese).
 

@@ -3,7 +3,7 @@
 // Faz três coisas sobre DADOS/refs: valida o INDEX.md linha a linha (campos por chave, id, datas,
 // existência da ficha, fichas órfãs, pesquisa vencida em 60 dias) e monta a rodada por camadas de
 // prioridade (CAMADAS, até LIMITE_POR_RODADA empresas); reconstrói o INDEX.md a partir
-// das fichas quando ele sumiu (--reconstruir, recuperando o campo catálogo em catalog/raw/ e no
+// das fichas quando ele sumiu (--reconstruir, recuperando o campo catálogo em catalog/raw/linkedin/ e no
 // índice anterior — o alerta ⚠ não é recuperável do disco); e procura ficha parecida antes de criar
 // uma nova (--procurar, sem acento e por distância, também pelo grupo e pelos nomes relacionados).
 // Uso:     node scripts/indice.js <pasta refs> [--reconstruir] [--catalog <pasta>] [--procurar "<nome>"] [--hoje AAAA-MM-DD]
@@ -121,6 +121,7 @@ function lerFicha(pasta, arquivo) {
     prioridade: campo(['Prioridade']),
     grupo: campo(['Grupo']),
     relacionados: campo(['Grupo e nomes relacionados']),
+    instagram: campo(['Instagram']),
   };
 
   // Empresa sem página no LinkedIn tem `—` no endereço: o slug passa a ser o nome do arquivo da ficha.
@@ -148,7 +149,10 @@ function lerFicha(pasta, arquivo) {
 
   const relacionados = bruto.relacionados && !PADROES_VAZIOS.test(bruto.relacionados.trim()) ? bruto.relacionados.trim() : null;
 
-  return { arquivo, nome, slug, id, setor, pais, pesquisa, prioridade, linkedin, grupo, relacionados };
+  const instagramMatch = bruto.instagram ? bruto.instagram.match(/`([^`]+)`/) : null;
+  const instagram = instagramMatch && HANDLE_INSTAGRAM.test(instagramMatch[1].trim()) ? instagramMatch[1].trim() : null;
+
+  return { arquivo, nome, slug, id, setor, pais, pesquisa, prioridade, linkedin, instagram, grupo, relacionados };
 }
 
 // Pasta refs/ que ainda não existe é a primeira run: nenhuma ficha, não erro.
@@ -162,16 +166,19 @@ function listarFichas(pasta) {
 
 // ---------- a linha do índice ----------
 
-// Versão 2 da linha, campos ` · ` com chave nomeada:
+// Versão 3 da linha, campos ` · ` com chave nomeada:
 // - [Nome](<slug>.md) — `<slug>` · id <número|—> · setor <texto> · país <texto> · prioridade <…> · linkedin <sim|não>
-//   · pesquisa AAAA-MM-DD · <sem catálogo|catálogo AAAA-MM-DD> [· grupo <texto>] [· ⚠ <frase>]
+//   · instagram <handle|—> · pesquisa AAAA-MM-DD · <sem catálogo|catálogo AAAA-MM-DD> [· grupo <texto>] [· ⚠ <frase>]
+// A versão 2 era igual sem o instagram; a 1 não tinha chave no setor e no país.
 const RE_LINHA = /^-\s+\[([^\]]+)\]\(([^)]+)\)\s+—\s+`([^`]*)`\s+·\s+(.+)$/;
 // Toda linha de lista do INDEX.md é candidata a linha de empresa: linha solta vira problema, não sumiço.
 const RE_ITEM = /^-\s+/;
 const SLUG_VALIDO = /^[A-Za-z0-9_-]+$/;
+// O handle do Instagram sem o @: letras, números, ponto e _, até 30 caracteres.
+const HANDLE_INSTAGRAM = /^[A-Za-z0-9._]{1,30}$/;
 const PRIORIDADES = ['Alta', 'Média', 'Adjacente', 'Validação', 'a definir'];
 const FORMATO_DA_LINHA =
-  '- [Nome](<slug>.md) — `<slug>` · id <número|—> · setor <texto> · país <texto> · prioridade <Alta|Média|Adjacente|Validação|a definir> · linkedin <sim|não> · pesquisa AAAA-MM-DD · <sem catálogo|catálogo AAAA-MM-DD> [· grupo <texto>] [· ⚠ <frase>]';
+  '- [Nome](<slug>.md) — `<slug>` · id <número|—> · setor <texto> · país <texto> · prioridade <Alta|Média|Adjacente|Validação|a definir> · linkedin <sim|não> · instagram <handle|—> · pesquisa AAAA-MM-DD · <sem catálogo|catálogo AAAA-MM-DD> [· grupo <texto>] [· ⚠ <frase>]';
 
 const falha = (tipo, detalhe) => ({ problema: { tipo, detalhe } });
 
@@ -208,6 +215,16 @@ const CAMPOS = [
     obrigatorio: true,
     ler: (v) => (v === 'sim' || v === 'não' ? { valor: v === 'sim' } : falha('linkedin_invalido', `esperado "linkedin sim" ou "linkedin não", veio "linkedin ${v}"`)),
     escrever: (v) => `linkedin ${v ? 'sim' : 'não'}`,
+  },
+  {
+    chave: 'instagram',
+    propriedade: 'instagram',
+    obrigatorio: true,
+    ler: (v) => {
+      if (v === '—') return { valor: null };
+      return HANDLE_INSTAGRAM.test(v) ? { valor: v } : falha('instagram_invalido', `esperado "instagram <handle sem @>" ou "instagram —", veio "instagram ${v}"`);
+    },
+    escrever: (v) => `instagram ${v || '—'}`,
   },
   { chave: 'pesquisa', propriedade: 'pesquisa', obrigatorio: true, ler: lerData('data_pesquisa_invalida', 'pesquisa'), escrever: (v) => `pesquisa ${v}` },
   {
@@ -301,18 +318,20 @@ function parsearCaudaAntiga(resto) {
   return { id, setor, pais, pesquisa, catalogo, alerta: [alerta, notaDoCatalogo].filter(Boolean).join(' · ') || null, problemas };
 }
 
-// Setor e país com chave são obrigatórios na versão 2. Uma só chave não basta: na versão 1 um setor
+// Setor e país com chave são obrigatórios desde a versão 2. Uma só chave não basta: na versão 1 um setor
 // como "grupo industrial" ou um país como "linkedin BR" começam por chave da versão 2.
 function ehCaudaAntiga(resto) {
   const chaves = new Set(separarCampos(resto).map((c) => c.chave));
   return !(chaves.has('setor') && chaves.has('país'));
 }
 
+const PASTA_ANTIGA = 'a pasta de dados é de uma versão anterior — rode a profills-setup para atualizar a pasta';
+
 function parsearLinha(texto, numero) {
   const cabeca = cabecaDaLinha(texto);
   if (!cabeca) return { erro: 'linha_fora_do_formato', linha: numero, trecho: texto };
 
-  const empresa = { nome: cabeca.nome, arquivo: cabeca.arquivo, slug: cabeca.slug, linha: numero, trecho: texto, formato: 2 };
+  const empresa = { nome: cabeca.nome, arquivo: cabeca.arquivo, slug: cabeca.slug, linha: numero, trecho: texto, formato: 3 };
   for (const c of CAMPOS) empresa[c.propriedade] = null;
   const problemas = [];
 
@@ -323,10 +342,7 @@ function parsearLinha(texto, numero) {
   if (ehCaudaAntiga(cabeca.resto)) {
     const antiga = parsearCaudaAntiga(cabeca.resto);
     Object.assign(empresa, { id: antiga.id, setor: antiga.setor, pais: antiga.pais, pesquisa: antiga.pesquisa, catalogo: antiga.catalogo, alerta: antiga.alerta, formato: 1 });
-    problemas.push({
-      tipo: 'formato_antigo',
-      detalhe: 'a linha está no formato antigo (setor e país sem chave): a pasta de dados é de uma versão anterior — rode a profills-setup para atualizar a pasta',
-    });
+    problemas.push({ tipo: 'formato_antigo', detalhe: `a linha está no formato antigo (setor e país sem chave): ${PASTA_ANTIGA}` });
     return { empresa, problemas };
   }
 
@@ -346,8 +362,13 @@ function parsearLinha(texto, numero) {
     if (lido.problema) problemas.push({ campo: chave, ...lido.problema });
     else empresa[campo.propriedade] = lido.valor;
   }
+  // Linha sem o instagram é da versão 2: quem a converte é a migração, não uma correção à mão.
+  if (!vistos.has('instagram')) {
+    empresa.formato = 2;
+    problemas.push({ tipo: 'formato_antigo', detalhe: `a linha está no formato antigo (sem o campo instagram): ${PASTA_ANTIGA}` });
+  }
   for (const c of CAMPOS) {
-    if (c.obrigatorio && !vistos.has(c.chave)) {
+    if (c.obrigatorio && !vistos.has(c.chave) && !(c.chave === 'instagram' && empresa.formato === 2)) {
       problemas.push({ tipo: 'campo_ausente', campo: c.chave, detalhe: `a linha não tem o campo "${c.chave}"` });
     }
   }
@@ -504,6 +525,7 @@ function examinar(pasta, hoje) {
       pais: e.pais,
       prioridade: e.prioridade,
       linkedin: e.linkedin,
+      instagram: e.instagram,
       pesquisa: e.pesquisa,
       dias_desde_pesquisa: dias,
       pesquisa_vencida: vencida,
@@ -535,9 +557,9 @@ function validar(pasta, hoje) {
 }
 
 // O campo catálogo é do disco, não do índice: cada coleta da profills-garimpo deixa
-// catalog/raw/<slug>/<AAAA-MM-DD>/. Vale a data mais recente que trouxe post — meta.json com
+// catalog/raw/linkedin/<slug>/<AAAA-MM-DD>/. Vale a data mais recente que trouxe post — meta.json com
 // status "ok" ou posts.json com pelo menos um post. Coleta vazia (sem_posts, página não
-// gerenciada) não conta como catálogo.
+// gerenciada) e coleta interrompida ("concluida": false) não contam como catálogo.
 function catalogoNoDisco(raiz, slug) {
   const pastaEmpresa = path.join(raiz, slug);
   let datas;
@@ -559,6 +581,7 @@ function catalogoNoDisco(raiz, slug) {
     } catch (e) {
       meta = null;
     }
+    if (meta && meta.concluida === false) continue;
     if (meta && meta.status === 'ok') return { data, prova: 'meta.json com status ok' };
     try {
       const posts = JSON.parse(lerTexto(path.join(dia, 'posts.json')));
@@ -581,7 +604,7 @@ function reconstruir(pasta, hoje, raizCatalogo) {
       if (r.erro) linhasIlegiveis.push({ linha: i + 1, trecho: texto.slice(0, 120) });
       else {
         const e = r.empresa;
-        anteriores.set(e.slug, { catalogo: e.catalogo, alerta: e.alerta, prioridade: e.prioridade, grupo: e.grupo });
+        anteriores.set(e.slug, { catalogo: e.catalogo, alerta: e.alerta, prioridade: e.prioridade, grupo: e.grupo, instagram: e.instagram });
       }
     });
   }
@@ -634,7 +657,7 @@ function reconstruir(pasta, hoje, raizCatalogo) {
     let origem = 'sem catálogo';
     if (doDisco && (!anterior.catalogo || doDisco.data >= anterior.catalogo)) {
       dataCatalogo = doDisco.data;
-      origem = 'catalog/raw';
+      origem = 'catalog/raw/linkedin';
     } else if (anterior.catalogo) {
       dataCatalogo = anterior.catalogo;
       origem = 'índice anterior';
@@ -642,6 +665,7 @@ function reconstruir(pasta, hoje, raizCatalogo) {
     const setor = resumirSetor(ficha.setor);
     const prioridade = ficha.prioridade || anterior.prioridade || 'a definir';
     const grupo = ficha.grupo || anterior.grupo || null;
+    const instagram = ficha.instagram || anterior.instagram || null;
     linhas.push(
       formatarLinha({
         nome: ficha.nome,
@@ -651,6 +675,7 @@ function reconstruir(pasta, hoje, raizCatalogo) {
         pais: ficha.pais || '[a confirmar]',
         prioridade,
         linkedin: ficha.linkedin,
+        instagram,
         pesquisa: ficha.pesquisa || '[a confirmar]',
         catalogo: dataCatalogo,
         grupo,
@@ -665,11 +690,12 @@ function reconstruir(pasta, hoje, raizCatalogo) {
       setor,
       prioridade,
       linkedin: ficha.linkedin,
+      instagram,
       grupo,
       pesquisa: ficha.pesquisa,
       catalogo: dataCatalogo,
       origem_catalogo: origem,
-      prova_catalogo: origem === 'catalog/raw' ? doDisco.prova : null,
+      prova_catalogo: origem === 'catalog/raw/linkedin' ? doDisco.prova : null,
       alerta_preservado: anterior.alerta || null,
       campos_a_confirmar: ['setor', 'pais', 'pesquisa'].filter((c) => !ficha[c]),
     });
@@ -809,7 +835,7 @@ function principal(argv) {
       if (!termo) morrer('Uso: --procurar precisa de um nome, ex.: --procurar "Maquimox".');
     } else if (a === '--catalog') {
       catalogo = args[++i];
-      if (!catalogo) morrer('Uso: --catalog precisa de uma pasta, ex.: --catalog "<DADOS>/catalog/raw".');
+      if (!catalogo) morrer('Uso: --catalog precisa de uma pasta, ex.: --catalog "<DADOS>/catalog/raw/linkedin".');
     } else if (a === '--hoje') {
       hoje = args[++i];
       if (!hoje || !dataValida(hoje)) morrer('Uso: --hoje precisa de uma data AAAA-MM-DD, ex.: --hoje 2026-08-24.');
@@ -827,8 +853,8 @@ function principal(argv) {
   if (acao !== 'validar' && !fs.existsSync(pasta)) morrer(`Pasta não encontrada: ${pasta}`);
   if (fs.existsSync(pasta) && !fs.statSync(pasta).isDirectory()) morrer(`Não é uma pasta: ${pasta}`);
 
-  // catalog/raw/ é irmã de refs/ dentro de DADOS; --catalog sobrescreve quando não é.
-  const raizCatalogo = catalogo ? path.resolve(catalogo) : path.resolve(pasta, '..', 'catalog', 'raw');
+  // catalog/raw/linkedin/ fica em DADOS, ao lado de refs/; --catalog sobrescreve quando não fica.
+  const raizCatalogo = catalogo ? path.resolve(catalogo) : path.resolve(pasta, '..', 'catalog', 'raw', 'linkedin');
 
   if (acao === 'reconstruir') return reconstruir(pasta, hoje, raizCatalogo);
   if (acao === 'procurar') return procurar(pasta, termo);
@@ -842,6 +868,7 @@ module.exports = {
   PRIORIDADES,
   FORMATO_DA_LINHA,
   SLUG_VALIDO,
+  HANDLE_INSTAGRAM,
   RE_ITEM,
   cabecaDaLinha,
   parsearLinha,

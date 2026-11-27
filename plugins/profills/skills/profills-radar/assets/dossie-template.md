@@ -6,6 +6,7 @@
 - **Grupo**: <o recorte em que o usuário agrupa a empresa> — `—` quando não há
 - **Grupo e nomes relacionados**: <marcas, divisões, empresa-mãe e nomes antigos, como a fonte escreveu> — `—` quando não há; o `--procurar` também lê esta linha
 - **Outras páginas no LinkedIn**: <outros endereços `linkedin.com/company/…` da mesma empresa, com o motivo> — `—` quando não há
+- **Instagram**: `<handle>` (`instagram.com/<handle>`) — o perfil da empresa, sem o @; `—` quando ela não tem, e aí a linha do índice leva `instagram —`
 - **Setor**: <setor>
 - **Porte**: <nº de seguidores / funcionários, se souber>
 - **País / idioma dos posts**: <BR / global · PT / EN>

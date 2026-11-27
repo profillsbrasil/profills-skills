@@ -2,7 +2,7 @@
 
 - **Slug**: `skymsen` · **Coletado em**: 2026-07-14
 - **Seguidores**: não informados (coleta sem `meta.json`) · **Janela**: padrão (7 dias) — 5 posts, de 2026-07-08 a 2026-07-13
-- **Fonte bruta**: `raw/skymsen/2026-07-14/posts.json`
+- **Fonte bruta**: `raw/linkedin/skymsen/2026-07-14/posts.json`
 
 > Neste relatório, [medido] = lido da página (fato); [inferido] = leitura da IA (hipótese).
 

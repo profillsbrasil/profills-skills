@@ -43,9 +43,20 @@ const ESPERADO_REAL = {
   'sulpack-industria-de-maquinas-para-embalagens': { setor: 'seladoras/embaladoras', catalogo: null, alerta: 'presença digital fraca (~38 seguidores)' },
 };
 
+// linkedin-data/refs/INDEX.md na versão 2 da pasta, antes do campo instagram.
+const LINHAS_V2 = [
+  '- [Cetro Máquinas](cetromaquinas.md) — `cetromaquinas` · id — · setor máquinas de embalagem/processamento · país BR · prioridade a definir · linkedin sim · pesquisa 2026-07-14 · catálogo 2026-07-14 · ⚠ catálogo parcial (smoke test)',
+  '- [Maqinox indústria de Máquinas](maqinox-ind-stria-de-maquinas.md) — `maqinox-ind-stria-de-maquinas` · id — · setor máquinas de envase/Doypack · país BR · prioridade a definir · linkedin sim · pesquisa 2026-07-14 · sem catálogo',
+  '- [Tecnox do Brasil](tecnox-do-brasil.md) — `tecnox-do-brasil` · id — · setor embalagem flexível/Doypack · país BR · prioridade a definir · linkedin sim · pesquisa 2026-07-14 · sem catálogo',
+  '- [Sulpack Indústria de Máquinas](sulpack-industria-de-maquinas-para-embalagens.md) — `sulpack-industria-de-maquinas-para-embalagens` · id — · setor seladoras/embaladoras · país BR · prioridade a definir · linkedin sim · pesquisa 2026-07-14 · sem catálogo · ⚠ presença digital fraca (~38 seguidores)',
+];
+const comInstagram = (linha) => linha.replace(/ · linkedin (sim|não) · /, ' · linkedin $1 · instagram — · ');
+
 const indexCom = (linhas, quebra = '\n') => [...CABECALHO, ...linhas, ''].join(quebra);
 
-function montar({ index, marcador } = {}) {
+// coletas: [slug, data, { posts, meta, status }] na forma da versão 2, catalog/raw/<slug>/<data>/.
+// meta é o objeto do meta.json (ou o texto cru); status é o texto de um STATUS.txt da versão 1.
+function montar({ index, marcador, coletas = [] } = {}) {
   const dados = fs.mkdtempSync(path.join(os.tmpdir(), 'migrar-test-'));
   for (const sub of ['refs', 'catalog/raw', 'drafts', 'boletins']) fs.mkdirSync(path.join(dados, sub), { recursive: true });
   if (index !== undefined) {
@@ -53,8 +64,20 @@ function montar({ index, marcador } = {}) {
     for (const m of index.matchAll(/\]\(([^)\s]+\.md)\)/g)) fs.writeFileSync(path.join(dados, 'refs', m[1]), '# ficha\n');
   }
   if (marcador !== undefined) fs.writeFileSync(path.join(dados, '.profills.json'), JSON.stringify({ versao_dados: marcador }) + '\n');
+  for (const [rel, data, { posts, meta, status } = {}] of coletas) {
+    const pasta = path.join(dados, 'catalog', 'raw', rel, data);
+    fs.mkdirSync(pasta, { recursive: true });
+    if (posts !== undefined) fs.writeFileSync(path.join(pasta, 'posts.json'), JSON.stringify(posts, null, 2) + '\n');
+    if (meta !== undefined) fs.writeFileSync(path.join(pasta, 'meta.json'), typeof meta === 'string' ? meta : JSON.stringify(meta, null, 2) + '\n');
+    if (status !== undefined) fs.writeFileSync(path.join(pasta, 'STATUS.txt'), status);
+  }
   return dados;
 }
+
+const ler = (dados, rel) => fs.readFileSync(path.join(dados, rel), 'utf8');
+const lerJson = (dados, rel) => JSON.parse(ler(dados, rel));
+const POSTS = [{ post_id: 'urn:li:activity:7001', url: 'https://www.linkedin.com/feed/update/urn:li:activity:7001/', data: '2026-07-10' }];
+const META_V2 = { slug: 'tecnox-do-brasil', coletado_em: '2026-07-14', seguidores: 154, janela_dias: 7, posts_coletados: 0, status: 'sem_posts', nota: 'LinkedIn parado.' };
 
 function rodar(script, args) {
   const r = spawnSync(process.execPath, [script, ...args, '--hoje', HOJE], { encoding: 'utf8' });
@@ -153,12 +176,12 @@ const casos = [
     assert.deepStrictEqual(v.json.problemas.filter((p) => p.tipo !== 'cabecalho_ausente'), [], 'nenhum problema de linha');
   }],
 
-  ['indice.js lê a linha 1 de um INDEX v2 com BOM', () => {
+  ['indice.js lê a linha 1 de um INDEX da versão atual com BOM', () => {
     const linhas = [
-      '- [A](a.md) — `a` · id 1 · setor s · país BR · prioridade Alta · linkedin sim · pesquisa 2026-07-14 · sem catálogo',
-      '- [B](b.md) — `b` · id 2 · setor s · país BR · prioridade Alta · linkedin sim · pesquisa 2026-07-14 · sem catálogo',
+      '- [A](a.md) — `a` · id 1 · setor s · país BR · prioridade Alta · linkedin sim · instagram — · pesquisa 2026-07-14 · sem catálogo',
+      '- [B](b.md) — `b` · id 2 · setor s · país BR · prioridade Alta · linkedin sim · instagram — · pesquisa 2026-07-14 · sem catálogo',
     ];
-    const dados = montar({ index: BOM + linhas.join('\n') + '\n', marcador: 2 });
+    const dados = montar({ index: BOM + linhas.join('\n') + '\n', marcador: 3 });
     const v = validar(dados);
     assert.strictEqual(v.json.n_empresas, 2, 'índice lê as duas empresas');
     assert.deepStrictEqual(v.json.problemas.filter((p) => p.tipo !== 'cabecalho_ausente'), [], 'nenhum problema de linha');
@@ -216,13 +239,13 @@ const casos = [
     for (const [slug, esperado] of Object.entries(ESPERADO_REAL)) {
       const e = empresas[slug];
       assert.deepStrictEqual(
-        { setor: e.setor, pais: e.pais, id: e.id, pesquisa: e.pesquisa, catalogo: e.catalogo, alerta: e.alerta, prioridade: e.prioridade, linkedin: e.linkedin },
-        { ...esperado, pais: 'BR', id: '—', pesquisa: '2026-07-14', prioridade: 'a definir', linkedin: true },
+        { setor: e.setor, pais: e.pais, id: e.id, pesquisa: e.pesquisa, catalogo: e.catalogo, alerta: e.alerta, prioridade: e.prioridade, linkedin: e.linkedin, instagram: e.instagram },
+        { ...esperado, pais: 'BR', id: '—', pesquisa: '2026-07-14', prioridade: 'a definir', linkedin: true, instagram: null },
         slug,
       );
     }
     assert.strictEqual(fs.readFileSync(path.join(dados, '.backup', HOJE, 'refs', 'INDEX.md'), 'utf8'), original, 'backup byte a byte');
-    assert.strictEqual(JSON.parse(fs.readFileSync(path.join(dados, '.profills.json'), 'utf8')).versao_dados, 2);
+    assert.strictEqual(JSON.parse(fs.readFileSync(path.join(dados, '.profills.json'), 'utf8')).versao_dados, 3);
   }],
 
   ['variante de 2026-08-04 sem id e com catálogo parcial', () => {
@@ -267,13 +290,182 @@ const casos = [
     recusaSemGravar(dados, 'slug_duplicado');
   }],
 
-  ['pasta na versão 3 é recusada sem mudar nada', () => {
-    const dados = montar({ index: indexCom(LINHAS_REAIS), marcador: 3 });
+  ['pasta na versão 4 é recusada sem mudar nada', () => {
+    const dados = montar({ index: indexCom(LINHAS_REAIS), marcador: 4 });
     const antes = hashDaPasta(dados);
     const r = migrar(dados, '--aplicar');
     assert.strictEqual(r.json.ok, false);
     assert.ok(r.json.problemas.some((p) => p.tipo === 'pasta_mais_nova'));
     assert.strictEqual(hashDaPasta(dados), antes, 'sha256 da pasta igual');
+  }],
+
+  // ---------- versão 2 → 3: a rede vira nível de pasta ----------
+
+  ['v2 → v3: cada coleta vai para catalog/raw/linkedin/<slug>, com o registro para desfazer', () => {
+    const dados = montar({
+      index: indexCom(LINHAS_V2),
+      marcador: 2,
+      coletas: [
+        ['cetromaquinas', '2026-07-14', { posts: POSTS }],
+        ['tecnox-do-brasil', '2026-07-14', { posts: [], meta: META_V2 }],
+      ],
+    });
+    const postsAntes = ler(dados, 'catalog/raw/cetromaquinas/2026-07-14/posts.json');
+    const r = aplicarComSucesso(dados);
+    assert.deepStrictEqual(
+      r.acoes.filter((a) => a.tipo === 'mover_coleta').map((a) => a.alvo),
+      [path.join('catalog', 'raw', 'linkedin', 'cetromaquinas'), path.join('catalog', 'raw', 'linkedin', 'tecnox-do-brasil')],
+    );
+    assert.ok(!existe(dados, 'catalog/raw/cetromaquinas') && !existe(dados, 'catalog/raw/tecnox-do-brasil'), 'nenhuma pasta de empresa fica solta em catalog/raw/');
+    assert.strictEqual(ler(dados, 'catalog/raw/linkedin/cetromaquinas/2026-07-14/posts.json'), postsAntes, 'posts.json chega byte a byte');
+    const movidos = ler(dados, `.backup/${HOJE}/movidos.jsonl`).trim().split('\n').map((l) => JSON.parse(l));
+    assert.deepStrictEqual(movidos, [
+      { de: path.join('catalog', 'raw', 'cetromaquinas'), para: path.join('catalog', 'raw', 'linkedin', 'cetromaquinas') },
+      { de: path.join('catalog', 'raw', 'tecnox-do-brasil'), para: path.join('catalog', 'raw', 'linkedin', 'tecnox-do-brasil') },
+    ]);
+    assert.ok(existe(dados, 'catalog/raw/linkedin'), 'a pasta da rede existe');
+    assert.strictEqual(JSON.parse(ler(dados, '.profills.json')).versao_dados, 3);
+  }],
+
+  ['v2 → v3: meta.json ganha "concluida": true, e a coleta antiga sem meta.json continua sem', () => {
+    const dados = montar({
+      index: indexCom(LINHAS_V2),
+      marcador: 2,
+      coletas: [
+        ['cetromaquinas', '2026-07-14', { posts: POSTS }],
+        ['tecnox-do-brasil', '2026-07-14', { posts: [], meta: META_V2 }],
+      ],
+    });
+    const metaAntes = ler(dados, 'catalog/raw/tecnox-do-brasil/2026-07-14/meta.json');
+    aplicarComSucesso(dados);
+    assert.deepStrictEqual(lerJson(dados, 'catalog/raw/linkedin/tecnox-do-brasil/2026-07-14/meta.json'), { ...META_V2, concluida: true }, 'os campos de antes ficam, e concluida entra');
+    assert.strictEqual(ler(dados, `.backup/${HOJE}/catalog/raw/linkedin/tecnox-do-brasil/2026-07-14/meta.json`), metaAntes, 'backup do meta.json original');
+    assert.ok(!existe(dados, 'catalog/raw/linkedin/cetromaquinas/2026-07-14/meta.json'), 'coleta de 2026-07 sem meta.json não ganha meta.json');
+  }],
+
+  ['v2 → v3: a linha do índice ganha só o campo instagram', () => {
+    const dados = montar({ index: indexCom(LINHAS_V2), marcador: 2 });
+    const r = aplicarComSucesso(dados);
+    assert.ok(r.acoes.some((a) => a.tipo === 'converter_indice'));
+    assert.strictEqual(lerIndex(dados), indexCom(LINHAS_V2.map(comInstagram)), 'cada linha é a de antes com " · instagram —" depois do linkedin');
+    const empresas = validarComSucesso(dados, 4);
+    assert.ok(Object.values(empresas).every((e) => e.instagram === null), 'instagram — é null');
+    assert.strictEqual(ler(dados, `.backup/${HOJE}/refs/INDEX.md`), indexCom(LINHAS_V2), 'backup do INDEX de antes');
+  }],
+
+  ['v1 → v2 → v3 numa execução só: linha antiga, STATUS.txt e pasta solta', () => {
+    const dados = montar({
+      index: indexCom(LINHAS_REAIS),
+      coletas: [
+        ['cetromaquinas', '2026-07-14', { posts: POSTS }],
+        ['tecnoenvase-maquinas-e-equipamentos-ltda', '2026-07-14', { status: 'PÁGINA NÃO GERENCIADA: /posts/ redireciona para /about/.' }],
+      ],
+    });
+    aplicarComSucesso(dados);
+    const empresas = validarComSucesso(dados, 6);
+    assert.strictEqual(empresas.cetromaquinas.setor, 'máquinas de embalagem/processamento', 'a linha v1 chega na v3 com o setor certo');
+    assert.strictEqual(empresas.cetromaquinas.instagram, null);
+    const meta = lerJson(dados, 'catalog/raw/linkedin/tecnoenvase-maquinas-e-equipamentos-ltda/2026-07-14/meta.json');
+    assert.strictEqual(meta.status, 'pagina_nao_gerenciada', 'o STATUS.txt virou meta.json no lugar novo');
+    assert.strictEqual(meta.concluida, true);
+    assert.ok(existe(dados, 'catalog/raw/linkedin/tecnoenvase-maquinas-e-equipamentos-ltda/2026-07-14/STATUS.txt'), 'o STATUS.txt vai junto com a pasta');
+    assert.ok(!existe(dados, 'catalog/raw/tecnoenvase-maquinas-e-equipamentos-ltda'), 'nada fica no caminho antigo');
+    assert.strictEqual(JSON.parse(ler(dados, '.profills.json')).versao_dados, 3);
+    assert.deepStrictEqual(aplicarComSucesso(dados).acoes, [], 'segunda rodada sem ação');
+  }],
+
+  ['queda no meio da v3: a retomada termina e a terceira rodada não muda nenhum byte', () => {
+    if (process.getuid && process.getuid() === 0) return 'pulado: root ignora permissão';
+    const dados = montar({
+      index: indexCom(LINHAS_V2),
+      marcador: 2,
+      coletas: [
+        ['cetromaquinas', '2026-07-14', { posts: POSTS }],
+        ['maqinox-ind-stria-de-maquinas', '2026-07-14', { posts: POSTS }],
+        ['sulpack-industria-de-maquinas-para-embalagens', '2026-07-14', { posts: POSTS }],
+        ['tecnox-do-brasil', '2026-07-14', { posts: [], meta: META_V2 }],
+      ],
+    });
+    // Mover uma pasta para outra pasta-mãe reescreve o ".." dela: sem permissão de escrita nela, o rename falha.
+    const travada = path.join(dados, 'catalog', 'raw', 'sulpack-industria-de-maquinas-para-embalagens');
+    fs.chmodSync(travada, 0o555);
+    let r;
+    try {
+      r = migrar(dados, '--aplicar');
+    } finally {
+      fs.chmodSync(travada, 0o755);
+    }
+    assert.ok(r.json, `saída JSON em vez de stack trace: ${r.stderr.slice(0, 300)}`);
+    assert.strictEqual(r.json.ok, false);
+    assert.strictEqual(r.status, 1, 'exit 1');
+    assert.ok(r.json.erro.includes('sulpack-industria-de-maquinas-para-embalagens'), `erro cita a pasta: ${r.json.erro}`);
+    assert.ok(existe(dados, 'catalog/raw/linkedin/cetromaquinas') && existe(dados, 'catalog/raw/linkedin/maqinox-ind-stria-de-maquinas'), 'as duas primeiras já foram');
+    assert.ok(existe(dados, 'catalog/raw/sulpack-industria-de-maquinas-para-embalagens/2026-07-14/posts.json'), 'a travada ficou no lugar antigo, inteira');
+    assert.strictEqual(JSON.parse(ler(dados, '.profills.json')).versao_dados, 2, 'marcador não gravado na queda');
+    assert.strictEqual(lerIndex(dados), indexCom(LINHAS_V2), 'INDEX intacto na queda');
+
+    const retomada = aplicarComSucesso(dados);
+    assert.deepStrictEqual(
+      retomada.acoes.filter((a) => a.tipo === 'mover_coleta').map((a) => path.basename(a.alvo)),
+      ['sulpack-industria-de-maquinas-para-embalagens', 'tecnox-do-brasil'],
+      'a retomada só move o que faltou',
+    );
+    assert.strictEqual(lerJson(dados, 'catalog/raw/linkedin/tecnox-do-brasil/2026-07-14/meta.json').concluida, true);
+    validarComSucesso(dados, 4);
+    assert.strictEqual(JSON.parse(ler(dados, '.profills.json')).versao_dados, 3);
+    const antes = hashDaPasta(dados);
+    assert.deepStrictEqual(aplicarComSucesso(dados).acoes, [], 'terceira rodada sem ação');
+    assert.strictEqual(hashDaPasta(dados), antes, 'sha256 da pasta igual');
+  }],
+
+  ['pasta v3 com coleta interrompida: concluida false continua false e nada muda', () => {
+    const dados = montar({ index: indexCom(LINHAS_V2.map(comInstagram)), marcador: 3 });
+    const pasta = path.join(dados, 'catalog', 'raw', 'linkedin', 'tecnox-do-brasil', '2026-11-20');
+    fs.mkdirSync(pasta, { recursive: true });
+    fs.writeFileSync(path.join(pasta, 'meta.json'), JSON.stringify({ slug: 'tecnox-do-brasil', coletado_em: '2026-11-20', janela_dias: 7, concluida: false }, null, 2) + '\n');
+    const antes = hashDaPasta(dados);
+    const r = aplicarComSucesso(dados);
+    assert.deepStrictEqual(r.acoes, [], 'nada a fazer');
+    assert.strictEqual(hashDaPasta(dados), antes, 'sha256 da pasta igual');
+  }],
+
+  ['empresa com slug linkedin trava a migração sem gravar', () => {
+    const dados = montar({ index: indexCom(LINHAS_V2), marcador: 2, coletas: [['linkedin', '2026-07-14', { posts: POSTS }], ['cetromaquinas', '2026-07-14', { posts: POSTS }]] });
+    fs.rmdirSync(path.join(dados, 'drafts'));
+    const antes = hashDaPasta(dados);
+    const r = migrar(dados, '--aplicar');
+    assert.strictEqual(r.json.ok, false);
+    assert.strictEqual(r.status, 1, 'exit 1');
+    assert.deepStrictEqual(r.json.problemas.map((p) => [p.tipo, p.alvo]), [['slug_reservado', path.join('catalog', 'raw', 'linkedin')]]);
+    assert.strictEqual(hashDaPasta(dados), antes, 'nenhum byte da pasta mudou');
+    assert.ok(!existe(dados, '.backup') && !existe(dados, 'drafts'), 'nem backup nem pasta nova');
+  }],
+
+  ['empresa com slug instagram também trava', () => {
+    const dados = montar({ index: indexCom(LINHAS_V2), marcador: 2, coletas: [['instagram', '2026-07-14', { posts: POSTS }]] });
+    const r = migrar(dados, '--aplicar');
+    assert.deepStrictEqual(r.json.problemas.map((p) => p.tipo), ['slug_reservado']);
+    assert.ok(existe(dados, 'catalog/raw/instagram/2026-07-14/posts.json'), 'a coleta fica onde estava');
+  }],
+
+  ['a mesma empresa no caminho antigo e no novo: problema, e o script não junta as duas', () => {
+    const dados = montar({
+      index: indexCom(LINHAS_V2),
+      marcador: 2,
+      coletas: [['cetromaquinas', '2026-07-14', { posts: POSTS }], ['linkedin/cetromaquinas', '2026-08-01', { posts: POSTS }]],
+    });
+    const antes = hashDaPasta(dados);
+    const r = migrar(dados, '--aplicar');
+    assert.deepStrictEqual(r.json.problemas.map((p) => [p.tipo, p.alvo]), [['destino_existe', path.join('catalog', 'raw', 'linkedin', 'cetromaquinas')]]);
+    assert.strictEqual(hashDaPasta(dados), antes, 'nenhum byte da pasta mudou');
+  }],
+
+  ['meta.json ilegível não trava a migração: fica como está, com aviso', () => {
+    const dados = montar({ index: indexCom(LINHAS_V2), marcador: 2, coletas: [['tecnox-do-brasil', '2026-07-14', { posts: [], meta: '{ isto não é json' }]] });
+    const r = aplicarComSucesso(dados);
+    assert.deepStrictEqual(r.avisos.map((a) => [a.tipo, a.alvo]), [['meta_ilegivel', path.join('catalog', 'raw', 'linkedin', 'tecnox-do-brasil', '2026-07-14', 'meta.json')]]);
+    assert.strictEqual(ler(dados, 'catalog/raw/linkedin/tecnox-do-brasil/2026-07-14/meta.json'), '{ isto não é json', 'o arquivo chega como estava');
+    assert.strictEqual(JSON.parse(ler(dados, '.profills.json')).versao_dados, 3);
   }],
 ];
 

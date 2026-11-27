@@ -4,7 +4,7 @@
 
 - **Slug**: `<slug>` · **Coletado em**: <AAAA-MM-DD> (`coletado_em`)
 - **Seguidores**: <n> (`seguidores`; "não informados" quando `null`) · **Janela**: <padrão (7 dias) / ampliada (<n> dias)> (`janela`, `janela_dias`) — <n> posts (`n_posts`), de <data> a <data> (`periodo`)
-- **Fonte bruta**: `raw/<slug>/<AAAA-MM-DD>/posts.json` · **Idiomas**: <distribuição `idiomas`, ex.: en 4, pt 1>
+- **Fonte bruta**: `raw/linkedin/<slug>/<AAAA-MM-DD>/posts.json` · **Idiomas**: <distribuição `idiomas`, ex.: en 4, pt 1>
 
 > Neste relatório, [medido] = lido da página (fato); [inferido] = leitura da IA (hipótese).
 

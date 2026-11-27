@@ -1,15 +1,18 @@
 #!/usr/bin/env node
 // migrar.js — atualiza a pasta de dados DADOS para a versão atual (Node >= 18, sem dependência).
 // Sem --aplicar só simula e lista as ações. Com --aplicar copia para DADOS/.backup/<hoje>/ cada
-// arquivo que vai reescrever, cria as subpastas que faltam, converte as linhas antigas do
-// refs/INDEX.md, converte STATUS.txt legado em meta.json e grava DADOS/.profills.json por último.
-// Idempotente: rodar de novo depois de terminar devolve acoes [] e não muda nenhum byte; rodar de
-// novo depois de cair no meio termina o que faltou.
+// arquivo que vai reescrever, cria as subpastas que faltam, move cada catalog/raw/<slug>/ para
+// catalog/raw/linkedin/<slug>/ (anotando o movimento em .backup/<hoje>/movidos.jsonl), converte as
+// linhas antigas do refs/INDEX.md, converte STATUS.txt legado em meta.json, escreve "concluida": true
+// no meta.json que ainda não tem o campo e grava DADOS/.profills.json por último. Uma execução leva a
+// pasta da versão 1 ou 2 até a 3. Cada ação sai do que está no disco: rodar de novo depois de terminar
+// devolve acoes [] e não muda nenhum byte; rodar de novo depois de cair no meio termina o que faltou.
+// Para desfazer um movimento, leia movidos.jsonl de baixo para cima e mova cada "para" de volta a "de".
 // Uso:     node scripts/migrar.js <DADOS> [--aplicar] [--hoje AAAA-MM-DD]
 // Exemplo: node scripts/migrar.js "$HOME/Profills LinkedIn"
 //          → {"dados":"...","versao_atual":1,"versao_alvo":2,"acoes":[{"tipo":"converter_indice",...}],"ok":true}
-// Saída: JSON em stdout. Exit 0 = ok · 1 = alguma linha não deu para converter ou a gravação parou
-// no meio (campo erro) · 2 = erro de uso.
+// Saída: JSON em stdout. Exit 0 = ok · 1 = alguma linha ou pasta não deu para converter ou a gravação
+// parou no meio (campo erro) · 2 = erro de uso. avisos[] não impede a migração.
 
 const fs = require('fs');
 const path = require('path');
@@ -17,9 +20,13 @@ const path = require('path');
 // O formato da linha do índice é da profills-radar; a migração usa o mesmo parser e o mesmo escritor.
 const indice = require(path.join(__dirname, '..', '..', 'profills-radar', 'scripts', 'indice.js'));
 
-const VERSAO_ALVO = 2;
+const VERSAO_ALVO = 3;
 const MARCADOR = '.profills.json';
-const SUBPASTAS = ['refs', path.join('catalog', 'raw'), 'drafts', 'boletins'];
+const RAW = path.join('catalog', 'raw');
+// Desde a versão 3 a rede é o primeiro nível de catalog/raw/: <rede>/<conta>/<AAAA-MM-DD>/.
+// A conta é o slug da página no LinkedIn e o handle no Instagram.
+const REDES = ['linkedin', 'instagram'];
+const SUBPASTAS = ['refs', path.join(RAW, 'linkedin'), 'drafts', 'boletins'];
 
 function morrer(mensagem) {
   process.stderr.write(mensagem + '\n');
@@ -83,9 +90,17 @@ function converterLinhaAntiga(texto, numero) {
   };
 }
 
-// O índice que fica no disco passa inteiro pelo parser da versão 2: qualquer linha de lista que ele
+// Linha da versão 2 sem outro problema ganha só o campo instagram, logo depois do linkedin: o resto
+// da linha fica byte a byte. Linha da versão 2 com problema fica como está, e o problema trava.
+function converterLinhaV2(texto, numero, lida) {
+  const problemas = lida.problemas.filter((p) => p.tipo !== 'formato_antigo').map((p) => ({ linha: numero, trecho: texto.slice(0, 120), ...p }));
+  if (problemas.length) return { problemas };
+  return { problemas, linha: texto.replace(/( · linkedin (?:sim|não))( · |$)/, '$1 · instagram —$2') };
+}
+
+// O índice que fica no disco passa inteiro pelo parser da versão atual: qualquer linha de lista que ele
 // recusa trava a migração, em vez de passar calada e aparecer depois na radar.
-function problemasDaVersao2(linhas) {
+function problemasDoFormatoAtual(linhas) {
   const problemas = [];
   const vistos = new Map();
   linhas.forEach((texto, i) => {
@@ -120,8 +135,8 @@ function planejarIndice(dados) {
   const novas = linhas.map((texto, i) => {
     if (!indice.RE_ITEM.test(texto)) return texto;
     const lida = indice.parsearLinha(texto, i + 1);
-    if (lida.erro || lida.empresa.formato !== 1) return texto;
-    const r = converterLinhaAntiga(texto, i + 1);
+    if (lida.erro || lida.empresa.formato === 3) return texto;
+    const r = lida.empresa.formato === 1 ? converterLinhaAntiga(texto, i + 1) : converterLinhaV2(texto, i + 1, lida);
     if (r.problemas.length) {
       problemas.push(...r.problemas);
       return texto;
@@ -131,10 +146,10 @@ function planejarIndice(dados) {
   });
 
   // Tudo ou nada: índice meio convertido confundiria a radar mais que índice todo antigo.
-  if (!problemas.length) problemas.push(...problemasDaVersao2(novas));
+  if (!problemas.length) problemas.push(...problemasDoFormatoAtual(novas));
   if (problemas.length || !convertidas) return { acoes: [], problemas };
   return {
-    acoes: [{ tipo: 'converter_indice', alvo: path.join('refs', 'INDEX.md'), detalhe: `${convertidas} linha(s) passam para o formato novo, com prioridade "a definir"`, conteudo: novas.join(quebra), backup: true }],
+    acoes: [{ tipo: 'converter_indice', alvo: path.join('refs', 'INDEX.md'), detalhe: `${convertidas} linha(s) passam para o formato novo, com o campo instagram vazio (e prioridade "a definir" na linha que ainda não tinha prioridade)`, conteudo: novas.join(quebra), backup: true }],
     problemas,
   };
 }
@@ -163,37 +178,96 @@ function metaDoStatus(slug, data, texto, pastaDia) {
     posts_coletados: postsColetados,
     status,
     nota: nota.charAt(0).toUpperCase() + nota.slice(1),
+    concluida: true,
   };
 }
 
-function planejarStatus(dados) {
-  const raiz = path.join(dados, 'catalog', 'raw');
+const ehPasta = (p) => fs.existsSync(p) && fs.statSync(p).isDirectory();
+const datasEm = (pasta) => fs.readdirSync(pasta).filter((d) => dataValida(d) && ehPasta(path.join(pasta, d))).sort();
+
+// Na versão 2, cada catalog/raw/<slug>/ com pastas de data é uma empresa do LinkedIn: ela vai para
+// catalog/raw/linkedin/<slug>/. Uma pasta de rede com data logo dentro é empresa cujo slug é o nome da rede.
+function planejarMovimentos(dados) {
+  const raiz = path.join(dados, RAW);
   const acoes = [];
-  if (!fs.existsSync(raiz)) return acoes;
-  for (const slug of fs.readdirSync(raiz).sort()) {
-    const pastaEmpresa = path.join(raiz, slug);
-    if (!fs.statSync(pastaEmpresa).isDirectory()) continue;
-    for (const data of fs.readdirSync(pastaEmpresa).sort()) {
-      const dia = path.join(pastaEmpresa, data);
-      if (!dataValida(data) || !fs.statSync(dia).isDirectory()) continue;
-      const status = path.join(dia, 'STATUS.txt');
-      if (!fs.existsSync(status) || fs.existsSync(path.join(dia, 'meta.json'))) continue;
-      const meta = metaDoStatus(slug, data, fs.readFileSync(status, 'utf8'), dia);
-      acoes.push({
-        tipo: 'converter_status',
-        alvo: path.join('catalog', 'raw', slug, data, 'meta.json'),
-        detalhe: `STATUS.txt vira meta.json com status "${meta.status}"; o STATUS.txt fica onde está`,
-        conteudo: JSON.stringify(meta, null, 2) + '\n',
-        backup: false,
+  const problemas = [];
+  if (!ehPasta(raiz)) return { acoes, problemas };
+  for (const nome of fs.readdirSync(raiz).sort()) {
+    const pasta = path.join(raiz, nome);
+    if (!ehPasta(pasta) || !datasEm(pasta).length) continue;
+    if (REDES.includes(nome)) {
+      problemas.push({
+        tipo: 'slug_reservado',
+        alvo: path.join(RAW, nome),
+        detalhe: `"${path.join(RAW, nome)}" tem coletas com data logo dentro: é a empresa de endereço "${nome}", e na versão nova esse é o nome da pasta da rede. Mova as pastas de data dela para "${path.join(RAW, nome, nome)}" e rode de novo`,
       });
+      continue;
+    }
+    const alvo = path.join(RAW, 'linkedin', nome);
+    if (fs.existsSync(path.join(dados, alvo))) {
+      problemas.push({ tipo: 'destino_existe', alvo, detalhe: `a empresa "${nome}" tem coletas em "${path.join(RAW, nome)}" e em "${alvo}": junte as pastas de data dela em "${alvo}" e rode de novo` });
+    } else {
+      acoes.push({ tipo: 'mover_coleta', de: path.join(RAW, nome), alvo, detalhe: `as coletas de "${nome}" vão para a pasta do LinkedIn`, backup: false });
     }
   }
-  return acoes;
+  return { acoes, problemas };
+}
+
+// Cada coleta do disco, onde ela está agora (no caminho antigo ou já no da rede) e onde fica na versão 3.
+function coletasDoDisco(dados) {
+  const raiz = path.join(dados, RAW);
+  if (!ehPasta(raiz)) return [];
+  const contas = [];
+  for (const nome of fs.readdirSync(raiz).sort()) {
+    const pasta = path.join(raiz, nome);
+    if (!ehPasta(pasta)) continue;
+    if (!REDES.includes(nome)) {
+      contas.push({ conta: nome, pasta, rede: 'linkedin' });
+      continue;
+    }
+    // Pasta de rede com data logo dentro é o slug_reservado: as datas não são contas.
+    for (const conta of fs.readdirSync(pasta).sort()) {
+      if (!dataValida(conta) && ehPasta(path.join(pasta, conta))) contas.push({ conta, pasta: path.join(pasta, conta), rede: nome });
+    }
+  }
+  return contas.flatMap(({ conta, pasta, rede }) => datasEm(pasta).map((data) => ({ conta, data, agora: path.join(pasta, data), alvo: path.join(RAW, rede, conta, data) })));
+}
+
+// meta.json da versão 2 não diz se a coleta terminou; ele só existia no fim dela, então ganha "concluida": true.
+// Coleta sem meta.json nem STATUS.txt (as de 2026-07) fica sem: o boletim.js a lê do jeito de sempre.
+function planejarMetas(dados) {
+  const acoes = [];
+  const avisos = [];
+  for (const c of coletasDoDisco(dados)) {
+    const meta = path.join(c.agora, 'meta.json');
+    const status = path.join(c.agora, 'STATUS.txt');
+    const alvo = path.join(c.alvo, 'meta.json');
+    if (!fs.existsSync(meta)) {
+      if (!fs.existsSync(status)) continue;
+      const novo = metaDoStatus(c.conta, c.data, fs.readFileSync(status, 'utf8'), c.agora);
+      acoes.push({ tipo: 'converter_status', alvo, detalhe: `STATUS.txt vira meta.json com status "${novo.status}"; o STATUS.txt fica onde está`, conteudo: JSON.stringify(novo, null, 2) + '\n', backup: false });
+      continue;
+    }
+    let lido;
+    try {
+      lido = JSON.parse(fs.readFileSync(meta, 'utf8').replace(/^\uFEFF/, ''));
+    } catch (e) {
+      lido = null;
+    }
+    if (!lido || typeof lido !== 'object' || Array.isArray(lido)) {
+      avisos.push({ tipo: 'meta_ilegivel', alvo, detalhe: 'o meta.json desta coleta não é um objeto JSON legível: fica como está, e o boletim mostra a coleta com erro' });
+      continue;
+    }
+    if (!('concluida' in lido)) {
+      acoes.push({ tipo: 'marcar_concluida', alvo, detalhe: 'o meta.json ganha "concluida": true', conteudo: JSON.stringify({ ...lido, concluida: true }, null, 2) + '\n', backup: true });
+    }
+  }
+  return { acoes, avisos };
 }
 
 function planejar(dados, hoje) {
   const versao = lerVersao(dados);
-  const saida = { versao_atual: versao.versao, acoes: [], problemas: [] };
+  const saida = { versao_atual: versao.versao, acoes: [], problemas: [], avisos: [] };
   if (versao.versao > VERSAO_ALVO) {
     saida.problemas.push({ tipo: 'pasta_mais_nova', detalhe: `a pasta está na versão ${versao.versao} e estas skills só conhecem até a ${VERSAO_ALVO}: atualize o plugin antes` });
     return saida;
@@ -202,10 +276,16 @@ function planejar(dados, hoje) {
   for (const sub of SUBPASTAS) {
     if (!fs.existsSync(path.join(dados, sub))) saida.acoes.push({ tipo: 'criar_pasta', alvo: sub, detalhe: 'pasta que faltava' });
   }
+  // Os movimentos vêm antes de tudo que grava dentro de uma coleta: o alvo dessas gravações já é o caminho novo.
+  const movimentos = planejarMovimentos(dados);
+  saida.acoes.push(...movimentos.acoes);
+  saida.problemas.push(...movimentos.problemas);
   const doIndice = planejarIndice(dados);
   saida.acoes.push(...doIndice.acoes);
   saida.problemas.push(...doIndice.problemas);
-  saida.acoes.push(...planejarStatus(dados));
+  const metas = planejarMetas(dados);
+  saida.acoes.push(...metas.acoes);
+  saida.avisos.push(...metas.avisos);
 
   // O marcador vai por último e só sem problema: pasta marcada como nova tem de estar nova.
   if (!saida.problemas.length && (versao.versao < VERSAO_ALVO || versao.ilegivel)) {
@@ -247,6 +327,8 @@ const MOTIVOS = {
   EBUSY: 'outro programa está com o arquivo aberto',
 };
 
+const RETOMAR = 'O que já foi gravado continua certo e a pasta não foi marcada como nova; resolva isso e rode de novo com --aplicar, que a migração termina o que faltou.';
+
 // Devolve null quando tudo foi gravado, ou a frase que explica onde e por que parou.
 function aplicar(dados, acoes, pastaBackup) {
   for (const a of acoes) {
@@ -255,11 +337,24 @@ function aplicar(dados, acoes, pastaBackup) {
         fs.mkdirSync(path.join(dados, a.alvo), { recursive: true });
         continue;
       }
+      if (a.tipo === 'mover_coleta') {
+        // Anota antes de mover: uma linha a mais (o movimento que falhou) não atrapalha desfazer; uma a menos sim.
+        fs.mkdirSync(pastaBackup, { recursive: true });
+        fs.appendFileSync(path.join(pastaBackup, 'movidos.jsonl'), JSON.stringify({ de: a.de, para: a.alvo }) + '\n');
+        fs.mkdirSync(path.dirname(path.join(dados, a.alvo)), { recursive: true });
+        try {
+          fs.renameSync(path.join(dados, a.de), path.join(dados, a.alvo));
+        } catch (e) {
+          const motivo = MOTIVOS[e.code] ? `${MOTIVOS[e.code]} em "${path.join(dados, a.de)}" ou em "${path.dirname(path.join(dados, a.alvo))}"` : e.message;
+          return `Não deu para mover "${path.join(dados, a.de)}" para "${path.join(dados, a.alvo)}": ${motivo}. ${RETOMAR}`;
+        }
+        continue;
+      }
       if (a.backup) copiarParaBackup(dados, pastaBackup, a.alvo);
       escreverInteiro(path.join(dados, a.alvo), a.conteudo);
     } catch (e) {
       const motivo = MOTIVOS[e.code] ? `${MOTIVOS[e.code]} em "${e.path ? path.dirname(e.path) : dados}"` : e.message;
-      return `Não deu para gravar "${path.join(dados, a.alvo)}": ${motivo}. O que já foi gravado continua certo e a pasta não foi marcada como nova; resolva isso e rode de novo com --aplicar, que a migração termina o que faltou.`;
+      return `Não deu para gravar "${path.join(dados, a.alvo)}": ${motivo}. ${RETOMAR}`;
     }
   }
   return null;
@@ -290,7 +385,7 @@ function principal(argv) {
 
   const plano = planejar(dados, hoje);
   const pastaBackup = path.join(dados, '.backup', hoje);
-  const temBackup = plano.acoes.some((a) => a.backup);
+  const temBackup = plano.acoes.some((a) => a.backup || a.tipo === 'mover_coleta');
   // Com problema, nada é gravado: nem as pastas que faltam, para a pasta não mudar pela metade.
   const aplicavel = aplicarAgora && plano.acoes.length > 0 && plano.problemas.length === 0;
   const erro = aplicavel ? aplicar(dados, plano.acoes, pastaBackup) : null;
@@ -302,8 +397,9 @@ function principal(argv) {
     versao_alvo: VERSAO_ALVO,
     aplicado: aplicavel && !erro,
     backup: temBackup ? pastaBackup : null,
-    acoes: plano.acoes.map(({ tipo, alvo, detalhe }) => ({ tipo, alvo, detalhe })),
+    acoes: plano.acoes.map(({ tipo, de, alvo, detalhe }) => ({ tipo, ...(de ? { de } : {}), alvo, detalhe })),
     problemas: plano.problemas,
+    avisos: plano.avisos,
     ...(erro ? { erro } : {}),
     ok,
   };

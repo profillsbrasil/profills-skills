@@ -1,0 +1,19 @@
+# Dados brutos pesados da coleta — não versionar
+catalog/raw/**/screenshots/
+catalog/raw/**/*.png
+catalog/raw/**/*.jpg
+
+# Seleção ativa é efêmera por sessão
+selection.md
+
+# Picker local (pid, log, telas da sessão)
+.picker/
+
+# Cópias de segurança da migração da pasta (profills-setup/scripts/migrar.js)
+.backup/
+
+# Versionar: refs/ (dossiês + índice), catalog/*.md (relatórios sintetizados),
+# catalog/raw/**/*.json (dado estruturado leve), drafts/ (rascunhos aprovados),
+# voz.md (arquivo de voz do usuário — dado vivo, mesma categoria de refs/ e catalog/*.md),
+# .profills.json (versão da pasta, lida por todas as skills),
+# CLAUDE.md (o que o Claude lê ao abrir a pasta; o mapa.js da profills-setup gera os blocos)

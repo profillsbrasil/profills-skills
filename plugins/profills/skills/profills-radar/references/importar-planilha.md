@@ -13,7 +13,7 @@ node "<pasta desta skill>/scripts/importar.js" "<planilha.xlsx>" "<DADOS>/refs" 
 
 `--pular <id_planilha>` (repetível) deixa uma linha da planilha de fora e a lista em `puladas[]`.
 
-Ele lê as abas `Mapa competitivo` e `Canais digitais` pelo nome das colunas e devolve `novas[]`, `ja_existem[]`, `sem_linkedin[]`, `perfil_pessoal[]`, `puladas[]`, `problemas[]`, `resumo` e `ok`. Com qualquer item em `problemas[]` ele sai com exit 1 e não grava nada, nem com `--aplicar`; cada problema traz o `id_planilha` e a `linha` quando se refere a uma linha. Planilha corrompida ou arquivo que não é `.xlsx` sai com exit 2 e a frase em stderr.
+Ele lê as abas `Mapa competitivo` e `Canais digitais` pelo nome das colunas (na de canais, a linha `LinkedIn` dá a página e a linha `Instagram` dá o perfil, que vai para o campo `instagram` da linha e para a ficha) e devolve `novas[]`, `ja_existem[]`, `sem_linkedin[]`, `perfil_pessoal[]`, `puladas[]`, `problemas[]`, `resumo` e `ok`. Com qualquer item em `problemas[]` ele sai com exit 1 e não grava nada, nem com `--aplicar`; cada problema traz o `id_planilha` e a `linha` quando se refere a uma linha. Planilha corrompida ou arquivo que não é `.xlsx` sai com exit 2 e a frase em stderr.
 
 O script resolve prioridade sem acento e o grupo pelo ID citado; você só repassa o que ele devolveu. Rodar de novo com a mesma planilha não muda nada.
 
@@ -45,11 +45,12 @@ O script resolve prioridade sem acento e o grupo pelo ID citado; você só repas
 
 3. **Conte em linguagem simples, antes de gravar.** Uma frase para cada grupo que veio:
    - `novas`: "vou criar a ficha de N empresas novas", com os nomes;
-   - `ja_existem`: "estas já estavam na sua lista e ficam como estão", e, para quem tem `muda`, "ganham a prioridade (ou o grupo) que a planilha dá";
+   - `ja_existem`: "estas já estavam na sua lista e ficam como estão", e, para quem tem `muda`, "ganham a prioridade (ou o grupo, ou o Instagram) que a planilha dá";
    - `sem_linkedin` e `perfil_pessoal`: "estas ficam na lista, mas a coleta pula", com o `motivo` de cada uma em palavras simples: a planilha não traz o endereço no LinkedIn; o endereço é de outro tipo de página (vitrine, escola, grupo), e a coleta só lê página de empresa; ou, no perfil pessoal, "só o perfil de uma pessoa, e perfil de pessoa a coleta não lê";
    - `novas[].parecidas`: "a X da planilha parece a Y que você já tem; é a mesma?". Sendo a mesma, rode a importação com `--pular <id_planilha>` dessa linha e, se ele quiser os dados novos, trate a empresa que já existe por [Atualizar](../SKILL.md#gestão); não sendo, siga;
    - `novas[].notas` com prioridade fora da lista: "a planilha dizia 'Urgente' para a Z; ela entra como 'a definir' e eu pergunto na seleção";
-   - `novas[].notas` com data inválida: "a data de conferência da Z veio como '5 nov 2026', que eu não leio; usei a data de hoje".
+   - `novas[].notas` com data inválida: "a data de conferência da Z veio como '5 nov 2026', que eu não leio; usei a data de hoje";
+   - `novas[].notas` com endereço do Instagram que não é perfil: "o Instagram da Z na planilha é o link de um post, não do perfil; deixei o Instagram dela vazio".
 
    É inclusão do que ele mesmo trouxe, dentro do pedido: siga sem pedir licença, a não ser que uma `parecidas` espere resposta. Concluído quando ele ouviu os números e cada `parecidas` teve resposta.
 

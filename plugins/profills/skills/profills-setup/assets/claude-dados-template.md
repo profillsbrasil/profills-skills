@@ -32,7 +32,7 @@ O caminho comum é voz, radar, garimpo e post. O boletim chama a radar e a garim
 |---|---|---|
 | `refs/INDEX.md` | A lista de empresas, uma linha por empresa | `profills-radar` (a garimpo só marca a data do catálogo) |
 | `refs/<empresa>.md` | A ficha de cada empresa, com o que não copiar dela | `profills-radar`, `profills-garimpo` |
-| `catalog/raw/<empresa>/<data>/` | Os posts coletados num dia (`posts.json`) e o contexto da página (`meta.json`) | `profills-garimpo` |
+| `catalog/raw/<rede>/<empresa>/<data>/` | Os posts coletados num dia (`posts.json`) e o contexto da página (`meta.json`), numa pasta por rede social (`linkedin`, `instagram`) | `profills-garimpo` |
 | `catalog/<empresa>.md` e `catalog/_summary.md` | O perfil de cada empresa e o comparativo entre elas | `profills-garimpo` |
 | `drafts/` | Os posts escritos, um arquivo por post, e as variações de cada um | `profills-post` |
 | `boletins/` | Um boletim por dia: novidades dos concorrentes, cobertura e 3 pautas | `profills-boletim` |
