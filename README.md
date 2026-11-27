@@ -97,7 +97,7 @@ npx skills update humanize-pt-br -g -y
 
 O `update` só baixa quando há versão nova; com tudo em dia, ele responde que está atualizado. Se ele responder `No installed skills found matching: humanize-pt-br`, a skill foi instalada de outro jeito. Rode então o comando de instalar, que traz a versão atual, e o `update` passa a funcionar.
 
-Para editar as skills, clone o repo; `.claude/skills` já aponta para `skills/`.
+Para editar as skills, clone o repo; `.claude/skills` já aponta para `plugins/profills/skills/`.
 
 ## CRM no agente (`crm-profills`)
 
