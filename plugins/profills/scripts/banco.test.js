@@ -86,7 +86,7 @@ const CONTEUDO = [
   'SELECT c.rede, c.handle, e.slug FROM conta c LEFT JOIN empresa e ON e.id = c.empresa_id ORDER BY c.rede, c.handle',
   'SELECT ct.rede, ct.handle, co.data, co.pasta, co.status, co.concluida, co.catalogo, co.seguidores, co.seguidores_arredondado, co.janela_dias, co.nota, co.erro FROM coleta co JOIN conta ct ON ct.id = co.conta_id ORDER BY 1, 2, 3',
   'SELECT ct.rede, ct.handle, p.id_externo, p.url, p.data, p.idioma, p.resumo_pt, p.texto, p.formato, p.framework_carrossel, p.hook, p.hook_categoria, p.hook_cabe_no_corte, p.cta, p.hashtags, p.link_externo, p.artigo_titulo, p.angulo, p.gatilho_psicologico, p.tom, p.descricao_visual, p.screenshot FROM post p JOIN conta ct ON ct.id = p.conta_id ORDER BY 1, 2, 3',
-  'SELECT ct.rede, ct.handle, p.id_externo, co.data, m.likes, m.comentarios, m.reposts, m.destaque_semana FROM metrica m JOIN post p ON p.id = m.post_id JOIN coleta co ON co.id = m.coleta_id JOIN conta ct ON ct.id = co.conta_id ORDER BY 1, 2, 3, 4',
+  'SELECT ct.rede, ct.handle, p.id_externo, co.data, m.likes, m.comentarios, m.reposts, m.compartilhamentos, m.destaque_semana FROM metrica m JOIN post p ON p.id = m.post_id JOIN coleta co ON co.id = m.coleta_id JOIN conta ct ON ct.id = co.conta_id ORDER BY 1, 2, 3, 4',
 ];
 const hashDoConteudo = (dados) => crypto.createHash('sha256').update(JSON.stringify(CONTEUDO.map((sql) => linhasDe(dados, sql)))).digest('hex');
 
@@ -144,6 +144,18 @@ caso('post visto em duas coletas: um post, uma métrica por coleta, campos da co
     'contador ilegível fica null, não zero',
   );
   assert.deepStrictEqual(linhasDe(dados, "SELECT seguidores, seguidores_arredondado FROM coleta WHERE data = '2026-11-01' AND pasta LIKE '%/alfa/%'"), [[6000, 1]]);
+});
+
+caso('compartilhamentos do post do Instagram vai para a métrica; no LinkedIn fica null', () => {
+  const dados = montarDados();
+  coletar(dados, 'instagram', 'alfa.br', '2026-11-09', {
+    meta: OK,
+    posts: [{ post_id: 'ig:DgP2ERfAMpP', url: 'https://www.instagram.com/p/DgP2ERfAMpP/', data: '2026-11-08', formato: 'reel', engajamento: { likes: 4013, comentarios: 27, reposts: 78, compartilhamentos: 41 } }],
+  });
+  assert.deepStrictEqual(
+    linhasDe(dados, "SELECT ct.rede, p.formato, m.likes, m.reposts, m.compartilhamentos FROM metrica m JOIN post p ON p.id = m.post_id JOIN coleta co ON co.id = m.coleta_id JOIN conta ct ON ct.id = co.conta_id WHERE p.id_externo IN ('ig:DgP2ERfAMpP', 'urn:li:activity:3') AND co.data IN ('2026-11-09', '2026-11-01') ORDER BY 1"),
+    [['instagram', 'reel', 4013, 78, 41], ['linkedin', null, 10, 0, null]],
+  );
 });
 
 caso('conta sem linha no índice entra sem empresa; post sem post_id usa a url sem query', () => {

@@ -6,9 +6,11 @@
  * o _summary.md, o dashboard e a resposta ao usuário usam. Ninguém recalcula
  * em prosa o que sai daqui.
  *
- * Uso:  node scripts/metricas.js <DADOS/catalog/raw/linkedin/<slug>/<AAAA-MM-DD>> [--janela padrao|ampliada]
+ * Uma coleta é de uma conta numa rede só, então nenhum número daqui soma redes diferentes.
+ *
+ * Uso:  node scripts/metricas.js <DADOS/catalog/raw/<rede>/<conta>/<AAAA-MM-DD>> [--janela padrao|ampliada]
  * Ex.:  node scripts/metricas.js "$DADOS/catalog/raw/linkedin/skymsen/2026-07-14"
- * Saída (stdout, JSON): {"slug":"skymsen","status":"ok","n_posts":5,"taxa_normalizada":null,
+ * Saída (stdout, JSON): {"slug":"skymsen","rede":"linkedin","conta":"skymsen","status":"ok","n_posts":5,"taxa_normalizada":null,
  *   "engajamento_medio":8,"posts_por_semana":5,"formato_dominante":"video",
  *   "destaque_semana":{"post_id":"urn:li:activity:..."},"avisos":["..."],"ok":false}
  * Exit: 0 coleta utilizável (leia `avisos` mesmo assim) · 1 status ≠ ok (sem perfil) · 2 erro de uso/arquivo
@@ -78,15 +80,17 @@ function numeroBr(v) {
 
 // Lê o bloco `engajamento` de um post. Qualquer campo ilegível invalida o post
 // inteiro: ele sai das médias, do destaque e dos outliers em vez de virar 0
-// silencioso (0 é um dado, "não consegui ler" é outro).
+// silencioso (0 é um dado, "não consegui ler" é outro). `compartilhamentos` só
+// existe no Instagram: ausente é null, não 0, e fica fora do total da taxa.
 function analisaEngajamento(p) {
   const e = p.engajamento;
-  if (e === null || e === undefined) return { likes: 0, comentarios: 0, reposts: 0 };
+  if (e === null || e === undefined) return { likes: 0, comentarios: 0, reposts: 0, compartilhamentos: null };
   if (typeof e !== 'object' || Array.isArray(e)) {
     return { invalido: true, campo: 'engajamento', bruto: e };
   }
-  const out = { likes: 0, comentarios: 0, reposts: 0 };
-  for (const campo of ['likes', 'comentarios', 'reposts']) {
+  const out = { likes: 0, comentarios: 0, reposts: 0, compartilhamentos: null };
+  for (const campo of ['likes', 'comentarios', 'reposts', 'compartilhamentos']) {
+    if (campo === 'compartilhamentos' && (e[campo] === null || e[campo] === undefined)) continue;
     const r = numeroBr(e[campo]);
     if (r.invalido) return { invalido: true, campo, bruto: e[campo] };
     out[campo] = r.valor;
@@ -129,7 +133,7 @@ if (require.main !== module) return;
 
 // ------------------------------------------------------------------- argumentos
 
-const USO = 'Uso: node scripts/metricas.js <pasta raw/linkedin/<slug>/<AAAA-MM-DD>> [--janela padrao|ampliada]';
+const USO = 'Uso: node scripts/metricas.js <pasta raw/<rede>/<conta>/<AAAA-MM-DD>> [--janela padrao|ampliada]';
 
 const args = process.argv.slice(2);
 let pasta = null;
@@ -195,7 +199,13 @@ if (fs.existsSync(arqMeta)) {
 
 // ------------------------------------------------------------------- contexto
 
-const slug = (meta && meta.slug) || path.basename(path.dirname(pasta));
+// A pasta é raw/<rede>/<conta>/<data>. No LinkedIn a conta é o slug da empresa; no Instagram é o handle,
+// e o slug da empresa vem do meta.json.
+const conta = path.basename(path.dirname(path.resolve(pasta)));
+const pastaDaRede = path.basename(path.dirname(path.dirname(path.resolve(pasta))));
+const rede = ['linkedin', 'instagram'].includes(pastaDaRede) ? pastaDaRede : null;
+if (!rede) avisos.push(`a pasta não está em catalog/raw/<rede>/<conta>/<data>: a rede não sai do caminho (veio "${pastaDaRede}").`);
+const slug = (meta && meta.slug) || conta;
 const coletadoEm = (meta && meta.coletado_em) || path.basename(pasta);
 const status = (meta && meta.status) || (posts.length > 0 ? 'ok' : 'desconhecido');
 const nota = (meta && meta.nota) || null;
@@ -242,6 +252,8 @@ const n = posts.length;
 
 const resultado = {
   slug,
+  rede,
+  conta,
   pasta,
   coletado_em: coletadoEm,
   status,
@@ -359,7 +371,8 @@ if (comCorte.length > 0) {
   const cabem = comCorte.filter((p) => p.hook_cabe_no_corte === true).length;
   resultado.hook_cabe_no_corte_pct = arredonda((cabem / comCorte.length) * 100, 1);
   if (comCorte.length !== n) avisos.push(`hook_cabe_no_corte_pct medido sobre ${comCorte.length} de ${n} posts (o resto não tem o campo).`);
-} else {
+} else if (rede !== 'instagram') {
+  // No Instagram o campo fica null: a régua do corte da legenda ainda não existe.
   avisos.push('Nenhum post tem "hook_cabe_no_corte": a % de hooks que cabem no corte não existe nesta coleta.');
 }
 
