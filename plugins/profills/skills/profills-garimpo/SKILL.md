@@ -1,9 +1,8 @@
 ---
 name: profills-garimpo
 description: >-
-  Cataloga os posts recentes de empresas no LinkedIn e no Instagram pelo
-  navegador logado e gera perfil por empresa, comparativo e dashboard. Use
-  para "o que as empresas andam postando", "analisa os posts da X",
+  Cataloga os posts recentes de empresas no LinkedIn e no Instagram, no
+  navegador logado, com perfil, comparativo e dashboard. Use para "o que as empresas andam postando", "analisa os posts da X",
   "monitorar concorrentes", "leitura de tendência" (janela ampliada) ou
   re-catalogar.
   Não use para escolher a lista (profills-radar) nem escrever posts
