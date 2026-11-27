@@ -1,28 +1,35 @@
 #!/usr/bin/env node
 // boletim.js — a conta do boletim da profills-boletim (Node >= 18, sem dependência).
-// Lê o índice (pelo indice.js da profills-radar), a seleção da rodada e, por empresa do índice,
-// a coleta mais recente e a anterior em catalog/raw/linkedin/<slug>/<data>/. Devolve, por empresa, o balde
-// de cobertura, os posts novos e a cadência das duas coletas (posts_por_semana do metricas.js da
-// profills-garimpo). Só lê: não grava nada, e rodar duas vezes no mesmo estado dá a mesma saída.
+// Lê o índice (pelo indice.js da profills-radar) e a seleção da rodada. A unidade de exame é a conta, uma
+// empresa numa rede: a página no LinkedIn ou o perfil no Instagram, com as coletas em
+// catalog/raw/<rede>/<conta>/<data>/. De cada empresa da seleção entram as contas que a linha dela lista;
+// de cada conta saem o balde de cobertura, os posts novos (contra a coleta anterior da mesma conta) e a
+// cadência das duas coletas (posts_por_semana do metricas.js da profills-garimpo). A empresa leva a
+// cobertura agregada das contas e a soma dos posts novos; engajamento de redes diferentes nunca se soma.
+// Só lê: não grava nada, e rodar duas vezes no mesmo estado dá a mesma saída.
 // Uso:     node scripts/boletim.js <DADOS> [--hoje AAAA-MM-DD]
 // Exemplo: node scripts/boletim.js "$HOME/Profills LinkedIn" --hoje 2026-08-24
-//          → {"acao":"boletim","rodada":{"data":"2026-08-24","faltam_coletar":[]},"empresas":[...],"cobertura":{...},"ok":true}
+//          → {"acao":"boletim","rodada":{"data":"2026-08-24","faltam_coletar":[]},"empresas":[{"nome":…,"cobertura":…,"contas":[…]}],"cobertura":{...},"ok":true}
 //          rodada.situacao diz o que fazer com a seleção: de_hoje, anterior_por_terminar, anterior_sem_boletim, anterior_com_boletim.
 // Saída: JSON em stdout. Exit 0 = ok · 1 = índice, seleção ou coleta com data depois de hoje impedem o boletim (campo problemas) · 2 = erro de uso.
 
 const fs = require('fs');
 const path = require('path');
 const { spawnSync } = require('child_process');
+const { dataValida, datasDaConta } = require(path.join(__dirname, '..', '..', '..', 'scripts', 'coleta.js'));
 
 const INDICE = path.join(__dirname, '..', '..', 'profills-radar', 'scripts', 'indice.js');
 const METRICAS = path.join(__dirname, '..', '..', 'profills-garimpo', 'scripts', 'metricas.js');
 
-// Cada empresa do índice cai em exatamente um balde, nesta ordem de precedência.
-const BALDES = ['com_novidade', 'sem_novidade', 'indisponivel', 'sem_linkedin', 'fora_desta_rodada'];
+// Cada empresa do índice cai em exatamente um balde, nesta ordem de precedência. Cada conta examinada
+// cai num dos três primeiros; a empresa leva o primeiro que alguma conta dela tem.
+const BALDES = ['com_novidade', 'sem_novidade', 'indisponivel', 'sem_rede', 'fora_desta_rodada'];
+const NA_RODADA = BALDES.slice(0, 3);
 // Status de meta.json que contam como retrato válido da página: servem de coleta anterior para comparar.
-// sem_posts é silêncio, que é dado; pagina_nao_gerenciada é página sem aba de publicações.
+// sem_posts é silêncio, que é dado; pagina_nao_gerenciada é página sem aba de publicações ou perfil privado.
 const STATUS_SEM_POSTS = new Set(['sem_posts', 'pagina_nao_gerenciada']);
-const RE_DATA = /^\d{4}-\d{2}-\d{2}$/;
+const REDE_POR_EXTENSO = { linkedin: 'LinkedIn', instagram: 'Instagram' };
+const mesmaConta = (a, b) => a.rede === b.rede && a.conta === b.conta;
 
 function morrer(mensagem) {
   process.stderr.write(mensagem + '\n');
@@ -35,16 +42,10 @@ function hojeISO() {
   return `${d.getFullYear()}-${p(d.getMonth() + 1)}-${p(d.getDate())}`;
 }
 
-function dataValida(s) {
-  if (!RE_DATA.test(s)) return false;
-  const d = new Date(s + 'T00:00:00Z');
-  return !Number.isNaN(d.getTime()) && d.toISOString().slice(0, 10) === s;
-}
-
 function lerJson(arquivo) {
   if (!fs.existsSync(arquivo)) return { ausente: true };
   try {
-    return { valor: JSON.parse(fs.readFileSync(arquivo, 'utf8').replace(/^﻿/, '')) };
+    return { valor: JSON.parse(fs.readFileSync(arquivo, 'utf8').replace(/^\uFEFF/, '')) };
   } catch (e) {
     return { erro: e.message };
   }
@@ -59,19 +60,24 @@ function lerIndice(refs, hoje) {
   }
 }
 
+// Linha da seleção: - [Nome](refs/<slug>.md) — `<slug>` · id <id|—> · <setor> · <país> · linkedin `<slug>` · instagram `<handle>`,
+// com só as redes a coletar nesta rodada. Linha sem nenhum campo de rede é do formato anterior.
 function lerSelecao(arquivo) {
   if (!fs.existsSync(arquivo)) return null;
   const texto = fs.readFileSync(arquivo, 'utf8').replace(/^﻿/, '');
   const cabecalho = texto.match(/^#\s+Seleção ativa\s+[—–-]\s+(\d{4}-\d{2}-\d{2})\s*$/m);
-  const slugs = [];
-  for (const m of texto.matchAll(/^\s*-\s+\[[^\]]+\]\([^)]*\)\s+[—–-]\s+`([^`]+)`/gm)) slugs.push(m[1]);
-  return { data: cabecalho && dataValida(cabecalho[1]) ? cabecalho[1] : null, slugs };
+  const empresas = [];
+  for (const m of texto.matchAll(/^\s*-\s+\[[^\]]+\]\([^)]*\)\s+[—–-]\s+`([^`]+)`(.*)$/gm)) {
+    const contas = [...m[2].matchAll(/·\s*(linkedin|instagram)\s+`([^`]+)`/g)].map((r) => ({ rede: r[1], conta: r[2].trim() }));
+    empresas.push({ slug: m[1], contas });
+  }
+  return { data: cabecalho && dataValida(cabecalho[1]) ? cabecalho[1] : null, empresas, slugs: empresas.map((e) => e.slug) };
 }
 
 // A garimpo grava o meta.json com "concluida": false ao abrir a página e com true ao terminar.
 // Pasta sem meta.json é coleta de 2026-07, de antes do meta.json, ou coleta que parou antes de começar;
-// quem decide entre as duas é a data da rodada, em examinarEmpresa. meta.json ilegível conta como
-// terminado, para o erro aparecer em lerColeta em vez de mandar a empresa de volta à garimpo.
+// quem decide entre as duas é a data da rodada, em examinarConta. meta.json ilegível conta como
+// terminado, para o erro aparecer em lerColeta em vez de mandar a conta de volta à garimpo.
 function estadoDaPasta(pasta) {
   const meta = lerJson(path.join(pasta, 'meta.json'));
   if (meta.ausente) return 'sem_meta';
@@ -80,9 +86,10 @@ function estadoDaPasta(pasta) {
 }
 
 // Uma coleta é uma pasta de data com posts.json e meta.json. `comparavel` diz se ela retrata a
-// página no dia (serve de anterior); `erro` diz por que não dá para ler.
-function lerColeta(raiz, slug, data) {
-  const pasta = path.join(raiz, slug, data);
+// página no dia (serve de anterior); `erro` diz por que não dá para ler. Difere do lerColeta do coleta.js
+// de propósito: aqui erro_navegacao sem posts.json é o motivo da coleta, não um erro de leitura.
+function lerColeta(pastaConta, data) {
+  const pasta = path.join(pastaConta, data);
   const meta = lerJson(path.join(pasta, 'meta.json'));
   const posts = lerJson(path.join(pasta, 'posts.json'));
   const coleta = { data, pasta, estado: estadoDaPasta(pasta), status: null, nota: null, janela_dias: null, posts: null, erro: null };
@@ -104,18 +111,6 @@ function lerColeta(raiz, slug, data) {
   coleta.comparavel = !coleta.erro && coleta.estado !== 'interrompida' && (coleta.status === 'ok' || STATUS_SEM_POSTS.has(coleta.status));
   return coleta;
 }
-
-function todasAsDatas(raiz, slug) {
-  const pasta = path.join(raiz, slug);
-  if (!fs.existsSync(pasta)) return [];
-  return fs
-    .readdirSync(pasta, { withFileTypes: true })
-    .filter((d) => d.isDirectory() && dataValida(d.name))
-    .map((d) => d.name)
-    .sort();
-}
-
-const datasDeColeta = (raiz, slug, hoje) => todasAsDatas(raiz, slug).filter((d) => d <= hoje);
 
 function cadenciaDe(coleta) {
   if (STATUS_SEM_POSTS.has(coleta.status)) return { data: coleta.data, n_posts: 0, posts_por_semana: 0, janela_dias: coleta.janela_dias, destaque: null };
@@ -157,14 +152,14 @@ function postNovo(p, destaque) {
 }
 
 // O mesmo post pode aparecer duas vezes na mesma coleta (rolagem do feed): vale a primeira vez.
-function semRepetidos(coleta, avisos, nome) {
+function semRepetidos(coleta, aviso) {
   const ids = new Set();
   const urls = new Set();
   return coleta.posts.filter((p) => {
     const id = idDe(p);
     const url = normalizarUrl(p.url);
     if ((id && ids.has(id)) || (url && urls.has(url))) {
-      avisos.push({ tipo: 'post_repetido', empresa: nome, detalhe: `o post ${id || url} aparece mais de uma vez na coleta ${coleta.data}: conta uma vez só` });
+      aviso('post_repetido', `o post ${id || url} aparece mais de uma vez na coleta ${coleta.data}: conta uma vez só`);
       return false;
     }
     if (id) ids.add(id);
@@ -173,7 +168,7 @@ function semRepetidos(coleta, avisos, nome) {
   });
 }
 
-function postsNovos(atual, anterior, avisos, nome) {
+function postsNovos(atual, anterior, aviso) {
   const ids = new Set();
   const urls = new Set();
   for (const p of anterior ? anterior.posts : []) {
@@ -183,56 +178,57 @@ function postsNovos(atual, anterior, avisos, nome) {
   return atual.posts.filter((p) => {
     const id = idDe(p);
     const url = normalizarUrl(p.url);
-    if (!id && !url) avisos.push({ tipo: 'post_sem_chave', empresa: nome, detalhe: `um post da coleta ${atual.data} não tem post_id nem url: entra como novo e não tem link` });
+    if (!id && !url) aviso('post_sem_chave', `um post da coleta ${atual.data} não tem post_id nem url: entra como novo e não tem link`);
     return !(id && ids.has(id)) && !(url && urls.has(url));
   });
 }
 
-function examinarEmpresa(e, rodada, raiz, hoje, avisos) {
-  const base = { nome: e.nome, slug: e.slug, prioridade: e.prioridade || 'a definir' };
-  if (e.linkedin === false) return { ...base, cobertura: 'sem_linkedin', motivo: null };
-  if (!rodada.slugs.includes(e.slug)) return { ...base, cobertura: 'fora_desta_rodada', motivo: null, ultimo_catalogo: e.catalogo || null };
+// Uma conta da seleção (empresa + rede) na rodada: a mesma regra que valia para a empresa quando só havia LinkedIn.
+function examinarConta(e, { rede, conta }, rodada, raiz, hoje, avisos) {
+  const aviso = (tipo, detalhe) => avisos.push({ tipo, empresa: e.nome, rede, conta, detalhe });
+  const pastaConta = path.join(raiz, rede, conta);
+  const base = { rede, conta, cobertura: 'indisponivel', motivo: null, nota: null, coleta_atual: null, coleta_anterior: null, primeira_coleta: null, n_novos: 0, novos: [], cadencia: null };
 
-  // A regra da profills-garimpo: coletada nesta rodada é quem tem meta.json com "concluida": true numa pasta
+  // A regra da profills-garimpo: coletada nesta rodada é a conta com meta.json com "concluida": true numa pasta
   // com data entre a do cabeçalho e hoje. Pasta da rodada sem meta.json, ou com "concluida": false, é coleta
   // interrompida e a garimpo a refaz.
-  const datas = datasDeColeta(raiz, e.slug, hoje);
+  const datas = datasDaConta(pastaConta).filter((d) => d <= hoje);
   const daRodada = datas.filter((d) => d >= rodada.data);
-  const completas = daRodada.filter((d) => estadoDaPasta(path.join(raiz, e.slug, d)) === 'concluida');
+  const completas = daRodada.filter((d) => estadoDaPasta(path.join(pastaConta, d)) === 'concluida');
   const ultima = completas[completas.length - 1];
   if (!ultima) {
     const anteriores = datas.filter((d) => d < rodada.data);
     let nota = anteriores.length ? `última coleta em ${anteriores[anteriores.length - 1]}, antes desta rodada` : 'nunca coletada';
     const parou = daRodada[daRodada.length - 1];
     if (parou) {
-      nota = estadoDaPasta(path.join(raiz, e.slug, parou)) === 'sem_meta'
+      nota = estadoDaPasta(path.join(pastaConta, parou)) === 'sem_meta'
         ? `coleta interrompida em ${parou}: a pasta não tem meta.json`
         : `coleta interrompida em ${parou}: o meta.json não traz "concluida": true`;
     }
-    return { ...base, cobertura: 'indisponivel', motivo: 'nao_coletada_nesta_rodada', nota, coleta_atual: null };
+    return { ...base, motivo: 'nao_coletada_nesta_rodada', nota };
   }
-  const atual = lerColeta(raiz, e.slug, ultima);
-  if (atual.erro) return { ...base, cobertura: 'indisponivel', motivo: 'coleta_com_erro', nota: atual.erro, coleta_atual: { data: atual.data } };
+  const atual = lerColeta(pastaConta, ultima);
+  if (atual.erro) return { ...base, motivo: 'coleta_com_erro', nota: atual.erro, coleta_atual: { data: atual.data } };
   if (atual.status !== 'ok' && !STATUS_SEM_POSTS.has(atual.status)) {
-    return { ...base, cobertura: 'indisponivel', motivo: atual.status, nota: atual.nota, coleta_atual: { data: atual.data, status: atual.status } };
+    return { ...base, motivo: atual.status, nota: atual.nota, coleta_atual: { data: atual.data, status: atual.status } };
   }
 
-  atual.posts = semRepetidos(atual, avisos, e.nome);
+  atual.posts = semRepetidos(atual, aviso);
   // Coleta interrompida não serve de base de comparação: posts parciais. Dentro da rodada, sem meta.json também é
   // interrompida; antes dela, pasta sem meta.json é a coleta de 2026-07, que vale.
   let anterior = null;
   const antes = datas.filter((d) => d < ultima && (d < rodada.data || completas.includes(d)));
   for (let i = antes.length - 1; i >= 0 && !anterior; i--) {
-    const c = lerColeta(raiz, e.slug, antes[i]);
+    const c = lerColeta(pastaConta, antes[i]);
     if (c.comparavel) anterior = c;
   }
   const cadAtual = cadenciaDe(atual);
   const cadAnterior = anterior ? cadenciaDe(anterior) : null;
-  const novos = postsNovos(atual, anterior, avisos, e.nome)
+  const novos = postsNovos(atual, anterior, aviso)
     .map((p) => postNovo(p, cadAtual.destaque))
     .sort((a, b) => (b.data || '').localeCompare(a.data || ''));
   for (const p of novos) {
-    if (p.estrangeiro && !p.resumo_pt) avisos.push({ tipo: 'resumo_pt_ausente', empresa: e.nome, detalhe: `post de ${p.data} em ${p.idioma} sem resumo_pt: leia o texto em ${atual.pasta}/posts.json` });
+    if (p.estrangeiro && !p.resumo_pt) aviso('resumo_pt_ausente', `post de ${p.data} em ${p.idioma} sem resumo_pt: leia o texto em ${atual.pasta}/posts.json`);
   }
 
   let cadencia = null;
@@ -244,7 +240,7 @@ function examinarEmpresa(e, rodada, raiz, hoje, avisos) {
       diferenca: numeros ? Math.round((cadAtual.posts_por_semana - cadAnterior.posts_por_semana) * 100) / 100 : null,
       mesma_janela: cadAtual.janela_dias === cadAnterior.janela_dias,
     };
-    if (!cadencia.mesma_janela) avisos.push({ tipo: 'janelas_diferentes', empresa: e.nome, detalhe: `a coleta ${cadAnterior.data} usou janela de ${cadAnterior.janela_dias} dias e a ${cadAtual.data} de ${cadAtual.janela_dias}: a cadência não se compara` });
+    if (!cadencia.mesma_janela) aviso('janelas_diferentes', `a coleta ${cadAnterior.data} usou janela de ${cadAnterior.janela_dias} dias e a ${cadAtual.data} de ${cadAtual.janela_dias}: a cadência não se compara`);
   }
 
   return {
@@ -259,6 +255,22 @@ function examinarEmpresa(e, rodada, raiz, hoje, avisos) {
     novos,
     cadencia,
   };
+}
+
+// As contas de uma empresa que esta rodada examina: as da linha dela na seleção que o índice também tem,
+// na ordem do índice.
+const contasDaRodada = (e, linha) => (linha ? e.contas.filter((c) => linha.contas.some((s) => mesmaConta(s, c))) : []);
+
+function examinarEmpresa(e, linha, rodada, raiz, hoje, avisos) {
+  const base = { nome: e.nome, slug: e.slug, prioridade: e.prioridade || 'a definir' };
+  if (!e.contas.length) return { ...base, cobertura: 'sem_rede', n_novos: 0, contas: [] };
+  const daRodada = contasDaRodada(e, linha);
+  if (!daRodada.length) {
+    return { ...base, cobertura: 'fora_desta_rodada', n_novos: 0, contas: e.contas.map((c) => ({ rede: c.rede, conta: c.conta, ultimo_catalogo: c.catalogo || null })) };
+  }
+  const contas = daRodada.map((c) => examinarConta(e, c, rodada, raiz, hoje, avisos));
+  const cobertura = NA_RODADA.find((b) => contas.some((c) => c.cobertura === b));
+  return { ...base, cobertura, n_novos: contas.reduce((s, c) => s + c.n_novos, 0), contas };
 }
 
 // Boletins gravados desde o dia da rodada até hoje: um deles é o boletim desta rodada.
@@ -324,8 +336,13 @@ function principal(argv) {
   }
 
   const selecao = lerSelecao(path.join(dados, 'selection.md'));
-  if (!selecao || selecao.slugs.length === 0) {
+  if (!selecao || selecao.empresas.length === 0) {
     saida.problemas.push({ tipo: 'selecao_ausente', detalhe: 'selection.md não existe ou não tem empresa: a profills-radar monta a rodada' });
+    return terminar();
+  }
+  const semRedes = selecao.empresas.filter((s) => s.contas.length === 0).map((s) => s.slug);
+  if (semRedes.length) {
+    saida.problemas.push({ tipo: 'selecao_sem_redes', slugs: semRedes, detalhe: `a seleção é do formato anterior, sem dizer as redes a coletar (${semRedes.map((s) => `\`${s}\``).join(', ')}): a profills-radar remonta a rodada` });
     return terminar();
   }
   if (!selecao.data) {
@@ -336,29 +353,43 @@ function principal(argv) {
     saida.problemas.push({ tipo: 'selecao_no_futuro', detalhe: `o cabeçalho do selection.md traz ${selecao.data}, depois de hoje (${hoje}): o relógio da máquina ou uma edição à mão; a profills-radar remonta a rodada com a data de hoje` });
     return terminar();
   }
-  const slugsDoIndice = new Set(indice.empresas.map((e) => e.slug));
-  for (const slug of selecao.slugs) {
-    if (!slugsDoIndice.has(slug)) saida.avisos.push({ tipo: 'selecao_fora_do_indice', detalhe: `\`${slug}\` está na seleção e não está no índice: fica fora do boletim` });
+  const linhaDe = (slug) => selecao.empresas.find((s) => s.slug === slug) || null;
+  const porSlug = new Map(indice.empresas.map((e) => [e.slug, e]));
+  for (const s of selecao.empresas) {
+    const e = porSlug.get(s.slug);
+    if (!e) {
+      saida.avisos.push({ tipo: 'selecao_fora_do_indice', detalhe: `\`${s.slug}\` está na seleção e não está no índice: fica fora do boletim` });
+      continue;
+    }
+    for (const c of s.contas.filter((c) => !e.contas.some((x) => mesmaConta(x, c)))) {
+      saida.avisos.push({ tipo: 'conta_fora_do_indice', empresa: e.nome, rede: c.rede, conta: c.conta, detalhe: `a seleção pede o ${REDE_POR_EXTENSO[c.rede]} \`${c.conta}\` de ${e.nome}, e a lista não traz essa conta para a empresa: ela fica fora do boletim` });
+    }
   }
 
-  const raiz = path.join(dados, 'catalog', 'raw', 'linkedin');
+  const raiz = path.join(dados, 'catalog', 'raw');
   // Pasta com data depois de hoje fica fora da conta, mas a garimpo a contaria como coletada: sem esta
-  // parada, a empresa iria para a garimpo, que a daria por feita, e o boletim a mostraria faltando de novo.
+  // parada, a conta iria para a garimpo, que a daria por feita, e o boletim a mostraria faltando de novo.
   for (const e of indice.empresas) {
-    if (e.linkedin === false || !selecao.slugs.includes(e.slug)) continue;
-    for (const data of todasAsDatas(raiz, e.slug).filter((d) => d > hoje)) {
-      saida.problemas.push({ tipo: 'coleta_no_futuro', empresa: e.nome, data, detalhe: `a coleta de ${e.nome} está numa pasta de ${data}, depois de hoje (${hoje}): o relógio ou o fuso do computador estava adiantado quando ela foi gravada` });
+    for (const c of contasDaRodada(e, linhaDe(e.slug))) {
+      for (const data of datasDaConta(path.join(raiz, c.rede, c.conta)).filter((d) => d > hoje)) {
+        saida.problemas.push({ tipo: 'coleta_no_futuro', empresa: e.nome, rede: c.rede, conta: c.conta, data, detalhe: `a coleta de ${e.nome} no ${REDE_POR_EXTENSO[c.rede]} está numa pasta de ${data}, depois de hoje (${hoje}): o relógio ou o fuso do computador estava adiantado quando ela foi gravada` });
+      }
     }
   }
   if (saida.problemas.length) return terminar();
 
   for (const e of indice.empresas) {
-    const r = examinarEmpresa(e, selecao, raiz, hoje, saida.avisos);
+    const r = examinarEmpresa(e, linhaDe(e.slug), selecao, raiz, hoje, saida.avisos);
     saida.empresas.push(r);
-    saida.cobertura[r.cobertura].push({ nome: r.nome, slug: r.slug, motivo: r.motivo || null, nota: r.nota || null });
+    saida.cobertura[r.cobertura].push({
+      nome: r.nome,
+      slug: r.slug,
+      contas: r.contas.map((c) => ({ rede: c.rede, conta: c.conta, cobertura: c.cobertura || r.cobertura, motivo: c.motivo || null, nota: c.nota || null })),
+    });
   }
-  const daRodada = saida.empresas.filter((e) => selecao.slugs.includes(e.slug) && e.cobertura !== 'sem_linkedin');
-  const faltam = daRodada.filter((e) => e.motivo === 'nao_coletada_nesta_rodada');
+  const daRodada = saida.empresas.filter((e) => NA_RODADA.includes(e.cobertura));
+  const contas = daRodada.flatMap((e) => e.contas.map((c) => ({ nome: e.nome, slug: e.slug, ...c })));
+  const faltam = contas.filter((c) => c.motivo === 'nao_coletada_nesta_rodada');
   const boletimDaRodada = boletinsEntre(dados, selecao.data, hoje).pop() || null;
   let situacao = 'de_hoje';
   if (selecao.data < hoje) situacao = faltam.length ? 'anterior_por_terminar' : boletimDaRodada ? 'anterior_com_boletim' : 'anterior_sem_boletim';
@@ -366,12 +397,13 @@ function principal(argv) {
     data: selecao.data,
     situacao,
     n_empresas: daRodada.length,
-    coletadas: daRodada.filter((e) => e.motivo !== 'nao_coletada_nesta_rodada').map((e) => e.nome),
-    faltam_coletar: faltam.map((e) => ({ nome: e.nome, slug: e.slug, nota: e.nota })),
+    n_contas: contas.length,
+    coletadas: contas.filter((c) => c.motivo !== 'nao_coletada_nesta_rodada').map((c) => ({ nome: c.nome, rede: c.rede })),
+    faltam_coletar: faltam.map((c) => ({ nome: c.nome, slug: c.slug, rede: c.rede, conta: c.conta, nota: c.nota })),
     boletim_da_rodada_existe: boletimDaRodada !== null,
     boletim_da_rodada: boletimDaRodada,
   };
-  saida.totais = { empresas: saida.empresas.length, posts_novos: saida.empresas.reduce((s, e) => s + (e.n_novos || 0), 0) };
+  saida.totais = { empresas: saida.empresas.length, posts_novos: saida.empresas.reduce((s, e) => s + e.n_novos, 0) };
   return terminar();
 }
 

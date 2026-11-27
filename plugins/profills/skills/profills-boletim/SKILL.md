@@ -1,8 +1,8 @@
 ---
 name: profills-boletim
 description: >-
-  Boletim do que os concorrentes publicaram no LinkedIn desde a última
-  coleta, com cobertura e 3 pautas. Use para "o que os concorrentes
+  Boletim do que os concorrentes publicaram no LinkedIn e no Instagram
+  desde a última coleta, com cobertura e 3 pautas. Use para "o que os concorrentes
   fizeram", "o que mudou nas empresas que eu acompanho". Não use para
   catalogar uma empresa (profills-garimpo), escrever o post
   (profills-post) nem gerir a lista (profills-radar).
@@ -16,13 +16,15 @@ metadata:
 
 **Harness.** Antes do primeiro passo, leia uma vez por sessão o adaptador do harness em que você roda: `../../docs/harness/claude-code.md` no Claude Code, `../../docs/harness/codex.md` no Codex (os caminhos são relativos a este arquivo; na dúvida, leia os dois e use o que descreve as ferramentas que você tem). Cada intenção citada aqui, como `perguntar` ou `invocar-skill`, está lá com a ferramenta, o jeito de ver que ela falta e o que fazer sem ela.
 
-Você responde "o que os concorrentes fizeram". O entregável é um arquivo, `DADOS/boletins/AAAA-MM-DD.md`, com o que cada empresa da rodada publicou de novo, quem ficou sem cobertura e por quê, e 3 pautas em pt-BR que a `profills-post` transforma em post.
+Você responde "o que os concorrentes fizeram". O entregável é um arquivo, `DADOS/boletins/AAAA-MM-DD.md`, com o que cada empresa da rodada publicou de novo em cada rede (LinkedIn e Instagram), quem ficou sem cobertura e por quê, e 3 pautas em pt-BR que a `profills-post` transforma em post.
 
 Quem usa é o comercial, não dev. Fale das empresas pelo nome; slug, `posts.json` e balde são vocabulário seu. Antes de cada passo longo (pesquisa, coleta), diga em uma frase o que vai acontecer.
 
 ## Medido vs inferido
 
 Data, link, formato, gancho, idioma, engajamento e cadência são medidos: saem do JSON do `boletim.js`, que os lê das coletas. O que o post indica para o comercial e as pautas são leitura sua e levam o rótulo "(inferido)" no arquivo. Você não recalcula número nenhum.
+
+Cada número é de uma conta, a empresa numa rede: a página no LinkedIn ou o perfil no Instagram. Diga sempre de que rede ele é. Curtidas, comentários e cadência do LinkedIn não se somam nem se comparam com os do Instagram, nem na frase nem na pauta; o script só soma a contagem de posts novos.
 
 ## O script
 
@@ -34,15 +36,16 @@ node "<pasta desta skill>/scripts/boletim.js" "<DADOS>"
 
 | Campo | Para que serve |
 |---|---|
-| `empresas[].cobertura` | o balde de cada empresa, um só: `com_novidade`, `sem_novidade`, `indisponivel`, `sem_linkedin`, `fora_desta_rodada` |
-| `empresas[].motivo`, `nota` | por que a empresa está no balde (`erro_navegacao`, `coleta_com_erro`, `nao_coletada_nesta_rodada`, `sem_posts`…), e a frase da coleta |
-| `empresas[].novos[]` | os posts da coleta desta rodada que não estavam na coleta anterior: `data`, `url`, `formato`, `hook`, `angulo`, `idioma`, `estrangeiro`, `resumo_pt`, `engajamento`, `destaque_da_coleta`. O script compara por `post_id` e, sem ele, pela `url`; post repetido na mesma coleta conta uma vez, e coleta interrompida (`"concluida": false` no `meta.json`, ou pasta da rodada sem `meta.json`) não serve de anterior |
-| `empresas[].primeira_coleta` | `true` quando não há coleta anterior: todos os posts da janela contam como novos |
-| `empresas[].cadencia` | `posts_por_semana` da coleta anterior e da atual e a `diferenca`; `mesma_janela: false` quer dizer que não se compara |
-| `rodada` | `data` do cabeçalho, `situacao` (passo 1), `coletadas`, `faltam_coletar` (nome, slug e a `nota`: antes da rodada, nunca coletada ou coleta interrompida, sem `meta.json` ou sem `"concluida": true`), `boletim_da_rodada_existe` e o caminho em `boletim_da_rodada`. Coletada nesta rodada é a mesma regra da garimpo: `meta.json` com `"concluida": true` em `catalog/raw/linkedin/<slug>/<data>/`, com data entre a do cabeçalho do `selection.md` e hoje. Pasta com data depois de hoje vira o problema `coleta_no_futuro`, que para o boletim antes da garimpo: sem essa parada, a garimpo daria a empresa por coletada e o boletim a mostraria faltando de novo, em laço |
-| `cobertura`, `totais` | a matriz e o total de posts novos, cada post contado uma vez |
+| `empresas[]` | uma por empresa do índice: `nome`, `slug`, `prioridade`, `cobertura` (o balde da empresa, um só: `com_novidade`, `sem_novidade`, `indisponivel`, `sem_rede`, `fora_desta_rodada`), `n_novos` (soma dos posts novos das contas) e `contas[]`. A empresa tem novidade se alguma conta tem; senão fica sem novidade se alguma conta ficou; senão é indisponível. `sem_rede` é a empresa sem LinkedIn nem Instagram na lista |
+| `empresas[].contas[]` | as contas que esta rodada examina: as que a linha da empresa no `selection.md` lista (a radar põe só as vencidas). Cada uma traz `rede` (`linkedin` ou `instagram`), `conta` (o slug no LinkedIn, o handle no Instagram), `cobertura` (um dos três primeiros baldes), `motivo` e `nota`, e os campos das linhas abaixo. Empresa `fora_desta_rodada` traz em `contas[]` só `rede`, `conta` e `ultimo_catalogo` |
+| `contas[].motivo`, `nota` | por que a conta está no balde (`erro_navegacao`, `coleta_com_erro`, `nao_coletada_nesta_rodada`, `sem_posts`, `pagina_nao_gerenciada`…), e a frase da coleta |
+| `contas[].novos[]` | os posts da coleta desta rodada que não estavam na coleta anterior da mesma conta: `data`, `url`, `formato`, `hook`, `angulo`, `idioma`, `estrangeiro`, `resumo_pt`, `engajamento` (como a coleta gravou: `likes`, `comentarios`, `reposts`, e no Instagram também `compartilhamentos`), `destaque_da_coleta`. O script compara por `post_id` e, sem ele, pela `url`; post repetido na mesma coleta conta uma vez, e coleta interrompida (`"concluida": false` no `meta.json`, ou pasta da rodada sem `meta.json`) não serve de anterior |
+| `contas[].primeira_coleta` | `true` quando a conta não tem coleta anterior: todos os posts da janela contam como novos |
+| `contas[].cadencia` | `posts_por_semana` da coleta anterior e da atual da conta e a `diferenca`; `mesma_janela: false` quer dizer que não se compara |
+| `rodada` | `data` do cabeçalho, `situacao` (passo 1), `n_empresas` e `n_contas`, `coletadas` (`nome` e `rede` de cada conta coletada), `faltam_coletar` (por conta: `nome`, `slug`, `rede`, `conta` e a `nota`: antes da rodada, nunca coletada ou coleta interrompida, sem `meta.json` ou sem `"concluida": true`), `boletim_da_rodada_existe` e o caminho em `boletim_da_rodada`. Coletada nesta rodada é a mesma regra da garimpo: `meta.json` com `"concluida": true` em `catalog/raw/<rede>/<conta>/<data>/`, com data entre a do cabeçalho do `selection.md` e hoje. Pasta com data depois de hoje vira o problema `coleta_no_futuro` (com `empresa`, `rede`, `conta` e `data`), que para o boletim antes da garimpo: sem essa parada, a garimpo daria a conta por coletada e o boletim a mostraria faltando de novo, em laço |
+| `cobertura`, `totais` | a matriz, com cada empresa num balde só e a situação de cada conta dela (`{nome, slug, contas: [{rede, conta, cobertura, motivo, nota}]}`), e o total de posts novos, cada post contado uma vez |
 | `voz_existe`, `boletim_do_dia_existe` | se há `voz.md` para ler; se o arquivo de hoje vai ser sobrescrito |
-| `avisos[]` | `resumo_pt_ausente` (leia o texto no `posts.json` da pasta indicada e resuma você, com o rótulo "(inferido)"), `janelas_diferentes`, `post_sem_chave`, `post_repetido` (o mesmo post duas vezes na coleta: o script já o conta uma vez), `selecao_fora_do_indice` |
+| `avisos[]` | `resumo_pt_ausente` (leia o texto no `posts.json` da pasta indicada e resuma você, com o rótulo "(inferido)"), `janelas_diferentes`, `post_sem_chave`, `post_repetido` (o mesmo post duas vezes na coleta: o script já o conta uma vez), cada um com `empresa` e `rede`; `selecao_fora_do_indice` (empresa da seleção que saiu da lista) e `conta_fora_do_indice` (a seleção pede uma conta que a lista não traz mais para a empresa, como um Instagram que saiu da linha: ela fica fora do boletim; diga isso ao comercial em uma frase) |
 
 ## Fluxo
 
@@ -58,13 +61,13 @@ Rode o script e decida pela `rodada.situacao`. Rodada nova pela radar regrava a 
 
 | Saída do script | O que fazer |
 |---|---|
-| `selecao_ausente`, `selecao_sem_data`, `indice_ausente` ou `indice_com_problemas` em `problemas` | Invoque a `profills-radar`. Ela monta a lista pelas camadas de prioridade, pergunta o que faltar (prioridade de empresa nova, troca de empresa) e grava `DADOS/selection.md` com a data de hoje no cabeçalho. Lista vazia é com ela também: a radar conduz a primeira run. |
+| `selecao_ausente`, `selecao_sem_redes`, `selecao_sem_data`, `indice_ausente` ou `indice_com_problemas` em `problemas` | Invoque a `profills-radar`. `selecao_sem_redes` é seleção do formato anterior, que não diz as redes a coletar: a radar remonta a rodada. Ela monta a lista pelas camadas de prioridade, pergunta o que faltar (prioridade de empresa nova, troca de empresa) e grava `DADOS/selection.md` com a data de hoje no cabeçalho. Lista vazia é com ela também: a radar conduz a primeira run. |
 | `indice_ilegivel` em `problemas` | O script da `profills-radar` que lê a lista não respondeu: a instalação está incompleta ou quebrada. Diga isso ao comercial em uma frase e invoque a `profills-setup` (intenção `invocar-skill`), que confere a instalação. Rode o script de novo uma vez só; se o problema voltar, pare e diga que a lista não pôde ser lida. |
 | `selecao_no_futuro` em `problemas` | A seleção traz uma data depois de hoje, por relógio da máquina adiantado ou edição à mão. Diga isso ao comercial em uma frase, com a data, e invoque a `profills-radar` para remontar a rodada com a data de hoje. |
-| `coleta_no_futuro` em `problemas` | A coleta de `empresa` está numa pasta de `data`, depois de hoje: o relógio ou o fuso do computador estava adiantado quando ela foi gravada. Diga isso ao comercial com o nome e a data, e peça que ele confira a data, a hora e o fuso do computador. A pasta fica como está: não apague, não renomeie e não invoque a garimpo para essa empresa. Pare aqui; o boletim desta rodada sai quando o script voltar sem esse problema. |
+| `coleta_no_futuro` em `problemas` | A coleta de `empresa` na `rede` está numa pasta de `data`, depois de hoje: o relógio ou o fuso do computador estava adiantado quando ela foi gravada. Diga isso ao comercial com o nome e a data, e peça que ele confira a data, a hora e o fuso do computador. A pasta fica como está: não apague, não renomeie e não invoque a garimpo para essa conta. Pare aqui; o boletim desta rodada sai quando o script voltar sem esse problema. |
 | `situacao: de_hoje` | A rodada de hoje já está montada: diga isso e siga sem reabrir a seleção, a não ser que o comercial peça outra. |
-| `situacao: anterior_por_terminar` | A rodada de `rodada.data` ficou pela metade. Pergunte se ele quer terminar essa rodada, coletando só as empresas de `faltam_coletar` (diga os nomes), ou montar uma nova pela radar, que abre de novo as páginas já coletadas. Recomende terminar. Terminar segue para o passo 2 sem tocar no `selection.md`. |
-| `situacao: anterior_sem_boletim` | A rodada de `rodada.data` está toda coletada e ainda não virou boletim. Pergunte se ele quer o boletim dessa rodada, sem abrir o LinkedIn, ou uma rodada nova pela radar. Recomende o boletim dessa rodada. |
+| `situacao: anterior_por_terminar` | A rodada de `rodada.data` ficou pela metade. Pergunte se ele quer terminar essa rodada, coletando só as contas de `faltam_coletar` (diga os nomes e a rede de cada uma), ou montar uma nova pela radar, que abre de novo as páginas já coletadas. Recomende terminar. Terminar segue para o passo 2 sem tocar no `selection.md`. |
+| `situacao: anterior_sem_boletim` | A rodada de `rodada.data` está toda coletada e ainda não virou boletim. Pergunte se ele quer o boletim dessa rodada, sem abrir o LinkedIn nem o Instagram, ou uma rodada nova pela radar. Recomende o boletim dessa rodada. |
 | `situacao: anterior_com_boletim` | A rodada de `rodada.data` já virou o boletim em `rodada.boletim_da_rodada`. Diga isso e ofereça montar uma rodada nova pela radar; se ele não quiser, aponte o boletim que já existe e pare. |
 
 Depois que a radar gravar a seleção, rode o script de novo.
@@ -73,9 +76,9 @@ Concluído quando o script voltou sem `problemas` e o comercial sabe qual rodada
 
 ### 2. Garanta a coleta
 
-Rode o script e leia `rodada.faltam_coletar`. Lista vazia: todas as empresas da rodada já têm coleta desta rodada, siga.
+Rode o script e leia `rodada.faltam_coletar`, que lista contas: a empresa e a rede. Lista vazia: todas as contas da rodada já têm coleta desta rodada, siga.
 
-Lista com empresas: invoque a `profills-garimpo`, que oferece coletar tudo, só as de prioridade Alta ou deixar para depois, e retoma pela data do cabeçalho sem mudar o `selection.md`. Quando ela devolver o controle, rode o script de novo. Terminada a coleta, a `situacao` vira `anterior_sem_boletim`: siga para o boletim dessa rodada sem perguntar de novo, porque o comercial já escolheu no passo 1. Se o comercial deixou parte para depois, siga com o que foi coletado: as que faltam entram no boletim como indisponíveis, com o motivo "ainda não coletada nesta rodada".
+Lista com contas: invoque a `profills-garimpo`, que oferece coletar tudo, só as de prioridade Alta ou deixar para depois, e retoma pela data do cabeçalho sem mudar o `selection.md`. Quando ela devolver o controle, rode o script de novo. Terminada a coleta, a `situacao` vira `anterior_sem_boletim`: siga para o boletim dessa rodada sem perguntar de novo, porque o comercial já escolheu no passo 1. Se o comercial deixou parte para depois, siga com o que foi coletado: as contas que faltam entram no boletim como indisponíveis, com o motivo "ainda não coletada nesta rodada", e a empresa com outra conta coletada aparece pelo que essa conta trouxe.
 
 Concluído quando `faltam_coletar` está vazio ou o comercial escolheu deixar as restantes para depois.
 
@@ -86,11 +89,11 @@ Com `voz_existe: true`, leia `DADOS/voz.md` antes: o que o comercial vende e par
 Grave `DADOS/<arquivo_boletim>` seguindo `assets/boletim-template.md`. Segunda rodada no mesmo dia sobrescreve o arquivo do dia; com `boletim_do_dia_existe: true`, diga isso em uma frase.
 
 - **Cabeçalho**: a data de hoje, a data e o tamanho da rodada, e o aviso fixo de uma linha do template sobre anúncios de campanha.
-- **Novidades**: uma seção por empresa de `com_novidade`, cada post com data, link, formato, gancho literal e engajamento copiados do JSON. Post com `estrangeiro: true` leva o `resumo_pt`; o gancho fica no idioma original. `primeira_coleta: true` vira a frase do template; com `cadencia` presente, a seção leva a linha de cadência do template. Cada post ganha uma frase "(inferido)" sobre o que ele indica para o comercial.
-- **Cobertura**: a tabela dos cinco baldes, com todas as empresas do índice, cada uma num balde só, e o motivo em palavras simples. Empresa sem novidade com `cadencia` leva a cadência na linha dela.
-- **Pautas**: 3 pautas originais em pt-BR. Cada uma cita o post que a sustenta (empresa, data, link) e o ângulo da taxonomia (`../profills-garimpo/references/taxonomias.md`). Reuse o tema e o ângulo, nunca o texto: nada de frase copiada nem traduzida do post. Sem nenhum post novo na rodada, apoie as pautas nos posts da coleta mais recente de cada empresa (o `posts.json` da `coleta_atual.pasta`) e diga isso no cabeçalho das pautas; sem post nenhum em disco, escreva que não há pauta nesta rodada e por quê.
+- **Novidades**: uma seção por empresa de `com_novidade` e, dentro dela, uma subseção por conta com `com_novidade` ("No LinkedIn", "No Instagram"), cada post com data, link, formato, gancho literal e engajamento copiados do JSON, com os contadores da rede dele. Post com `estrangeiro: true` leva o `resumo_pt`; o gancho fica no idioma original. `primeira_coleta: true` da conta vira a frase do template; com `cadencia` na conta, a subseção leva a linha de cadência do template. Conta da mesma empresa sem novidade vira uma linha curta na seção, com a cadência dela quando houver. Cada post ganha uma frase "(inferido)" sobre o que ele indica para o comercial.
+- **Cobertura**: a tabela dos cinco baldes, com todas as empresas do índice, cada uma num balde só, e o motivo em palavras simples. Empresa com mais de uma conta na rodada leva a situação de cada rede entre parênteses; conta sem novidade com `cadencia` leva a cadência.
+- **Pautas**: 3 pautas originais em pt-BR. Cada uma cita o post que a sustenta (empresa, rede, data, link) e o ângulo da taxonomia (`../profills-garimpo/references/taxonomias.md`). Reuse o tema e o ângulo, nunca o texto: nada de frase copiada nem traduzida do post. Sem nenhum post novo na rodada, apoie as pautas nos posts da coleta mais recente de cada conta (o `posts.json` da `coleta_atual.pasta`) e diga isso no cabeçalho das pautas; sem post nenhum em disco, escreva que não há pauta nesta rodada e por quê.
 
-Concluído quando o arquivo existe, não contém nenhum `<!--` nem slug do índice, e as empresas aparecem pelo nome; cada número dele bate com o JSON do script, incluída a cadência de cada empresa que tem `cadencia`; a matriz cobre todas as empresas do índice, as pautas são 3 (ou a frase de por que não há) e cada uma cita um post com link.
+Concluído quando o arquivo existe, não contém nenhum `<!--` nem slug ou handle do índice, e as empresas aparecem pelo nome; cada número dele bate com o JSON do script e diz de que rede é, incluída a cadência de cada conta que tem `cadencia`, e nenhum número soma ou compara duas redes; a matriz cobre todas as empresas do índice, as pautas são 3 (ou a frase de por que não há) e cada uma cita um post com link.
 
 ### 4. Atualize o resumo da pasta
 
@@ -100,10 +103,10 @@ Concluído quando o `mapa.js` voltou `ok: true` ou o comercial foi avisado de qu
 
 ### 5. Feche
 
-Conte ao comercial, em poucas frases: quantas empresas publicaram algo novo, a novidade que mais salta (pelo nome da empresa), quem ficou sem cobertura e por quê, e o caminho do arquivo. Termine com uma sugestão só: pedir à `profills-post` "gera um post da pauta N do boletim", com a pauta que você recomenda e o porquê em uma frase.
+Conte ao comercial, em poucas frases: quantas empresas publicaram algo novo, a novidade que mais salta (pelo nome da empresa e a rede), quem ficou sem cobertura e por quê, e o caminho do arquivo. Termine com uma sugestão só: pedir à `profills-post` "gera um post da pauta N do boletim", com a pauta que você recomenda e o porquê em uma frase.
 
 Concluído quando a resposta traz os quatro itens, cita as empresas só pelo nome e termina com uma sugestão só.
 
 ## Compliance
 
-Esta skill não navega: lê as coletas e grava o boletim e o resumo da pasta; quem abre o LinkedIn é a `profills-garimpo`, com as regras dela (`../profills-garimpo/references/compliance.md`).
+Esta skill não navega: lê as coletas e grava o boletim e o resumo da pasta; quem abre o LinkedIn e o Instagram é a `profills-garimpo`, com as regras dela (`../profills-garimpo/references/compliance.md`).

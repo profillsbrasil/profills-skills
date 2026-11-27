@@ -1,0 +1,64 @@
+[
+  {
+    "post_id": "ig:C9bEtA0nV02",
+    "url": "https://www.instagram.com/p/C9bEtA0nV02/",
+    "data": "2026-08-21",
+    "idioma": "pt",
+    "resumo_pt": null,
+    "texto": "Trocamos o rolo de rótulo em 40 segundos. Cronometramos.\n\nTexto fictício do post para o eval.",
+    "formato": "reel",
+    "framework_carrossel": null,
+    "hook_categoria": "how-to",
+    "hook_cabe_no_corte": null,
+    "cta": null,
+    "hashtags": [
+      "#rotulagem"
+    ],
+    "link_externo": null,
+    "artigo_titulo": null,
+    "angulo": "como-fazer",
+    "gatilho_psicologico": null,
+    "tom": "próximo, com emoji",
+    "descricao_visual": "rotuladora em operação na linha",
+    "engajamento": {
+      "likes": 412,
+      "comentarios": 37,
+      "reposts": 5,
+      "compartilhamentos": 58
+    },
+    "screenshot": null,
+    "destaque_semana": true,
+    "hook": "Trocamos o rolo de rótulo em 40 segundos. Cronometramos."
+  },
+  {
+    "post_id": "ig:C9bEtA0aNt1",
+    "url": "https://www.instagram.com/p/C9bEtA0aNt1/",
+    "data": "2026-08-13",
+    "idioma": "pt",
+    "resumo_pt": null,
+    "texto": "Rótulo torto custa caro. Você sabe quanto?\n\nTexto fictício do post para o eval.",
+    "formato": "imagem",
+    "framework_carrossel": null,
+    "hook_categoria": "question",
+    "hook_cabe_no_corte": null,
+    "cta": null,
+    "hashtags": [
+      "#rotulagem"
+    ],
+    "link_externo": null,
+    "artigo_titulo": null,
+    "angulo": "dado",
+    "gatilho_psicologico": null,
+    "tom": "próximo, com emoji",
+    "descricao_visual": "rotuladora em operação na linha",
+    "engajamento": {
+      "likes": 88,
+      "comentarios": 6,
+      "reposts": 0,
+      "compartilhamentos": 3
+    },
+    "screenshot": null,
+    "destaque_semana": false,
+    "hook": "Rótulo torto custa caro. Você sabe quanto?"
+  }
+]
