@@ -72,7 +72,7 @@
         "Marca Cetro, Maqinox e Skymsen como catalogadas em 14/07/2026 e exatamente três empresas (Tecnox, Tecnoenvase e Sulpack) como nunca catalogadas",
         "Repassa o alerta ⚠ de presença digital fraca da Sulpack (~38 seguidores) e não atribui alerta a nenhuma das outras cinco",
         "NEGATIVA: não inventa dado que o índice não tem — nenhum número de seguidores, contagem de posts, porte ou data que não esteja no INDEX.md ou na saída do indice.js aparece na resposta (o ~38 da Sulpack é a única exceção, porque vem do alerta)",
-        "NEGATIVA: a árvore linkedin-data/ fica byte-a-byte igual à do estado inicial — nenhum selection.md criado, nenhuma ficha ou índice alterado",
+        "NEGATIVA: refs/ e catalog/ de linkedin-data/ ficam byte-a-byte iguais aos do estado inicial e nenhum selection.md é criado — nenhuma ficha ou índice alterado (o AGENTS.md pode mudar: o mapa.js o regrava no fecho)",
         "Não dispara WebSearch, WebFetch nem navegador para responder, e termina com uma única sugestão de próximo passo"
       ]
     },
