@@ -22,12 +22,12 @@
     {
       "id": 2,
       "prompt": "Quero monitorar o que essas 8 empresas de embalagem andam postando: Cetro, Maqinox, Sulpack, Tecnoenvase, Tecnox, Skymsen, Selopack e Pratipack.",
-      "expected_output": "Não monta nem corta a lista sozinha: invoca a profills-radar. As 6 fichas da fixture estão com `prioridade a definir`, então a radar pergunta a prioridade de cada uma antes de montar a rodada; Selopack e Pratipack não têm dossiê e entram pelo cadastro da radar. O teto de 12 não corta nenhuma das 8, e o DADOS/selection.md sai com as empresas que o usuário aprovou. Ao voltar, a garimpo lê a seleção, mantém a janela padrão e, antes de abrir o navegador, diz quantas empresas a rodada tem, quantas são de prioridade Alta e o tempo aproximado como estimativa; oferece seguir com tudo, coletar só as Alta agora e o resto depois, ou deixar para depois. Com o 'pode ir', invoca a profills-navegador e coleta uma empresa por vez, salvando posts.json + meta.json antes da próxima. Roda o metricas.js por empresa, gera catalog/<slug>.md para cada uma com status ok, o _summary.md comparando pela taxa normalizada (média por post) mais o eixo de mercado, não carimba data de catálogo no INDEX.md (ela sai das coletas) e publica o dashboard de verdade, entregando o link.",
+      "expected_output": "Não monta nem corta a lista sozinha: invoca a profills-radar. As 6 fichas da fixture estão com `prioridade a definir`, então a radar pergunta a prioridade de cada uma antes de montar a rodada; Selopack e Pratipack não têm dossiê e entram pelo cadastro da radar. O limite de 36 páginas não corta nenhuma das 8 (só com LinkedIn, 3 páginas cada, somam 24), e o DADOS/selection.md sai com as empresas que o usuário aprovou. Ao voltar, a garimpo lê a seleção, mantém a janela padrão e, antes de abrir o navegador, diz quantas empresas a rodada tem, quantas são de prioridade Alta e o tempo aproximado como estimativa; oferece seguir com tudo, coletar só as Alta agora e o resto depois, ou deixar para depois. Com o 'pode ir', invoca a profills-navegador e coleta uma empresa por vez, salvando posts.json + meta.json antes da próxima. Roda o metricas.js por empresa, gera catalog/<slug>.md para cada uma com status ok, o _summary.md comparando pela taxa normalizada (média por post) mais o eixo de mercado, não carimba data de catálogo no INDEX.md (ela sai das coletas) e publica o dashboard de verdade, entregando o link.",
       "files": [
         "evals/profills-garimpo/files/2"
       ],
       "expectations": [
-        "Invoca a profills-radar em vez de montar ou cortar a lista sozinha; a radar pergunta a prioridade das fichas `a definir` antes de montar a rodada, e DADOS/selection.md sai com as empresas que o usuário aprovou (até 12; nenhuma das 8 pedidas é cortada pelo teto), cada linha com nome, slug e id",
+        "Invoca a profills-radar em vez de montar ou cortar a lista sozinha; a radar pergunta a prioridade das fichas `a definir` antes de montar a rodada, e DADOS/selection.md sai com as empresas que o usuário aprovou (nenhuma das 8 pedidas é cortada pelo limite de páginas), cada linha com nome, slug, id e o campo `linkedin` da conta",
         "Antes de abrir o navegador, diz em texto quantas empresas a rodada tem, quantas são de prioridade Alta e o tempo aproximado chamado de estimativa, e confirma com AskUserQuestion oferecendo seguir com tudo, coletar só as Alta agora e o resto depois, ou deixar para depois (a opção das Alta some quando nenhuma ou todas são Alta)",
         "Cada empresa da seleção tem catalog/raw/linkedin/<slug>/2026-08-24/posts.json + meta.json (janela_dias 7, ≤5 posts dentro da janela), gravados um a um antes de passar à próxima",
         "Toda empresa com status ok tem o perfil catalog/<slug>.md gerado pelo perfil-template — é ele o insumo da profills-post, e nenhum deles carrega comentário HTML `<!--` do template",
@@ -139,6 +139,55 @@
         "ARTEFATO: `node scripts/metricas.js` rodado na pasta da coleta devolve `idiomas` com {\"en\": 3} e nenhum aviso `resumo_pt_ausente`",
         "catalog/zeta-sealing.md tem a seção 'Posts em outro idioma' com um item por post (link, data, idioma, hook original e o resumo em pt-BR igual ao `resumo_pt` do posts.json), e nenhum comentário HTML `<!--` nem o bloco 'Como usar este template'",
         "Os números do perfil (`posts_por_semana`, `formato_dominante`, `engajamento_medio`, `taxa_normalizada`) são os da saída do metricas.js, e refs/INDEX.md fica idêntico ao da fixture"
+      ]
+    },
+    {
+      "id": 9,
+      "prompt": "Cataloga a Alfa Envase. (Contexto: ela não tem página no LinkedIn, só o Instagram, e o navegador está logado no Instagram. O perfil alfa.envase mostra \"8,4 mil seguidores\". A grade abre com um post fixado de 02/03 (imagem) e, depois dele, 4 posts dos últimos 7 dias: 23/08 reel \"Linha nova de envase rodando a 60 frascos por minuto\" (310 curtidas, 22 comentários, 4 reposts, 18 compartilhamentos), 22/08 carrossel \"5 sinais de que sua dosadora precisa de manutenção\" (120 curtidas, 9 comentários, 0 reposts, 30 compartilhamentos), 20/08 imagem \"Estaremos na Fispal, estande C40\" (85 curtidas, 3 comentários, 0 reposts, 2 compartilhamentos), 19/08 reel \"Bastidor da montagem\" (140 curtidas, 6 comentários, 1 repost, 5 compartilhamentos); o seguinte é de 10/08. A captura de tela funciona.)",
+      "expected_output": "Lê a seleção da fixture (Alfa Envase, slug `alfa-envase`, só a conta `instagram alfa.envase`), avisa o tamanho da rodada como estimativa, dizendo que vai ler o Instagram, e confirma; invoca a profills-navegador. Segue `references/navegacao-instagram.md`: abre o perfil, roda o bloco Perfil, pula o fixado de março pelo dia_alt, abre os 4 posts da janela, cada um em `https://www.instagram.com/p/<código>/` (também os reels) com pausa entre eles, e para no post de 10/08 sem abri-lo. Grava raw/instagram/alfa.envase/2026-08-24/posts.json com os 4 posts (`post_id` `ig:<código>`, `url` em `/p/`, formatos reel, carrossel, imagem, reel, `link_externo` e `hook_cabe_no_corte` null, engajamento com `compartilhamentos`) e meta.json com `slug` `alfa-envase`, 8400 seguidores arredondados, janela 7, status ok e concluida true. Roda o metricas.js nessa pasta e escreve catalog/alfa-envase.md com o bloco do Instagram, sem o padrão B2B do LinkedIn, e o _summary.md com a linha da Alfa marcada Instagram.",
+      "files": [
+        "evals/profills-garimpo/files/9"
+      ],
+      "expectations": [
+        "Usa a seleção da fixture sem invocar a profills-radar e não abre nenhuma página do LinkedIn: outputs/ não tem pasta `linkedin-data/catalog/raw/linkedin/alfa-envase/`",
+        "Abre cada post pelo endereço `https://www.instagram.com/p/<código>/`, inclusive os dois reels, e nenhuma [TOOL] de navegação abre endereço com `/reel/` ou `/reels/`",
+        "NEGATIVA: o post fixado de 02/03 e o post de 10/08 não são abertos nem gravados; a coleta abre o perfil e 4 posts, 5 páginas do Instagram no total",
+        "ARTEFATO: outputs/linkedin-data/catalog/raw/instagram/alfa.envase/2026-08-24/posts.json tem 4 posts, cada um com `post_id` começando por `ig:`, `url` em `https://www.instagram.com/p/`, `formato` entre reel, carrossel e imagem (na ordem reel, carrossel, imagem, reel), `link_externo: null`, `hook_cabe_no_corte: null` e `engajamento` com likes, comentarios, reposts e compartilhamentos iguais aos do contexto",
+        "ARTEFATO: o meta.json ao lado tem `slug` \"alfa-envase\", `seguidores` 8400 com `seguidores_arredondado: true`, `janela_dias` 7, `status` \"ok\" e `concluida: true`",
+        "ARTEFATO: `node plugins/profills/skills/profills-garimpo/scripts/metricas.js` na pasta da coleta devolve `rede: \"instagram\"`, `conta: \"alfa.envase\"` e `engajamento_total` 700 (likes + comentários + reposts, sem os compartilhamentos), sem aviso de hook_cabe_no_corte",
+        "catalog/alfa-envase.md diz que os números são do Instagram, copia `posts_por_semana` e `taxa_normalizada` do metricas.js e não compara a cadência com o padrão B2B de 3-5 posts do LinkedIn; o _summary.md tem a linha da Alfa Envase com a rede Instagram",
+        "NEGATIVA: nenhuma ação além de ler: nada de curtir, seguir, comentar, salvar, abrir story, mensagens diretas ou notificações, e nenhum arquivo guarda nome ou texto de quem comentou"
+      ]
+    },
+    {
+      "id": 10,
+      "prompt": "Cataloga a Beta Rótulos. (Contexto: o navegador está logado nas duas redes. No LinkedIn, a página beta-rotulos tem 3.100 seguidores e 2 posts nos últimos 7 dias: 21/08 imagem \"Rotuladora nova para frascos cônicos\" (40 likes, 5 comentários, 2 reposts) e 18/08 texto \"Por que o rótulo descola na câmara fria\" (65 likes, 12 comentários, 4 reposts). No Instagram, o perfil beta.rotulos mostra \"2.450 seguidores\" e 3 posts nos últimos 7 dias: 23/08 reel \"Troca de bobina em 40 segundos\" (210 curtidas, 15 comentários, 3 reposts, 9 compartilhamentos), 22/08 carrossel \"3 erros na escolha do adesivo\" (90 curtidas, 4 comentários, 0 reposts, 12 compartilhamentos), 20/08 imagem \"Rótulo metalizado\" (55 curtidas, 1 comentário, 0 reposts, 0 compartilhamentos). A captura de tela funciona.)",
+      "expected_output": "Lê a seleção da fixture com as duas contas da Beta Rótulos, avisa que vai ler o LinkedIn e o Instagram, com o tempo como estimativa, e confirma. Coleta o LinkedIn pela navegacao.md e depois o Instagram pela navegacao-instagram.md, gravando cada conta antes da seguinte: raw/linkedin/beta-rotulos/2026-08-24/ e raw/instagram/beta.rotulos/2026-08-24/, cada uma com posts.json e meta.json (slug beta-rotulos nas duas). Roda o metricas.js uma vez por conta e escreve catalog/beta-rotulos.md com um bloco de números por rede, e o _summary.md com uma linha por rede, sem somar nem comparar números das duas redes.",
+      "files": [
+        "evals/profills-garimpo/files/10"
+      ],
+      "expectations": [
+        "ARTEFATO: outputs/ tem linkedin-data/catalog/raw/linkedin/beta-rotulos/2026-08-24/ com 2 posts e linkedin-data/catalog/raw/instagram/beta.rotulos/2026-08-24/ com 3 posts, cada pasta com meta.json de `slug` \"beta-rotulos\", `status` ok e `concluida: true`",
+        "A coleta faz uma conta por vez: o LinkedIn termina (meta.json com concluida true) antes de o perfil do Instagram ser aberto",
+        "O metricas.js roda duas vezes, uma em cada pasta, e devolve `rede` linkedin e instagram; a taxa do LinkedIn usa 3.100 seguidores e a do Instagram 2.450",
+        "catalog/beta-rotulos.md tem um bloco 'Cadência e engajamento' para o LinkedIn e outro para o Instagram, cada número igual ao do JSON da rede dele, e a tabela de formatos com a coluna Rede",
+        "O _summary.md tem duas linhas da Beta Rótulos, uma marcada LinkedIn e outra Instagram, com a data da coleta",
+        "NEGATIVA: nenhum número do perfil, do _summary.md ou do dashboard soma likes, comentários ou taxa das duas redes, nem compara a taxa do LinkedIn com a do Instagram",
+        "NEGATIVA: refs/INDEX.md fica idêntico ao da fixture"
+      ]
+    },
+    {
+      "id": 11,
+      "prompt": "Cataloga a Gama Tampas. (Contexto: só Instagram. O perfil gama.tampas existe, é público, mostra \"0 posts\" e \"35 seguidores\" e a página diz \"Ainda não há nenhum post\".)",
+      "expected_output": "Lê a seleção (só a conta `instagram gama.tampas`), avisa e confirma, invoca a profills-navegador, abre o perfil e roda o bloco Perfil, que devolve `sem_posts: true` e nenhum item. Trata o silêncio como dado: grava raw/instagram/gama.tampas/2026-08-24/posts.json `[]` e meta.json com status sem_posts, a nota de uma frase, 35 seguidores e concluida true; não abre nenhuma página de post; não escreve catalog/gama-tampas.md; o _summary.md ganha a linha 'sem dados' da Gama Tampas no Instagram.",
+      "files": [
+        "evals/profills-garimpo/files/11"
+      ],
+      "expectations": [
+        "ARTEFATO: outputs/linkedin-data/catalog/raw/instagram/gama.tampas/2026-08-24/meta.json existe com \"status\": \"sem_posts\", uma `nota` de uma frase, `seguidores` 35, `janela_dias` 7 e `concluida: true`, e o posts.json ao lado é `[]`",
+        "NEGATIVA: nenhuma página de post do Instagram é aberta, e outputs/ não tem catalog/gama-tampas.md",
+        "O _summary.md tem a linha da Gama Tampas marcada Instagram como 'sem dados', com a nota do meta.json, sem taxa nem cadência inventadas",
+        "A resposta ao usuário diz em linguagem simples que o perfil da Gama Tampas no Instagram não tem nenhum post publicado, como sinal e não como erro"
       ]
     }
   ]

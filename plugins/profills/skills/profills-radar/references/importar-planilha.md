@@ -46,7 +46,7 @@ O script resolve prioridade sem acento e o grupo pelo ID citado; você só repas
 3. **Conte em linguagem simples, antes de gravar.** Uma frase para cada grupo que veio:
    - `novas`: "vou criar a ficha de N empresas novas", com os nomes;
    - `ja_existem`: "estas já estavam na sua lista e ficam como estão", e, para quem tem `muda`, "ganham a prioridade (ou o grupo, ou o Instagram) que a planilha dá";
-   - `sem_linkedin` e `perfil_pessoal`: "estas ficam na lista, mas a coleta pula", com o `motivo` de cada uma em palavras simples: a planilha não traz o endereço no LinkedIn; o endereço é de outro tipo de página (vitrine, escola, grupo), e a coleta só lê página de empresa; ou, no perfil pessoal, "só o perfil de uma pessoa, e perfil de pessoa a coleta não lê";
+   - `sem_linkedin` e `perfil_pessoal`: "estas ficam na lista, mas a coleta do LinkedIn pula" (a que tem perfil no Instagram na planilha é coletada só por ele), com o `motivo` de cada uma em palavras simples: a planilha não traz o endereço no LinkedIn; o endereço é de outro tipo de página (vitrine, escola, grupo), e a coleta só lê página de empresa; ou, no perfil pessoal, "só o perfil de uma pessoa, e perfil de pessoa a coleta não lê";
    - `novas[].parecidas`: "a X da planilha parece a Y que você já tem; é a mesma?". Sendo a mesma, rode a importação com `--pular <id_planilha>` dessa linha e, se ele quiser os dados novos, trate a empresa que já existe por [Atualizar](../SKILL.md#gestão); não sendo, siga;
    - `novas[].notas` com prioridade fora da lista: "a planilha dizia 'Urgente' para a Z; ela entra como 'a definir' e eu pergunto na seleção";
    - `novas[].notas` com data inválida: "a data de conferência da Z veio como '5 nov 2026', que eu não leio; usei a data de hoje";

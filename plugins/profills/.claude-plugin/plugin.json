@@ -1,9 +1,9 @@
 {
   "name": "profills-skills",
-  "version": "1.3.0",
-  "description": "Pipeline de conteúdo LinkedIn da Profills: radar → garimpo → post, mais boletim, voz, navegador e setup",
+  "version": "1.4.0",
+  "description": "Pipeline de conteúdo LinkedIn e Instagram da Profills: radar → garimpo → post, mais boletim, voz, navegador e setup",
   "author": { "name": "Profills", "email": "dev@profills.com" },
   "repository": "https://github.com/profillsbrasil/profills-skills",
   "license": "MIT",
-  "keywords": ["linkedin", "conteudo", "pt-br", "marketing"]
+  "keywords": ["linkedin", "instagram", "conteudo", "pt-br", "marketing"]
 }

@@ -19,12 +19,12 @@ const fs = require('fs');
 const path = require('path');
 
 const indice = require(path.join(__dirname, '..', 'skills', 'profills-radar', 'scripts', 'indice.js'));
-const { REDES, lerColeta, datasDaConta } = require(path.join(__dirname, 'coleta.js'));
+const { REDES, contasDaEmpresa, lerColeta, datasDaConta } = require(path.join(__dirname, 'coleta.js'));
 const { numeroBr, analisaEngajamento } = require(path.join(__dirname, '..', 'skills', 'profills-garimpo', 'scripts', 'metricas.js'));
 
 const ARQUIVO = 'indice.db';
 // Mudou o schema abaixo: suba a versão. O banco de versão diferente é refeito na próxima chamada.
-const VERSAO_SCHEMA = '1';
+const VERSAO_SCHEMA = '2';
 const LIMITE_PADRAO = 200;
 // Outra sessão gravando segura o banco por alguns ms; sem espera, a segunda daria "database is locked".
 const ESPERA_MS = 10000;
@@ -105,13 +105,14 @@ CREATE TABLE post (
 );
 CREATE INDEX post_data ON post (data);
 -- O número de um post visto numa coleta: o mesmo post em duas coletas tem duas linhas. Contador que não
--- deu para ler fica null, não zero.
+-- deu para ler fica null, não zero. compartilhamentos só existe no Instagram: no LinkedIn fica null.
 CREATE TABLE metrica (
   post_id INTEGER NOT NULL REFERENCES post (id),
   coleta_id INTEGER NOT NULL REFERENCES coleta (id),
   likes INTEGER,
   comentarios INTEGER,
   reposts INTEGER,
+  compartilhamentos INTEGER,
   destaque_semana INTEGER,
   PRIMARY KEY (post_id, coleta_id)
 ) WITHOUT ROWID;
@@ -307,7 +308,7 @@ function preparar(db) {
         gatilho_psicologico = excluded.gatilho_psicologico, tom = excluded.tom, descricao_visual = excluded.descricao_visual,
         screenshot = excluded.screenshot
       RETURNING id`),
-    metrica: p('INSERT INTO metrica (post_id, coleta_id, likes, comentarios, reposts, destaque_semana) VALUES (?, ?, ?, ?, ?, ?)'),
+    metrica: p('INSERT INTO metrica (post_id, coleta_id, likes, comentarios, reposts, compartilhamentos, destaque_semana) VALUES (?, ?, ?, ?, ?, ?, ?)'),
     apagarMetricas: p('DELETE FROM metrica WHERE coleta_id IN (SELECT id FROM coleta WHERE conta_id = ?)'),
     apagarPosts: p('DELETE FROM post WHERE conta_id = ?'),
     apagarColetas: p('DELETE FROM coleta WHERE conta_id = ?'),
@@ -320,8 +321,7 @@ function gravarEmpresas(db, q, empresas) {
   db.exec('UPDATE conta SET empresa_id = NULL; DELETE FROM empresa;');
   for (const e of empresas) {
     q.empresa.run(e.slug, e.nome, e.arquivo, e.id && e.id !== '—' ? e.id : null, e.setor, e.pais, e.prioridade, e.linkedin === false ? 0 : 1, e.instagram, e.pesquisa, e.grupo, e.alerta);
-    if (e.linkedin !== false) q.conta.get('linkedin', e.slug);
-    if (e.instagram) q.conta.get('instagram', e.instagram);
+    for (const { rede, conta } of contasDaEmpresa(e)) q.conta.get(rede, conta);
   }
 }
 
@@ -362,7 +362,7 @@ function gravarConta(q, conta, avisos) {
         texto(p.link_externo), texto(p.artigo_titulo), texto(p.angulo), texto(p.gatilho_psicologico), texto(p.tom), texto(p.descricao_visual), texto(p.screenshot),
       ).id;
       const e = analisaEngajamento(p);
-      q.metrica.run(postId, coletaId, e.invalido ? null : e.likes, e.invalido ? null : e.comentarios, e.invalido ? null : e.reposts, booleano(p.destaque_semana));
+      q.metrica.run(postId, coletaId, e.invalido ? null : e.likes, e.invalido ? null : e.comentarios, e.invalido ? null : e.reposts, e.invalido ? null : e.compartilhamentos, booleano(p.destaque_semana));
     }
   }
 }

@@ -129,16 +129,27 @@ const casos = [
     fs.writeFileSync(path.join(dados, 'boletins', '2026-11-04.md'), 'b\n');
     fs.writeFileSync(path.join(dados, 'voz.md'), '# Voz\n\n> Montado em 2026-10-01 · atualizado em 2026-10-20, a partir de: áudio.\n');
     const m = mapaOk(dados).mapa;
-    assert.deepStrictEqual(m.empresas, { total: 2, por_prioridade: { Alta: 1, 'a definir': 1 }, sem_linkedin: 1 });
-    assert.deepStrictEqual(m.ultima_coleta, { data: '2026-11-02', empresas: 2 });
+    assert.deepStrictEqual(m.empresas, { total: 2, por_prioridade: { Alta: 1, 'a definir': 1 }, sem_linkedin: 1, com_instagram: 0 });
+    assert.deepStrictEqual(m.ultima_coleta, { data: '2026-11-02', contas: { linkedin: 2 } });
     assert.deepStrictEqual(m.ultimo_rascunho, { arquivo: '2026-11-03-b.md', total: 2 });
     assert.strictEqual(m.ultimo_boletim.arquivo, '2026-11-04.md');
     assert.deepStrictEqual(m.voz, { existe: true, atualizado_em: '2026-10-20' });
     assert.deepStrictEqual(m.pendencias, { do_not_copy_vazio: ['alfa'], pesquisa_vencida: [] });
     const bloco = blocoMapa(lerAgents(dados));
-    for (const trecho of ['Empresas no índice: 2', 'Sem página no LinkedIn: 1', 'Última coleta: 2026-11-02, com 2', '`drafts/2026-11-03-b.md`', '`boletins/2026-11-04.md`', 'atualizado em 2026-10-20', '"Do Not Copy" vazio em 1 ficha(s): `alfa`']) {
+    for (const trecho of ['Empresas no índice: 2', 'Sem página no LinkedIn: 1. Com Instagram: 0.', 'Última coleta: 2026-11-02, com 2 conta(s) no LinkedIn.', '`drafts/2026-11-03-b.md`', '`boletins/2026-11-04.md`', 'atualizado em 2026-10-20', '"Do Not Copy" vazio em 1 ficha(s): `alfa`']) {
       assert.ok(bloco.includes(trecho), `bloco traz "${trecho}"`);
     }
+  }],
+
+  ['coleta nas duas redes: a última data conta as contas de cada rede, e o índice conta quem tem Instagram', () => {
+    const dados = montar({ index: indexCom([LINHA_A.replace('instagram —', 'instagram alfa.br'), LINHA_B.replace('instagram —', 'instagram beta.ig')]) });
+    for (const [rede, conta, data] of [['linkedin', 'alfa', '2026-11-02'], ['instagram', 'alfa.br', '2026-11-03'], ['instagram', 'beta.ig', '2026-11-03'], ['linkedin', 'alfa', '2026-11-03']]) {
+      fs.mkdirSync(path.join(dados, 'catalog', 'raw', rede, conta, data), { recursive: true });
+    }
+    const m = mapaOk(dados).mapa;
+    assert.strictEqual(m.empresas.com_instagram, 2);
+    assert.deepStrictEqual(m.ultima_coleta, { data: '2026-11-03', contas: { instagram: 2, linkedin: 1 } });
+    assert.ok(blocoMapa(lerAgents(dados)).includes('- Última coleta: 2026-11-03, com 1 conta(s) no LinkedIn e 2 conta(s) no Instagram.'));
   }],
 
   ['segunda rodada no mesmo estado não muda nenhum byte (sha256), nem dias depois', () => {

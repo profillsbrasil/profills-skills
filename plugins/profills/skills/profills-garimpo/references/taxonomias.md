@@ -6,24 +6,25 @@ Adaptado (traduzido) do repositório MIT [coreyhaines31/marketingskills](https:/
 
 ## Formato do post
 
-A coluna **Como reconhecer** separa o que o JS de `navegacao.md` já devolve em `formato` do que exige você olhar o post — sem essa checagem manual, todo `poll`, `newsletter`, `evento`, `documento` e `reshare` cai em `texto` ou `imagem`.
+A lista vale para as duas redes. A coluna **Rede** diz onde cada valor existe, e a coluna **Como reconhecer** separa o que o JS do arquivo de navegação já devolve em `formato` do que exige você olhar o post — sem essa checagem manual, todo `poll`, `newsletter`, `evento`, `documento` e `reshare` do LinkedIn cai em `texto` ou `imagem`. No Instagram o JS devolve todos os valores dele.
 
-| Valor | O que é | Como reconhecer |
-|---|---|---|
-| `texto` | só texto | JS |
-| `imagem` | texto + 1 imagem | JS |
-| `carrossel` | documento/PDF de múltiplos slides (classifique também o `framework_carrossel`) | JS |
-| `video` | vídeo nativo | JS |
-| `artigo` | link para artigo/newsletter do LinkedIn | JS |
-| `documento` | anexo de documento não-carrossel | manual: card de arquivo com uma página só, sem navegação entre slides |
-| `poll` | enquete | manual: bloco de opções com barra de porcentagem e "N votos" |
-| `newsletter` | edição de newsletter nativa da página (assinatura em série) | manual: o card de artigo traz nome da newsletter + "Edição N" ou botão Assinar |
-| `evento` | criação/divulgação de evento do LinkedIn | manual: card com data/hora e botão de participação |
-| `reshare` | repost de outro post (marque de quem, se relevante) | manual: post embutido com o autor original dentro do card |
+| Valor | Rede | O que é | Como reconhecer |
+|---|---|---|---|
+| `texto` | LinkedIn | só texto | JS |
+| `imagem` | as duas | texto + 1 imagem; no Instagram, a legenda + 1 imagem | JS |
+| `carrossel` | as duas | no LinkedIn, documento/PDF de múltiplos slides; no Instagram, post com várias imagens ou vídeos (classifique também o `framework_carrossel`) | JS |
+| `video` | as duas | vídeo nativo; no Instagram, vídeo que não é reel | JS |
+| `reel` | Instagram | vídeo curto do Reels | JS |
+| `artigo` | LinkedIn | link para artigo/newsletter do LinkedIn | JS |
+| `documento` | LinkedIn | anexo de documento não-carrossel | manual: card de arquivo com uma página só, sem navegação entre slides |
+| `poll` | LinkedIn | enquete | manual: bloco de opções com barra de porcentagem e "N votos" |
+| `newsletter` | LinkedIn | edição de newsletter nativa da página (assinatura em série) | manual: o card de artigo traz nome da newsletter + "Edição N" ou botão Assinar |
+| `evento` | LinkedIn | criação/divulgação de evento do LinkedIn | manual: card com data/hora e botão de participação |
+| `reshare` | LinkedIn | repost de outro post (marque de quem, se relevante) | manual: post embutido com o autor original dentro do card |
 
 ## Framework de carrossel
 
-Só quando o formato é carrossel/documento. Os 5 padrões de arquitetura de slides:
+Só quando o formato é carrossel/documento, nas duas redes. Os 5 padrões de arquitetura de slides:
 
 | Valor | Estrutura |
 |---|---|

@@ -1,6 +1,6 @@
 {
   "name": "profills-skills",
-  "description": "Plugins da Profills para o time comercial: conteúdo do LinkedIn e o CRM no agente",
+  "description": "Plugins da Profills para o time comercial: conteúdo do LinkedIn e do Instagram e o CRM no agente",
   "owner": {
     "name": "Profills",
     "email": "dev@profills.com"
@@ -9,7 +9,7 @@
     {
       "name": "profills-skills",
       "source": "./plugins/profills",
-      "description": "Pipeline de conteúdo LinkedIn da Profills: radar → garimpo → post, mais boletim, voz, navegador e setup"
+      "description": "Pipeline de conteúdo LinkedIn e Instagram da Profills: radar → garimpo → post, mais boletim, voz, navegador e setup"
     },
     {
       "name": "crm-profills",

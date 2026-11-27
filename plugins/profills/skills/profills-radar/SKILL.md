@@ -1,8 +1,8 @@
 ---
 name: profills-radar
 description: >-
-  Lista de empresas de referência do LinkedIn: escolhe quais catalogar
-  na rodada e gerencia a lista. Use para "adiciona a empresa X",
+  Lista de empresas de referência no LinkedIn e no Instagram: escolhe
+  quais catalogar na rodada e gerencia a lista. Use para "adiciona a empresa X",
   "importa minha planilha de concorrentes", "quais empresas eu
   acompanho", "atualiza os dados da Y", ou quando falta
   DADOS/selection.md. Para ver o que elas postam, use a profills-garimpo.
@@ -16,7 +16,7 @@ metadata:
 
 **Harness.** Antes do primeiro passo, leia uma vez por sessão o adaptador do harness em que você roda: `../../docs/harness/claude-code.md` no Claude Code, `../../docs/harness/codex.md` no Codex (os caminhos são relativos a este arquivo; na dúvida, leia os dois e use o que descreve as ferramentas que você tem). Cada intenção citada aqui, como `perguntar` ou `invocar-skill`, está lá com a ferramenta, o jeito de ver que ela falta e o que fazer sem ela.
 
-Você mantém a **memória de referências**: a lista de empresas que o usuário observa no LinkedIn para tirar ideias de conteúdo. O entregável é uma **seleção** de até 12 empresas em `DADOS/selection.md`, que a `profills-garimpo` coleta em seguida. Quem entra em cada rodada sai das camadas de prioridade, contadas pelo script.
+Você mantém a **memória de referências**: a lista de empresas que o usuário observa no LinkedIn e no Instagram para tirar ideias de conteúdo. O entregável é uma **seleção** em `DADOS/selection.md`, as empresas e as redes de cada uma até o limite de páginas da rodada, que a `profills-garimpo` coleta em seguida. Quem entra em cada rodada sai das camadas de prioridade, contadas pelo script.
 
 ## O índice é um mapa, não um armazém
 
@@ -44,15 +44,15 @@ E uma linha por empresa. Cada campo vem depois de ` · ` e começa pela chave de
 | `id` | sim | o id numérico da página, ou `—` quando ela não mostrou |
 | `setor`, `país` | sim | rótulo curto; texto livre sem o caractere `·` |
 | `prioridade` | sim | `Alta`, `Média`, `Adjacente`, `Validação` ou `a definir` — a que o usuário disse; `a definir` enquanto ele não disse |
-| `linkedin` | sim | `sim` quando a empresa tem página; `não` quando não tem, e aí a `profills-garimpo` não a coleta |
-| `instagram` | sim | o perfil da empresa no Instagram, sem o @ (`alfa.cartonagem`): letras, números, ponto e `_`. `—` quando ela não tem ou ninguém achou ainda. Por enquanto o campo só guarda o endereço: a coleta lê só o LinkedIn |
+| `linkedin` | sim | `sim` quando a empresa tem página; `não` quando não tem, e aí a `profills-garimpo` não coleta o LinkedIn dela |
+| `instagram` | sim | o perfil da empresa no Instagram, sem o @ (`alfa.cartonagem`): letras, números, ponto e `_`. `—` quando ela não tem ou ninguém achou ainda. Com o handle, a `profills-garimpo` coleta também o Instagram dela |
 | `pesquisa` | sim | data da última pesquisa |
 | `grupo` | não | o recorte em que o usuário agrupa a empresa, quando ele der um, ou o grupo que a importação achou pela regra do ID citado |
 | `⚠` | não | sempre o último; leva o resto da linha. Use quando a pesquisa mostrar presença digital fraca (audiência de dezenas de seguidores, meses sem publicar): é essa empresa que produz catálogo vazio depois |
 
-A linha não guarda a data do último catálogo: o script a calcula das coletas, a pasta mais recente de `<DADOS>/catalog/raw/linkedin/<slug>/` com `status: ok` que não parou no meio (`"concluida": false`), e a devolve em `empresas[].catalogo`. A coleta de 2026-07, sem `meta.json`, também conta.
+A linha não guarda a data do último catálogo: o script a calcula das coletas de cada conta, a pasta mais recente de `<DADOS>/catalog/raw/<rede>/<conta>/` com `status: ok` que não parou no meio (`"concluida": false`), e a devolve em `empresas[].contas[].catalogo`. A conta é o slug no LinkedIn e o handle no Instagram. A coleta de 2026-07, sem `meta.json`, também conta.
 
-O slug só tem letras sem acento, números, `-` e `_`: é o nome da ficha e o endereço da página. Empresa sem página no LinkedIn ganha um slug feito do nome (`gama-embalagens`) e `linkedin não`.
+O slug só tem letras sem acento, números, `-` e `_`: é o nome da ficha e o endereço da página. Empresa sem página no LinkedIn ganha um slug feito do nome (`gama-embalagens`) e `linkedin não`; com Instagram, ela entra na coleta só por ele.
 
 ## O script é quem lê o índice
 
@@ -70,11 +70,11 @@ Sai JSON em stdout; exit 0 = ok, 1 = alguma checagem falhou (leia `problemas`), 
 |---|---|
 | `indice_existe`, `n_empresas` | escolher a branch no passo 0 |
 | `fichas_orfas` | fichas fora da lista; trate pelo passo 0 |
-| `empresas[]` (`nome`, `slug`, `id`, `setor`, `pais`, `prioridade`, `linkedin` true/false, `instagram` (o handle, ou null), `pesquisa`, `catalogo` (a data calculada das coletas, ou null), `grupo`, `alerta`) | montar as opções da Seleção e a lista da Gestão, sem reabrir o arquivo |
+| `empresas[]` (`nome`, `slug`, `id`, `setor`, `pais`, `prioridade`, `linkedin` true/false, `instagram` (o handle, ou null), `pesquisa`, `contas` (uma por rede, com `rede`, `conta` e `catalogo`, a data calculada das coletas ou null), `grupo`, `alerta`) | montar as opções da Seleção e a lista da Gestão, sem reabrir o arquivo |
 | `dias_desde_pesquisa` e `pesquisa_vencida` (mais de 60 dias) | oferecer a re-pesquisa — a conta dos 60 dias é do script |
-| `rodada` (`devidas`, `fora_do_limite`, `em_dia`, `sem_linkedin`, `a_definir`, `limite_por_rodada`) | montar a [Seleção](#seleção): cada empresa cai em um balde só, já em ordem de prioridade e do catálogo mais antigo |
+| `rodada` (`devidas`, `fora_do_limite`, `em_dia`, `sem_rede`, `a_definir`, `limite_paginas`, `paginas`) | montar a [Seleção](#seleção): cada empresa cai em um balde só, já em ordem de prioridade e da conta com o catálogo mais antigo. Cada item traz `contas` (em `devidas` e `fora_do_limite`, só as contas vencidas, com `dias_desde_catalogo`) e `paginas`, o que essas contas custam no navegador |
 | `problemas[]` (`tipo`, `linha`, `detalhe`) | o que corrigir no `INDEX.md` antes de seguir — só formato e consistência do índice |
-| `avisos[]` com `catalogo_no_futuro` | o último catálogo está numa pasta de coleta com data depois de hoje: diga ao usuário o nome da empresa e a data, e que ela entra na rodada como devida até a pasta ser corrigida. Não derruba o `ok` |
+| `avisos[]` com `catalogo_no_futuro` | o último catálogo de uma conta (`rede`, `conta`) está numa pasta de coleta com data depois de hoje: diga ao usuário o nome da empresa, a rede e a data, e que essa conta entra na rodada como vencida até a pasta ser corrigida. Não derruba o `ok` |
 
 `--procurar` devolve `ha_parecido` e `candidatos[]` com `semelhanca` e `por` (`nome`, `slug`, `grupo` ou `nomes relacionados`). É assim que "Beta Envase" acha a ficha da Alfa Cartonagem quando a da Alfa cita a Beta Envase como divisão dela.
 
@@ -165,7 +165,7 @@ Vale para a primeira run, para as similares aprovadas e para o "adiciona a empre
 
 3. **Resolva o endereço no LinkedIn**: o slug (`linkedin.com/company/<slug>`, que o endereço do resultado da busca já traz) e, quando a página da empresa aberta pelo navegador mostrar, o id numérico — o slug muda em rebranding, o id não.
    - Duas ou mais páginas plausíveis (homônimos, matriz e filial): mostre 2-3 candidatas com nome, seguidores e cidade, e peça ao usuário para confirmar qual é. **Espere a resposta dele.** Enquanto ela não vier, a ficha fica com `[a confirmar]` no campo de confirmação e você não segue como se ele tivesse escolhido.
-   - Nenhuma candidata: diga que não achou a página dessa empresa no LinkedIn, escreva a ficha com `—` no endereço, dê a ela um slug feito do nome para o arquivo e a linha, marque `linkedin não` e ofereça seguir sem ela na seleção, porque a `profills-garimpo` só coleta quem tem página.
+   - Nenhuma candidata: diga que não achou a página dessa empresa no LinkedIn, escreva a ficha com `—` no endereço, dê a ela um slug feito do nome para o arquivo e a linha, marque `linkedin não` e ofereça seguir sem ela na seleção, porque a `profills-garimpo` só coleta quem tem página no LinkedIn ou perfil no Instagram.
 
    Concluído quando a ficha tem o slug ou o motivo pelo qual não tem.
 
@@ -181,9 +181,9 @@ A memória já tem empresas: mostre o que você já conhece, em vez de pedir lin
 
 1. **Pergunte a prioridade que falta.** Empresa em `rodada.a_definir` não tem camada. Pergunte com opções (`perguntar`), uma pergunta por empresa (até 4 por chamada), opções `Alta`, `Média`, `Adjacente` e `Validação`, cada uma com o que ela muda: Alta entra em toda rodada; Média, a cada 2 semanas; Adjacente e Validação, a cada 4. Grave a resposta no campo `prioridade` da linha do `INDEX.md` e no campo `Prioridade` da ficha (acrescente a linha abaixo do endereço quando a ficha não a tiver), e rode o script de novo. Se ele não quiser decidir agora ("deixa a definir"), a empresa fica `a definir` e entra no passo 2 como opção fora da rodada. Concluído quando `a_definir` está vazio ou ele disse que deixa para depois.
 
-2. **Ofereça a rodada calculada.** Mostre em texto as empresas de `rodada.devidas`, pelo nome, cada uma com a prioridade e o último catálogo ("catalogada em 12/08" ou "nunca catalogada"), e o `alerta` de quem tem. Elas já vêm marcadas: pergunte com opções (`perguntar`) se ele segue com essa rodada (opção recomendada), quer tirar ou trocar alguma, ou quer só as de prioridade Alta. Quem pediu ajuste diz os nomes; as opções de troca são as de `fora_do_limite`, `em_dia` e as `a definir` que ficaram. Diga quantas ficaram em `fora_do_limite` e cite pelo nome só as 3 primeiras, que entram primeiro na próxima rodada ("ficaram 15 para a próxima rodada, começando por A, B e C"); com 3 ou menos, cite todas. As de `sem_linkedin` não entram, porque não há página para coletar; diga isso uma vez, sem listá-las a cada rodada. Concluído quando ele aprovou a lista da rodada.
+2. **Ofereça a rodada calculada.** Mostre em texto as empresas de `rodada.devidas`, pelo nome, cada uma com a prioridade, as redes que entram (as `contas` do item) e o último catálogo de cada uma ("LinkedIn catalogado em 12/08, Instagram nunca"), e o `alerta` de quem tem. Elas já vêm marcadas: pergunte com opções (`perguntar`) se ele segue com essa rodada (opção recomendada), quer tirar ou trocar alguma, ou quer só as de prioridade Alta. Quem pediu ajuste diz os nomes; as opções de troca são as de `fora_do_limite`, `em_dia` e as `a definir` que ficaram. Diga quantas ficaram em `fora_do_limite` e cite pelo nome só as 3 primeiras, que entram primeiro na próxima rodada ("ficaram 15 para a próxima rodada, começando por A, B e C"); com 3 ou menos, cite todas. As de `sem_rede` não entram, porque não têm página no LinkedIn nem perfil no Instagram para coletar; diga isso uma vez, sem listá-las a cada rodada. Tirar uma rede de uma empresa da rodada é ajuste válido ("só o LinkedIn da Cetro desta vez"). Concluído quando ele aprovou a lista da rodada.
 
-   **O teto é 12.** A `profills-garimpo` coleta no navegador logado dele, e cada empresa custa algumas páginas (a lista de posts, a rolagem, a página da empresa). Com 12 empresas a sessão já soma dezenas de páginas, o volume que a regra de coleta da garimpo aceita; passar disso vira rajada, que o LinkedIn pode ler como robô e travar a conta dele. Essa razão vai **em texto que o usuário lê**, na própria pergunta quando a rodada chega a 12 ou na resposta seguinte se ele pedir mais. Se ele pedir mais de 12, peça para escolher as 12 desta vez e diga que as outras entram na próxima; se ele mantiver o pedido depois de ouvir a razão, escreva as 12 primeiras na ordem da rodada e diga, pelo nome, quais ficaram de fora. Concluído quando o `selection.md` tem no máximo 12 empresas e o usuário leu por que esse é o teto.
+   **O teto é de páginas, `rodada.limite_paginas`.** A `profills-garimpo` coleta no navegador logado dele, e cada conta custa páginas: no LinkedIn, a lista de posts com a troca de ordem e a rolagem; no Instagram, o perfil e um post por página. O script soma o custo das duas redes (`paginas` de cada item) e para no limite, que dá 12 empresas só com LinkedIn e menos quando elas têm Instagram. Passar disso vira rajada, que o LinkedIn ou o Instagram podem ler como robô e travar a conta dele. Essa razão vai **em texto que o usuário lê**, na própria pergunta quando a rodada chega ao limite ou na resposta seguinte se ele pedir mais. Se ele pedir mais, peça para escolher o que cabe desta vez e diga que o resto entra na próxima; se ele mantiver o pedido depois de ouvir a razão, escreva as primeiras na ordem da rodada até o limite e diga, pelo nome, quais ficaram de fora. Concluído quando a soma das `paginas` das contas do `selection.md` não passa de `rodada.limite_paginas` e o usuário leu por que esse é o teto.
 
 3. **Ofereça o que está atrasado**, quando houver: empresa similar já descoberta que ainda não virou ficha, ou empresa que o script marcou com `pesquisa_vencida: true` — cite os `dias_desde_pesquisa` dela e mande para [Atualizar](#gestão). Com `pesquisa_vencida` vazio e nenhuma similar pendente, diga que a lista está fresca e siga.
 
@@ -197,7 +197,7 @@ Pedidos sobre a lista, sem catalogar:
 - **Importar planilha** → [Importar planilha](#importar-planilha).
 - **Remover** → tire a linha do índice e mantenha a ficha no disco como histórico; apague o arquivo só se ele pedir. A ficha vira órfã de propósito; diga ao usuário que ela fica guardada, que volta como "ficha fora da lista" na próxima validação e que ele pode pedir para recolocá-la na lista depois.
 - **Atualizar / re-pesquisar** → refaça os três eixos de pesquisa, mova o conteúdo anterior da ficha para `## Histórico` **com o texto que estava lá, palavra por palavra**, sob a data em que ele valia; escreva o novo por cima e troque o campo `pesquisa` da linha do índice pela data de hoje. `## Por que é referência` e `## Do Not Copy` não são tocados. Concluído quando a ficha carrega duas datas — a de hoje no topo e a anterior no histórico — e o script volta `ok: true`.
-- **Listar** → mostre as empresas do `empresas[]` da saída do script, por nome, com setor, `pesquisa`, `catalogo` e o `alerta` de quem tem. Só o que está no índice: se ele perguntar algo que a linha não carrega (seguidores, quantos posts), abra a ficha ou diga que ainda não sabe — não estime.
+- **Listar** → mostre as empresas do `empresas[]` da saída do script, por nome, com setor, `pesquisa`, as redes e o `catalogo` de cada conta, e o `alerta` de quem tem. Só o que está no índice: se ele perguntar algo que a linha não carrega (seguidores, quantos posts), abra a ficha ou diga que ainda não sabe — não estime.
 
 ### Importar planilha
 
@@ -210,15 +210,16 @@ O handoff para a `profills-garimpo` é `DADOS/selection.md`. Sobrescreva-o a cad
 ```markdown
 # Seleção ativa — 2026-08-24
 
-- [Nubank](refs/nubank.md) — `nubank` · id 15216 · fintech · BR
-- [Anthropic](refs/anthropic.md) — `anthropic` · id — · IA · global
+- [Nubank](refs/nubank.md) — `nubank` · id 15216 · fintech · BR · linkedin `nubank` · instagram `nubank`
+- [Anthropic](refs/anthropic.md) — `anthropic` · id — · IA · global · linkedin `anthropic`
+- [Gama Embalagens](refs/gama-embalagens.md) — `gama-embalagens` · id — · embalagens · BR · instagram `gama.embalagens`
 ```
 
-**Valide o índice antes de escrever**: rode `node "<pasta desta skill>/scripts/indice.js" "<DADOS>/refs"` e só escreva o `selection.md` com `ok: true`. Índice inválido é corrigido primeiro — a `profills-garimpo` navega pelo que estiver aqui, e linha torta vira coleta na página errada. Empresa com `linkedin: false` não entra na seleção: não há página para coletar.
+**Valide o índice antes de escrever**: rode `node "<pasta desta skill>/scripts/indice.js" "<DADOS>/refs"` e só escreva o `selection.md` com `ok: true`. Índice inválido é corrigido primeiro — a `profills-garimpo` navega pelo que estiver aqui, e linha torta vira coleta na página errada.
 
-Cada campo da linha sai do `empresas[]` da saída do script — `nome`, `slug`, `id`, `setor`, `pais` — sem reescrever nem encurtar nada. O `id` é obrigatório; `—` quando o índice também não tem. É por ele que a `profills-garimpo` reencontra a página quando o slug mudou.
+Cada campo da linha sai da saída do script, sem reescrever nem encurtar nada: `nome`, `slug`, `id`, `setor` e `pais` do `empresas[]`, e um campo por conta a coletar nesta rodada, `linkedin \`<conta>\`` e `instagram \`<conta>\``, tirado das `contas` do item da rodada aprovada. Rede que não entra nesta rodada (em dia, ou que o usuário tirou) não vai na linha; toda linha tem ao menos uma. O `id` é obrigatório; `—` quando o índice também não tem. É por ele que a `profills-garimpo` reencontra a página do LinkedIn quando o slug mudou.
 
-Concluído quando o script voltou `ok: true`, cada empresa escolhida tem `refs/<slug>.md`, uma linha no `INDEX.md` e uma linha no `selection.md`; são no máximo 12; e o usuário ouviu, pelo nome, quais entraram.
+Concluído quando o script voltou `ok: true`, cada empresa escolhida tem `refs/<slug>.md`, uma linha no `INDEX.md` e uma linha no `selection.md` com as redes que entram; a soma das `paginas` não passa de `rodada.limite_paginas`; e o usuário ouviu, pelo nome, quais empresas e redes entraram.
 
 ### Feche
 
@@ -230,4 +231,4 @@ Antes de fechar, rode `node "<pasta desta skill>/../profills-setup/scripts/mapa.
 ## Guarda-corpos
 
 - **Similar sugerida é proposta, não fato.** Empresa entra na lista com o aval do usuário, e a ficha guarda o que a pesquisa sustentou — cada afirmação com a fonte que a produziu.
-- **Na conversa, a empresa é chamada pelo nome.** O slug e o id ficam nos arquivos de handoff (`INDEX.md`, `selection.md`); na fala com o usuário viram "o endereço dela no LinkedIn", e `<slug>.md` vira "a ficha da empresa".
+- **Na conversa, a empresa é chamada pelo nome.** O slug e o id ficam nos arquivos de handoff (`INDEX.md`, `selection.md`); na fala com o usuário viram "o endereço dela no LinkedIn" ou "o perfil dela no Instagram", e `<slug>.md` vira "a ficha da empresa".

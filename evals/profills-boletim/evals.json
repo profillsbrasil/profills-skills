@@ -1,11 +1,11 @@
 {
   "skill_name": "profills-boletim",
-  "nota_fixtures": "Cada eval lista `files` na ordem em que as pastas se copiam: `evals/profills-boletim/files/base` primeiro e a pasta do caso por cima, sobrescrevendo. O runner (`.claude/workflows/evals-profills.js`, passo 3 do preparar) diz \"cada pasta listada, por cima\" sem fixar a ordem; os casos daqui contam com a ordem da lista. O `.apagar` de cada caso lista caminhos relativos ao repo do sandbox, apagados depois da cópia; no caso 7 são pastas inteiras (`rm -r`), para que as coletas de 24/08 da base sumam e a rodada de 23/08 fique pela metade; no caso 8 é a pasta de 24/08 da Beta Rótulos, que fica só com a de 25/08, depois de hoje.",
+  "nota_fixtures": "Cada eval lista `files` na ordem em que as pastas se copiam: `evals/profills-boletim/files/base` primeiro e a pasta do caso por cima, sobrescrevendo. O runner (`.claude/workflows/evals-profills.js`, passo 3 do preparar) diz \"cada pasta listada, por cima\" sem fixar a ordem; os casos daqui contam com a ordem da lista. O `.apagar` de cada caso lista caminhos relativos ao repo do sandbox, apagados depois da cópia; no caso 7 são pastas inteiras (`rm -r`), para que as coletas de 24/08 da base sumam e a rodada de 23/08 fique pela metade; no caso 8 é a pasta de 24/08 da Beta Rótulos, que fica só com a de 25/08, depois de hoje. No caso 9, o `refs/INDEX.md` e o `selection.md` do caso sobrescrevem os da base: a Beta Rótulos ganha o Instagram `betarotulos`, com as coletas em `catalog/raw/instagram/betarotulos/`.",
   "evals": [
     {
       "id": 1,
       "prompt": "O que os concorrentes fizeram essa semana?",
-      "expected_output": "- Resolve DADOS pela regra (repo git com linkedin-data/ na raiz) e confere `.profills.json` na versão 4.\n- Vê que `linkedin-data/selection.md` já traz `# Seleção ativa — 2026-08-24` (a rodada de hoje está montada) e não reabre a seleção.\n- Roda `boletim.js linkedin-data --hoje 2026-08-24`: `faltam_coletar` vazio, então não invoca a profills-garimpo nem abre navegador.\n- Grava `linkedin-data/boletins/2026-08-24.md` pelo template: cabeçalho com a data e a rodada (3 empresas), o aviso fixo de uma linha sobre anúncio de campanha, Novidades da Alfa Envase (o post de 21/08, carrossel, com link e gancho literal) e da Nordic Fill Systems (primeira coleta, os 2 posts com o resumo em português e o gancho em inglês), a tabela de cobertura com os cinco baldes (Beta Rótulos sem novidade, Gama Tampas sem LinkedIn, Delta Selagem fora desta rodada) e 3 pautas em pt-BR, cada uma com o post que a sustenta (link) e o ângulo, rotuladas como inferido.\n- Usa o voz.md (Envix 400, envasadora semiautomática) na leitura do que cada novidade indica.\n- Roda o mapa.js e fecha com uma sugestão só: pedir à profills-post um post da pauta N do boletim.",
+      "expected_output": "- Resolve DADOS pela regra (repo git com linkedin-data/ na raiz) e confere `.profills.json` na versão 4.\n- Vê que `linkedin-data/selection.md` já traz `# Seleção ativa — 2026-08-24` (a rodada de hoje está montada) e não reabre a seleção.\n- Roda `boletim.js linkedin-data --hoje 2026-08-24`: `faltam_coletar` vazio, então não invoca a profills-garimpo nem abre navegador.\n- Grava `linkedin-data/boletins/2026-08-24.md` pelo template: cabeçalho com a data e a rodada (3 empresas), o aviso fixo de uma linha sobre anúncio de campanha, Novidades da Alfa Envase (o post de 21/08, carrossel, com link e gancho literal) e da Nordic Fill Systems (primeira coleta, os 2 posts com o resumo em português e o gancho em inglês), a tabela de cobertura com os cinco baldes (Beta Rótulos sem novidade, Gama Tampas sem LinkedIn nem Instagram, Delta Selagem fora desta rodada) e 3 pautas em pt-BR, cada uma com o post que a sustenta (link) e o ângulo, rotuladas como inferido.\n- Usa o voz.md (Envix 400, envasadora semiautomática) na leitura do que cada novidade indica.\n- Roda o mapa.js e fecha com uma sugestão só: pedir à profills-post um post da pauta N do boletim.",
       "files": [
         "evals/profills-boletim/files/base"
       ],
@@ -15,7 +15,7 @@
         "ARTEFATO: `linkedin-data/boletins/2026-08-24.md` existe em outputs/ e tem as seções `## Novidades`, `## Cobertura` e `## Pautas para você`, e a linha \"Anúncio feito só para campanha não aparece na página da empresa; este boletim cobre as publicações.\"",
         "ARTEFATO: em Novidades, a Alfa Envase tem só o post de 21/08 (o único que não estava na coleta de 17/08), com o link `https://www.linkedin.com/feed/update/urn:li:activity:790000000000000003/`; os posts de 12/08 e 15/08 não aparecem como novidade.",
         "ARTEFATO: a Nordic Fill Systems aparece como primeira coleta, com os 2 posts, cada um com o resumo em português do `resumo_pt` e o gancho no inglês original.",
-        "ARTEFATO: a tabela de cobertura põe cada empresa do índice num balde só: Alfa Envase e Nordic Fill Systems com novidade, Beta Rótulos sem novidade, Gama Tampas sem LinkedIn, Delta Selagem fora desta rodada; nenhum slug (`alfa-envase`, `nordic-fill`…) aparece no arquivo.",
+        "ARTEFATO: a tabela de cobertura põe cada empresa do índice num balde só: Alfa Envase e Nordic Fill Systems com novidade, Beta Rótulos sem novidade, Gama Tampas sem LinkedIn nem Instagram (sem rede para coletar), Delta Selagem fora desta rodada; nenhum slug (`alfa-envase`, `nordic-fill`…) aparece no arquivo.",
         "ARTEFATO: há exatamente 3 pautas numeradas, cada uma com o ângulo e um link de post que existe no `posts.json` da empresa citada, rotuladas como inferido; nenhuma pauta copia ou traduz frase do texto do post.",
         "A resposta final chama as empresas pelo nome, dá o caminho do boletim e termina com UMA sugestão: pedir à profills-post \"gera um post da pauta N do boletim\"; o transcript roda o `mapa.js` antes de fechar."
       ]
@@ -39,7 +39,7 @@
     {
       "id": 3,
       "prompt": "Quero ver as novidades dos concorrentes. (Contexto: quando o boletim pergunta se escreve o boletim da rodada de 10/08 ou monta uma nova, o usuário escolhe montar uma nova. Quando a escolha das empresas aparece, o usuário fica com Alfa Envase, Nordic Fill Systems e Beta Rótulos.)",
-      "expected_output": "- `selection.md` traz a rodada de 2026-08-10, toda coletada e sem boletim: `boletim.js` devolve `rodada.situacao: anterior_sem_boletim`, e a skill pergunta se escreve o boletim dessa rodada ou monta uma nova. O usuário escolhe nova.\n- Invoca a profills-radar para montar a rodada, que pergunta as empresas e grava `selection.md` com `# Seleção ativa — 2026-08-24` e as três escolhidas.\n- Com a rodada nova, roda `boletim.js`; as três já têm coleta de 24/08, então não invoca a garimpo.\n- Grava o boletim do dia com a Delta Selagem fora desta rodada (estava na seleção antiga) e Gama Tampas sem LinkedIn.",
+      "expected_output": "- `selection.md` traz a rodada de 2026-08-10, toda coletada e sem boletim: `boletim.js` devolve `rodada.situacao: anterior_sem_boletim`, e a skill pergunta se escreve o boletim dessa rodada ou monta uma nova. O usuário escolhe nova.\n- Invoca a profills-radar para montar a rodada, que pergunta as empresas e grava `selection.md` com `# Seleção ativa — 2026-08-24` e as três escolhidas.\n- Com a rodada nova, roda `boletim.js`; as três já têm coleta de 24/08, então não invoca a garimpo.\n- Grava o boletim do dia com a Delta Selagem fora desta rodada (estava na seleção antiga) e Gama Tampas sem LinkedIn nem Instagram.",
       "files": [
         "evals/profills-boletim/files/base",
         "evals/profills-boletim/files/3"
@@ -49,7 +49,7 @@
         "O transcript lê a SKILL.md da profills-radar antes de rodar o `boletim.js` pela primeira vez com a seleção nova.",
         "ARTEFATO: `linkedin-data/selection.md` em outputs/ começa com `# Seleção ativa — 2026-08-24` e lista `alfa-envase`, `nordic-fill` e `beta-rotulos`, e não lista `delta-selagem`.",
         "NEGATIVA: o transcript não lê a SKILL.md da profills-garimpo e nenhuma tool de navegador aparece como [TOOL].",
-        "ARTEFATO: `linkedin-data/boletins/2026-08-24.md` põe a Delta Selagem em Fora desta rodada e a Gama Tampas em Sem LinkedIn."
+        "ARTEFATO: `linkedin-data/boletins/2026-08-24.md` põe a Delta Selagem em Fora desta rodada e a Gama Tampas na linha de quem não tem LinkedIn nem Instagram."
       ]
     },
     {
@@ -126,6 +126,23 @@
         "A resposta final cita a Beta Rótulos pelo nome e a data de 25/08 (ou 2026-08-25), e pede que o comercial confira a data, a hora ou o fuso do computador.",
         "NEGATIVA: o transcript não lê a SKILL.md da profills-garimpo nem a da profills-radar, e nenhuma [TOOL] de navegador abre o LinkedIn.",
         "ARTEFATO: `linkedin-data/catalog/raw/linkedin/beta-rotulos/2026-08-25/meta.json` em outputs/ continua igual ao da fixture, e outputs/ não tem `linkedin-data/boletins/2026-08-24.md`."
+      ]
+    },
+    {
+      "id": 9,
+      "prompt": "O que os concorrentes fizeram essa semana?",
+      "expected_output": "- A seleção de hoje já existe e a linha da Beta Rótulos lista o LinkedIn e o Instagram (`betarotulos`); roda `boletim.js --hoje 2026-08-24`: `faltam_coletar` vazio, então não invoca a profills-garimpo nem abre navegador.\n- No JSON, a Beta Rótulos está em `com_novidade` pela conta do Instagram (o reel de 21/08, `https://www.instagram.com/p/C9bEtA0nV02/`), e a conta do LinkedIn dela está em `sem_novidade`.\n- Grava `linkedin-data/boletins/2026-08-24.md` com a Beta Rótulos nas Novidades, numa parte do Instagram: o reel de 21/08 com link do Instagram, gancho literal e os números do Instagram (412 curtidas, 37 comentários, 5 reposts, 58 compartilhamentos), e diz que no LinkedIn ela não publicou nada novo.\n- Nenhum número do boletim soma ou compara o engajamento do LinkedIn com o do Instagram.\n- A tabela de cobertura põe a Beta Rótulos em Com novidade, com a situação de cada rede (Instagram com novidade, LinkedIn sem novidade), e não a repete em Sem novidade.",
+      "files": [
+        "evals/profills-boletim/files/base",
+        "evals/profills-boletim/files/9"
+      ],
+      "expectations": [
+        "O transcript roda `boletim.js` com `--hoje 2026-08-24` e não lê nem invoca a SKILL.md da profills-garimpo; nenhuma tool de navegador aparece como [TOOL].",
+        "ARTEFATO: em `linkedin-data/boletins/2026-08-24.md`, as Novidades da Beta Rótulos trazem o post de 21/08 com o link `https://www.instagram.com/p/C9bEtA0nV02/`, dito como do Instagram, com 412 curtidas e 37 comentários; o post de 13/08 do Instagram não aparece como novidade.",
+        "ARTEFATO: o boletim diz que a Beta Rótulos não publicou nada novo no LinkedIn nesta rodada, e nenhum post do LinkedIn dela aparece como novidade.",
+        "NEGATIVA — ARTEFATO: nenhum número do boletim soma curtidas, comentários ou cadência do LinkedIn com os do Instagram (por exemplo, nada de 432 curtidas para a Beta Rótulos, que é 412 do Instagram mais 20 do LinkedIn).",
+        "ARTEFATO: a tabela de cobertura põe a Beta Rótulos só na linha Com novidade, com a situação das duas redes (Instagram com novidade, LinkedIn sem novidade); o handle `betarotulos` e o slug `beta-rotulos` não aparecem no arquivo.",
+        "A resposta final cita a novidade da Beta Rótulos dizendo que ela veio do Instagram."
       ]
     }
   ]

@@ -1,7 +1,8 @@
 // coleta.js — o que uma pasta de coleta diz, num lugar só (Node >= 18, sem dependência).
-// Uma coleta é DADOS/catalog/raw/<rede>/<conta>/<AAAA-MM-DD>/, com posts.json e meta.json. Daqui saem o
-// status, se ela terminou e se ela vira catálogo. O indice.js da profills-radar usa isto para a data do
-// último catálogo de cada empresa, e o banco.js para a coluna catalogo da tabela coleta.
+// Uma coleta é DADOS/catalog/raw/<rede>/<conta>/<AAAA-MM-DD>/, com posts.json e meta.json. Daqui saem as
+// contas de cada empresa, o status da coleta, se ela terminou e se ela vira catálogo. O indice.js da
+// profills-radar usa isto para a data do último catálogo de cada conta, o boletim.js e o mapa.js para
+// achar as coletas, e o banco.js para as tabelas conta e coleta.
 // Carregado com require(); não tem linha de comando.
 
 const fs = require('fs');
@@ -9,6 +10,15 @@ const path = require('path');
 
 // A rede é o primeiro nível de catalog/raw/. A conta é o slug no LinkedIn e o handle no Instagram.
 const REDES = ['linkedin', 'instagram'];
+
+// As contas de uma empresa do índice (a saída do indice.js), na ordem de REDES: a página no LinkedIn, que
+// é o slug da empresa, e o perfil no Instagram, que é o handle. Empresa sem as duas não tem o que coletar.
+function contasDaEmpresa(e) {
+  const contas = [];
+  if (e.linkedin !== false) contas.push({ rede: 'linkedin', conta: e.slug });
+  if (e.instagram) contas.push({ rede: 'instagram', conta: e.instagram });
+  return contas;
+}
 const STATUS_SEM_POSTS = new Set(['sem_posts', 'pagina_nao_gerenciada']);
 
 function dataValida(s) {
@@ -74,4 +84,4 @@ function ultimoCatalogo(pastaConta) {
   return null;
 }
 
-module.exports = { REDES, dataValida, lerColeta, datasDaConta, ultimoCatalogo };
+module.exports = { REDES, contasDaEmpresa, dataValida, lerColeta, datasDaConta, ultimoCatalogo };

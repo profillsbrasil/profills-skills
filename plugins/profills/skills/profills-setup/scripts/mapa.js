@@ -17,6 +17,9 @@
 const fs = require('fs');
 const path = require('path');
 const { spawnSync } = require('child_process');
+const { REDES } = require(path.join(__dirname, '..', '..', '..', 'scripts', 'coleta.js'));
+
+const NOME_DA_REDE = { linkedin: 'LinkedIn', instagram: 'Instagram' };
 
 // O índice é da profills-radar: o mapa usa a validação dela em vez de reler o formato da linha.
 const INDICE = path.join(__dirname, '..', '..', 'profills-radar', 'scripts', 'indice.js');
@@ -85,15 +88,22 @@ function contarPrioridades(empresas) {
   return contagem;
 }
 
+// A data mais recente com coleta em alguma rede, e quantas contas cada rede coletou nesse dia.
 function ultimaColeta(dados) {
-  const raiz = path.join(dados, 'catalog', 'raw', 'linkedin');
   const porData = new Map();
-  for (const slug of pastas(raiz)) {
-    for (const data of pastas(path.join(raiz, slug)).filter(dataValida)) porData.set(data, (porData.get(data) || 0) + 1);
+  for (const rede of REDES) {
+    const raiz = path.join(dados, 'catalog', 'raw', rede);
+    for (const conta of pastas(raiz)) {
+      for (const data of pastas(path.join(raiz, conta)).filter(dataValida)) {
+        const contas = porData.get(data) || {};
+        contas[rede] = (contas[rede] || 0) + 1;
+        porData.set(data, contas);
+      }
+    }
   }
   if (!porData.size) return null;
   const data = [...porData.keys()].sort().pop();
-  return { data, empresas: porData.get(data) };
+  return { data, contas: porData.get(data) };
 }
 
 function ultimoArquivo(pasta, filtro = () => true) {
@@ -132,6 +142,7 @@ function lerMapa(dados, hoje) {
       total: indice.empresas.length,
       por_prioridade: contarPrioridades(indice.empresas),
       sem_linkedin: indice.empresas.filter((e) => e.linkedin === false).length,
+      com_instagram: indice.empresas.filter((e) => e.instagram).length,
     },
     problemas_indice: indice.problemas.map(({ linha, slug, tipo, detalhe }) => ({ linha: linha ?? null, slug: slug ?? null, tipo, detalhe })),
     ultima_coleta: ultimaColeta(dados),
@@ -160,7 +171,7 @@ function linhasIndice(m) {
   if (!m.indice_existe) linhas.push('- Empresas no índice: nenhuma ainda; a `profills-radar` cria a lista.');
   else {
     const prioridades = Object.entries(m.empresas.por_prioridade).map(([p, n]) => `${p}: ${n}`).join(', ');
-    linhas.push(`- Empresas no índice: ${m.empresas.total}${prioridades ? ` (prioridade ${prioridades})` : ''}. Sem página no LinkedIn: ${m.empresas.sem_linkedin}.`);
+    linhas.push(`- Empresas no índice: ${m.empresas.total}${prioridades ? ` (prioridade ${prioridades})` : ''}. Sem página no LinkedIn: ${m.empresas.sem_linkedin}. Com Instagram: ${m.empresas.com_instagram}.`);
   }
   if (!m.problemas_indice.length) {
     if (m.indice_existe) linhas.push('- Problemas no índice: nenhum.');
@@ -202,7 +213,7 @@ function corpoDoMapa(m, data) {
     '',
     linhaVersao(m),
     ...linhasIndice(m),
-    c ? `- Última coleta: ${c.data}, com ${c.empresas} empresa(s).` : '- Última coleta: nenhuma ainda.',
+    c ? `- Última coleta: ${c.data}, com ${REDES.filter((rede) => c.contas[rede]).map((rede) => `${c.contas[rede]} conta(s) no ${NOME_DA_REDE[rede]}`).join(' e ')}.` : '- Última coleta: nenhuma ainda.',
     r ? `- Último rascunho: \`drafts/${r.arquivo}\` (${r.total} no total).` : '- Último rascunho: nenhum ainda.',
     ...(b ? [`- Último boletim: \`boletins/${b.arquivo}\`.`] : []),
     linhaVoz(m.voz),

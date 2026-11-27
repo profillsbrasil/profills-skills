@@ -4,6 +4,8 @@ O catálogo compara cada empresa contra ela mesma (outliers internos). O benchma
 
 Dados de mercado adaptados (traduzidos) do repositório MIT [coreyhaines31/marketingskills](https://github.com/coreyhaines31/marketingskills). São referência de setor, não lei — o sinal real da empresa (outliers próprios) sempre manda mais.
 
+Os números de mercado daqui são do LinkedIn B2B. Para o Instagram este arquivo não traz padrão de cadência nem âncora de taxa: o eixo de mercado de uma conta do Instagram fica vazio, dito assim, e a taxa dela compara só com a de outras contas do Instagram. A fórmula da taxa abaixo vale igual nas duas redes.
+
 ## Taxa de engajamento normalizada
 
 **Esta é a fonte única da fórmula no pipeline** — o `SKILL.md`, o `perfil-template.md`, o `dashboard.md` e o `schema-post.md` citam "taxa normalizada (`benchmark-mercado.md`)" e não repetem a conta. Quem a executa é `scripts/metricas.js`.
@@ -13,6 +15,8 @@ Likes brutos entre empresas de audiências diferentes não se comparam — 13 li
 ```
 taxa = média por post de (likes + comentários + reposts) ÷ seguidores × 100
 ```
+
+Os `compartilhamentos` do Instagram ficam fora do numerador: o LinkedIn não tem esse contador, e a fórmula é uma só.
 
 **Média por post, nunca a soma da janela.** A soma cresce com o número de posts: a mesma empresa pareceria 5× melhor numa semana de 5 posts que numa de 1 post. Quem divide por seguidores é a média.
 
