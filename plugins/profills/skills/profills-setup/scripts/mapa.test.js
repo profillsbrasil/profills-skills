@@ -15,8 +15,8 @@ const TEMPLATE = fs.readFileSync(path.join(__dirname, '..', 'assets', 'claude-da
 const FIXO = TEMPLATE.slice(TEMPLATE.indexOf('<!-- profills:fixo:inicio -->'), TEMPLATE.indexOf('<!-- profills:fixo:fim -->') + '<!-- profills:fixo:fim -->'.length);
 const HOJE = '2026-11-06';
 
-const LINHA_A = '- [Alfa](alfa.md) — `alfa` · id 1 · setor s · país BR · prioridade Alta · linkedin sim · instagram — · pesquisa 2026-11-01 · sem catálogo';
-const LINHA_B = '- [Beta](beta.md) — `beta` · id 2 · setor s · país BR · prioridade a definir · linkedin não · instagram — · pesquisa 2026-11-01 · sem catálogo';
+const LINHA_A = '- [Alfa](alfa.md) — `alfa` · id 1 · setor s · país BR · prioridade Alta · linkedin sim · instagram — · pesquisa 2026-11-01';
+const LINHA_B = '- [Beta](beta.md) — `beta` · id 2 · setor s · país BR · prioridade a definir · linkedin não · instagram — · pesquisa 2026-11-01';
 const indexCom = (linhas) => ['# Índice de referências', '', '## Empresas', '', ...linhas, ''].join('\n');
 const FICHA_VAZIA = '# Alfa\n\n## Do Not Copy\n\n<!-- vazio = ainda não perguntado. -->\n\n## Contexto\n\nfaz máquina\n';
 const FICHA_RESPONDIDA = '# Beta\n\n## Do Not Copy\n\n- o tom de piada\n\n## Contexto\n\nfaz máquina\n';

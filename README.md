@@ -15,6 +15,7 @@ O plugin acompanha o que os concorrentes e as empresas de referência postam no 
 
 - [Claude Code](https://claude.com/claude-code) instalado e com login feito.
 - Google Chrome ou um derivado (Brave, Edge, Arc, Vivaldi, Opera) com a extensão **Claude para Chrome**. A coleta usa esse navegador, com o seu login, para ler os posts do LinkedIn.
+- [Node.js](https://nodejs.org) 22.13 ou mais novo (a versão LTS do site serve). A `/profills-setup` confere a versão e mostra como instalar ou atualizar.
 
 ### Instalar
 
