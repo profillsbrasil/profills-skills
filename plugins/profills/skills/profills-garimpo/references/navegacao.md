@@ -1,5 +1,7 @@
 # Navegação — dirigindo o navegador logado
 
+Este arquivo é o do LinkedIn; o Instagram tem o seu, `navegacao-instagram.md`, que reaproveita os passos 1 e 2 e a tabela de erros daqui.
+
 A coleta usa a extensão do navegador do próprio comercial, no navegador que a `profills-navegador` selecionou, já logado no LinkedIn. Este arquivo diz **o que** fazer; **com que ferramenta** é a intenção citada em cada passo, traduzida pelo adaptador do harness que a `SKILL.md` mandou ler. A aba `/company/<slug>/posts/` **só existe logado** — deslogado ela cai em authwall total (testado). Por que o navegador real e não um scraper ou a API: `compliance.md`.
 
 ## Passos por empresa

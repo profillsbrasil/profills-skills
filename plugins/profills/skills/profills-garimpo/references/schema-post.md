@@ -1,6 +1,6 @@
 # Schema de extração por post
 
-O `posts.json` de cada empresa é um array destes objetos. Ele é o **artefato primário** — o relatório em prosa e o dashboard nascem dele. Preencha um campo com `null` quando não houver sinal claro.
+O `posts.json` de cada conta (uma empresa numa rede) é um array destes objetos. O objeto é o mesmo nas duas redes; o que muda no Instagram está na seção [Instagram](#instagram). Ele é o **artefato primário** — o relatório em prosa e o dashboard nascem dele. Preencha um campo com `null` quando não houver sinal claro.
 
 > Schema v2 (2026-08): alinhado aos campos que a coleta real produz. As coletas de 2026-07-14 são compatíveis (não têm `meta.json` nem `framework_carrossel`; trate ausência como `null`). Desde 2026-11, `idioma` é código curto em minúscula e o post fora do português ganha `resumo_pt`. Coleta anterior grava `PT`/`EN` em maiúscula e não tem `resumo_pt`: o código vale igual sem diferenciar maiúscula, e ausência é `null`.
 
@@ -33,7 +33,7 @@ O `posts.json` de cada empresa é um array destes objetos. Ele é o **artefato p
 
 ## Medido (lido da página — fato)
 
-A coluna **Fonte** diz de onde o valor sai: `JS` = retorno do script de `navegacao.md`; `leitura` = você lendo o post, sem julgamento.
+A coluna **Fonte** diz de onde o valor sai: `JS` = retorno do script do arquivo de navegação da rede (`navegacao.md` no LinkedIn, `navegacao-instagram.md` no Instagram); `leitura` = você lendo o post, sem julgamento. A coluna "Como obter" descreve o LinkedIn; o Instagram está na seção dele.
 
 | Campo | Fonte | Como obter |
 |---|---|---|
@@ -47,6 +47,39 @@ A coluna **Fonte** diz de onde o valor sai: `JS` = retorno do script de `navegac
 | `hook`, `hook_cabe_no_corte` | leitura | primeiro parágrafo literal, pela régua do `checar-formato.js` da post (até a primeira quebra dupla de linha; em post sem linha em branco, a primeira linha); cabe se termina antes do corte "ver mais" — o limite numérico é o `hook_max` de `../profills-post/scripts/checar-formato.js`, fonte única |
 | `cta` | leitura | a chamada final, se houver (`null` se não) |
 | `artigo_titulo` | leitura | título do card, só quando `formato` é `artigo` (`null` fora disso) |
+
+## Instagram
+
+Um post do Instagram tem os mesmos campos, lidos pelo bloco [Post (JS)](navegacao-instagram.md#post-js), com estas diferenças:
+
+| Campo | No Instagram |
+|---|---|
+| `post_id`, `url` | `ig:<código>` e `https://www.instagram.com/p/<código>/`, com o código sem os espaços do retorno. O `url` usa `/p/` também no reel |
+| `data` | o `dia` do retorno, tirado do `time[datetime]` do post |
+| `texto` | a legenda inteira, os `legenda_pedacos` juntos |
+| `formato` | `imagem`, `carrossel`, `reel` ou `video`, do retorno (`taxonomias.md`) |
+| `hashtags` | as do retorno, só as da legenda; hashtag de comentário não entra |
+| `link_externo` | `null`: a legenda do Instagram não tem link clicável ("link na bio" é texto) |
+| `artigo_titulo` | `null` |
+| `hook` | a primeira linha da legenda |
+| `hook_cabe_no_corte` | `null`: a régua do corte da legenda do Instagram ainda não existe, e o `metricas.js` não cobra o campo nesta rede |
+| `engajamento` | `likes`, `comentarios`, `reposts` e `compartilhamentos` do retorno. `reposts` é o "Repostar" do Instagram; `compartilhamentos` é o "Compartilhar" (envio por mensagem ou para fora), que o LinkedIn não mostra e por isso não existe lá. O `metricas.js` deixa `compartilhamentos` fora do total e da taxa, para a conta ser a mesma nas duas redes |
+| `screenshot` | `screenshots/post-<código>.png` ou `.jpg` |
+
+`comentarios` é o número da página, que conta as respostas. Quem comentou e o que escreveu não entram no catálogo.
+
+Exemplo, só os campos que mudam:
+
+```json
+{
+  "post_id": "ig:DgNRXYmBz0x",
+  "url": "https://www.instagram.com/p/DgNRXYmBz0x/",
+  "formato": "reel",
+  "link_externo": null,
+  "hook_cabe_no_corte": null,
+  "engajamento": { "likes": 47, "comentarios": 2, "reposts": 0, "compartilhamentos": 7 }
+}
+```
 
 ## Inferido (leitura sua — hipótese)
 
@@ -84,7 +117,7 @@ O discriminador é a **janela** fixada no passo 3 do `SKILL.md`, não a contagem
 
 ## Meta da coleta — `meta.json`
 
-Ao lado de `posts.json`, um `meta.json` com o contexto da página no dia:
+Ao lado de `posts.json`, um `meta.json` com o contexto da página no dia. É o mesmo nas duas redes; no Instagram ele fica em `raw/instagram/<handle>/<data>/` e o `slug` continua sendo o da empresa, que liga a conta à ficha:
 
 ```json
 {
@@ -101,7 +134,7 @@ Ao lado de `posts.json`, um `meta.json` com o contexto da página no dia:
 
 `concluida` é `false` do momento em que a pasta do dia nasce até a empresa terminar, e `true` depois (passo 5 do `SKILL.md`). Coleta com `false` parou no meio: ela não conta como coletada na rodada, não serve de base de comparação no boletim e não vira catálogo. As coletas de 2026-07-14 não têm `meta.json`; as da versão 2 da pasta ganharam `"concluida": true` na migração da `profills-setup`.
 
-`seguidores` vem do topo da página da empresa ("12.400 seguidores"), pelo retorno do JS de `navegacao.md`, e é o denominador da **taxa de engajamento normalizada** (`benchmark-mercado.md`) — sem ele, comparar likes brutos entre uma página de 30k e uma de 1,9k seguidores é enganoso. O LinkedIn arredonda o número em página maior ("6 mil", "52 mil", "1,1 mi"): grave o valor convertido (`6000`) com `"seguidores_arredondado": true`, e diga no perfil que a taxa dessa empresa é aproximada. `0` não é um valor válido aqui: o `metricas.js` avisa ("taxa impossível") e devolve `taxa_normalizada: null` em vez de dividir por zero.
+`seguidores` vem do topo da página da empresa ("12.400 seguidores"), pelo retorno do JS do arquivo de navegação da rede (no Instagram, o bloco Perfil), e é o denominador da **taxa de engajamento normalizada** (`benchmark-mercado.md`) daquela rede — sem ele, comparar likes brutos entre uma página de 30k e uma de 1,9k seguidores é enganoso. O LinkedIn arredonda o número em página maior ("6 mil", "52 mil", "1,1 mi"): grave o valor convertido (`6000`) com `"seguidores_arredondado": true`, e diga no perfil que a taxa dessa empresa é aproximada. `0` não é um valor válido aqui: o `metricas.js` avisa ("taxa impossível") e devolve `taxa_normalizada: null` em vez de dividir por zero.
 
 `status` é como a coleta conta o que aconteceu, e é o que o `_summary.md`, o dashboard e a `profills-post` leem para saber se há dado:
 
@@ -109,8 +142,8 @@ Ao lado de `posts.json`, um `meta.json` com o contexto da página no dia:
 |---|---|---|
 | `ok` | a empresa tem posts na janela | vira `catalog/<slug>.md` normalmente |
 | `sem_posts` | a página existe e não postou na janela | silêncio é sinal: entra no `_summary.md`, sem perfil |
-| `pagina_nao_gerenciada` | a página não tem aba de publicações | idem |
-| `erro_navegacao` | slug e id falharam, sessão caiu, coleta interrompida | idem, e o usuário fica sabendo no fim da rodada |
+| `pagina_nao_gerenciada` | no LinkedIn, a página não tem aba de publicações; no Instagram, o perfil é privado | idem |
+| `erro_navegacao` | slug e id (ou o handle) falharam, sessão caiu, coleta interrompida | idem, e o usuário fica sabendo no fim da rodada |
 
 Todo `status` diferente de `ok` vem com `"nota"`: uma frase em português dizendo o que aconteceu, que é o texto que aparece no `_summary.md`.
 

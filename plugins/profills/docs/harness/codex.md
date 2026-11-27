@@ -39,7 +39,7 @@ Medição que sustenta os "verificado" do navegador e da pergunta: Codex Desktop
 
 Login, captcha ou "atividade incomum" no meio da coleta: pare e peça ao comercial no chat, como no Claude.
 
-Os contornos dos blocos JS da `navegacao.md` (o `_` a cada 4 dígitos no id e o texto em pedaços de 850) existem por causa do Claude in Chrome. Aqui eles não atrapalham: tire os `_` do id e junte os pedaços do mesmo jeito. Se o retorno do `evaluate` também corta texto longo não foi medido; a soma dos pedaços contra `texto_chars` mostra quando cortou.
+Os contornos dos blocos JS da `navegacao.md` e da `navegacao-instagram.md` (o `_` a cada 4 dígitos no id, o espaço a cada 4 caracteres no código do post do Instagram e o texto em pedaços de 850) existem por causa do Claude in Chrome. Aqui eles não atrapalham: tire os `_` e os espaços e junte os pedaços do mesmo jeito. Os blocos do Instagram não guardam estado nem clicam, e o `extracao.test.js` os roda no ambiente com as restrições daqui; numa página real do Instagram no Codex Desktop eles não foram rodados; o que foi medido no Codex Desktop é que 15 comentários carregam ao abrir um post. Se o retorno do `evaluate` também corta texto longo não foi medido; a soma dos pedaços contra `texto_chars` mostra quando cortou.
 
 ## Plugin
 
