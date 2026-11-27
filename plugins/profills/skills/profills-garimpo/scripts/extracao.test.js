@@ -1,9 +1,10 @@
 #!/usr/bin/env node
-// extracao.test.js: roda os dois blocos JS de references/navegacao.md ("## Ordenar por Recentes (JS)" e
-// "## Extração (JS)") contra um DOM de fixture, em dois ambientes: o comum (escopo da página, como no Claude in
-// Chrome) e o do Codex Desktop (escopo só de leitura).
+// extracao.test.js: roda os blocos JS de references/navegacao.md ("## Ordenar por Recentes (JS)" e
+// "## Extração (JS)", do LinkedIn) e de references/navegacao-instagram.md ("## Perfil (JS)" e "## Post (JS)")
+// contra um DOM de fixture, em dois ambientes: o comum (escopo da página, como no Claude in Chrome) e o do
+// Codex Desktop (escopo só de leitura).
 // Uso: node plugins/profills/skills/profills-garimpo/scripts/extracao.test.js [navegacao.md]   (Node >= 18, sem dependência)
-// O DOM é sintético, montado a partir da descrição das duas estruturas no navegacao.md, não copiado de página real.
+// O DOM é sintético, montado a partir dos fatos de cada arquivo de navegação, não copiado de página real.
 // O innerText aqui é aproximado: elemento de bloco quebra linha, inline emenda, <br> quebra linha.
 
 const assert = require('assert');
@@ -12,8 +13,9 @@ const path = require('path');
 const vm = require('vm');
 
 const NAVEGACAO = process.argv[2] || path.join(__dirname, '..', 'references', 'navegacao.md');
+const NAVEGACAO_IG = path.join(path.dirname(NAVEGACAO), 'navegacao-instagram.md');
 
-const BLOCO = new Set(['body', 'div', 'p', 'li', 'ul', 'section', 'article', 'header', 'footer']);
+const BLOCO = new Set(['body', 'main', 'div', 'p', 'li', 'ul', 'section', 'article', 'header', 'footer']);
 const QUEBRA = '\u0000';
 
 class El {
@@ -28,6 +30,7 @@ class El {
     });
   }
 
+  get tagName() { return this.tag.toUpperCase(); }
   get children() { return this.nodes.filter((n) => n instanceof El); }
   get textContent() { return this.nodes.map((n) => (n instanceof El ? n.textContent : n)).join(''); }
   get innerText() {
@@ -177,10 +180,10 @@ function paginaDataUrn() {
   };
 }
 
-function bloco(titulo) {
-  const secao = fs.readFileSync(NAVEGACAO, 'utf8').split(/^## /m).find((s) => s.startsWith(`${titulo}\n`));
+function bloco(titulo, arquivo = NAVEGACAO) {
+  const secao = fs.readFileSync(arquivo, 'utf8').split(/^## /m).find((s) => s.startsWith(`${titulo}\n`));
   const m = secao && secao.match(/```js\n([\s\S]*?)\n```/);
-  if (!m) throw new Error(`bloco \`\`\`js de "## ${titulo}" não achado em navegacao.md`);
+  if (!m) throw new Error(`bloco \`\`\`js de "## ${titulo}" não achado em ${path.basename(arquivo)}`);
   return m[1];
 }
 
@@ -201,10 +204,13 @@ const AMBIENTES = {
 // As esperas dos blocos não importam no DOM de fixture, que muda na hora do clique.
 const semEspera = (fn) => { setImmediate(fn); };
 
-async function roda(js, body, nome) {
+// `head` leva as meta tags (og:url, og:description) que os blocos do Instagram leem.
+async function roda(js, body, nome, head = null) {
   const amb = AMBIENTES[nome];
   const window = amb.window();
-  const ctx = vm.createContext({ document: { body, querySelectorAll: (s) => body.querySelectorAll(s) }, window, setTimeout: semEspera });
+  const raiz = h('html', {}, head, body);
+  const document = { body, querySelectorAll: (s) => raiz.querySelectorAll(s), querySelector: (s) => raiz.querySelector(s) };
+  const ctx = vm.createContext({ document, window, setTimeout: semEspera });
   if (amb.soGlobaisDoCodex) {
     vm.runInContext(
       `(() => { const fica = new Set(${JSON.stringify(GLOBAIS_DO_CODEX)});
@@ -225,11 +231,13 @@ const comTextos = (lista) => {
 
 const extrai = (body, ambiente = 'comum', textos = []) => roda(textos.length ? comTextos(textos) : bloco('Extração (JS)'), body, ambiente);
 
-// Os outros blocos ```js do navegacao.md não têm DOM de fixture: confere-se ao menos que não citam o que falta lá.
-const FALTAM_NO_CODEX = /\b(parseFloat|parseInt|BigInt|Uint8Array|atob|globalThis|Boolean)\b|\b\d+n\b/;
-for (const [, js] of fs.readFileSync(NAVEGACAO, 'utf8').matchAll(/```js\n([\s\S]*?)\n```/g)) {
-  const achado = js.match(FALTAM_NO_CODEX);
-  assert.ok(!achado, `bloco js do navegacao.md usa ${achado && achado[0]}, que o escopo do Codex Desktop não tem`);
+// Todo bloco ```js dos dois arquivos de navegação, com fixture ou sem: confere-se ao menos que não cita o que falta lá.
+const FALTAM_NO_CODEX = /\b(parseFloat|parseInt|BigInt|Uint8Array|atob|globalThis|Boolean|location)\b|\b\d+n\b/;
+for (const arquivo of [NAVEGACAO, NAVEGACAO_IG]) {
+  for (const [, js] of fs.readFileSync(arquivo, 'utf8').matchAll(/```js\n([\s\S]*?)\n```/g)) {
+    const achado = js.match(FALTAM_NO_CODEX);
+    assert.ok(!achado, `bloco js do ${path.basename(arquivo)} usa ${achado && achado[0]}, que o escopo do Codex Desktop não tem`);
+  }
 }
 
 function paginaOrdenacao(rotulo, ambiente) {
@@ -413,6 +421,159 @@ caso('codex: ordenação sem click no elemento pede os dois cliques à ferrament
   assert.strictEqual(passos[2].ok, true);
   assert.strictEqual(passos[2].depois, 'Classificar por: Recentes');
   assert.strictEqual(gatilho.innerText, 'Classificar por: Recentes');
+});
+
+// ---------- Instagram: fixtures montadas dos fatos de navegacao-instagram.md ----------
+
+const ogs = (url, descricao) => h('head', {},
+  h('meta', { property: 'og:url', content: url }),
+  descricao === undefined ? null : h('meta', { property: 'og:description', content: descricao }));
+
+function itemDaGrade(caminho, { icone = null, alt = '' } = {}) {
+  return h('a', { href: caminho }, h('div', {}, h('img', { alt }), icone ? h('svg', { 'aria-label': icone }) : null));
+}
+
+function perfilIg() {
+  const head = ogs('https://www.instagram.com/empresa.exemplo/');
+  const body = h('body', {}, h('main', {},
+    h('header', {},
+      h('div', {}, 'empresa.exemplo'), h('div', {}, 'Empresa Exemplo'),
+      h('ul', {}, h('li', {}, '1.234 posts'), h('li', {}, '12,5 mil seguidores'), h('li', {}, '310 seguindo')),
+      h('div', {}, 'Máquinas de envase desde 1990')),
+    h('div', {},
+      itemDaGrade('/empresa.exemplo/p/AAAAfixado1/', { icone: 'Ícone de post fixado', alt: 'Photo by Empresa Exemplo on October 2, 2026. Pode ser uma imagem de texto.' }),
+      itemDaGrade('/empresa.exemplo/reel/BBBB_reel-2/', { icone: 'Clipe', alt: 'Conheça a linha nova de envase' }),
+      itemDaGrade('/empresa.exemplo/reel/BBBB_reel-2/', { icone: 'Clipe', alt: 'Conheça a linha nova de envase' }),
+      itemDaGrade('/empresa.exemplo/p/CCCCcarros3/', { icone: 'Carrossel', alt: 'Photo shared by Empresa Exemplo on November 20, 2026. Pode ser uma imagem.' }),
+      itemDaGrade('/empresa.exemplo/p/DDDDimagem4/', { alt: 'Photo by Empresa Exemplo on November 9, 2026.' }))));
+  return { head, body };
+}
+
+const LEGENDA = 'Linha nova de envase em operação! 🚀\nVeja o vídeo até o fim.\n#envase #industria';
+
+function barraIg(contas) {
+  const icone = (nome) => h('div', { role: 'button' }, h('div', {}, h('span', {}, h('svg', { 'aria-label': nome }))));
+  const numero = (nome) => (contas[nome] === undefined ? null : h('span', { role: 'button' }, contas[nome]));
+  return h('section', {},
+    h('div', {},
+      h('span', {}, icone('Curtir')), numero('Curtir'),
+      h('span', {}, icone('Comentar')), numero('Comentar'),
+      icone('Repostar'), numero('Repostar'),
+      icone('Compartilhar'), numero('Compartilhar')),
+    h('div', {}, icone('Salvar')));
+}
+
+function postIg({ caminho = 'reel', codigo = 'EEEEpost-_5', descricao, legenda = LEGENDA, contas, carrossel = false, video = caminho === 'reel', comentarios = 2 }) {
+  const head = ogs(`https://www.instagram.com/empresa.exemplo/${caminho}/${codigo}/`,
+    descricao === undefined ? `3,959 likes, 27 comments - empresa.exemplo no November 26, 2026: "${legenda}".` : descricao);
+  const linhas = legenda.split('\n');
+  const body = h('body', {}, h('main', {},
+    h('div', {}, video ? h('video', {}) : h('img', { alt: '' }), carrossel ? h('button', { 'aria-label': 'Avançar' }) : null),
+    h('div', {},
+      h('div', {}, h('a', { href: '/empresa.exemplo/' }, 'empresa.exemplo'), h('span', {}, ' '), h('span', {}, h('time', { datetime: '2026-11-26T14:01:05.000Z' }, '1 d'))),
+      h('span', {}, ...linhas.flatMap((l, i) => (i ? [h('br', {}), l] : [l])))),
+    ...Array.from({ length: comentarios }, (_, k) => h('div', {},
+      h('a', { href: `/pessoa${k}/` }, `pessoa${k}`), ' ',
+      h('a', { href: `/p/${codigo}/c/${1000 + k}/` }, h('time', { datetime: '2026-11-26T17:38:18.000Z' }, '23 h')),
+      h('span', {}, 'Comentário com #hashtag de outra pessoa'))),
+    contas === null ? null : barraIg(contas || { Curtir: '4 mil', Comentar: '27', Compartilhar: '41' }),
+    h('div', {}, h('a', { href: `/empresa.exemplo/${caminho}/${codigo}/` }, h('time', { datetime: '2026-11-26T14:01:25.000Z' }, 'há 1 dia'))),
+    h('div', {}, h('div', {}, 'Mais posts de empresa.exemplo'),
+      itemDaGrade('/empresa.exemplo/p/FFFFoutro06/', { icone: 'Carrossel' }))));
+  return { head, body };
+}
+
+const perfil = ({ head, body }, amb) => roda(bloco('Perfil (JS)', NAVEGACAO_IG), body, amb, head).then((r) => r.retorno);
+const post = ({ head, body }, amb) => roda(bloco('Post (JS)', NAVEGACAO_IG), body, amb, head).then((r) => r.retorno);
+
+nosDois('instagram perfil: seguidores, total de posts e a grade sem repetir item', async (amb) => {
+  const r = await perfil(perfilIg(), amb);
+  assert.deepStrictEqual(
+    { pagina: r.pagina, handle: r.handle, seguidores: r.seguidores, arredondado: r.seguidores_arredondado, total: r.posts_no_perfil, avisos: r.avisos },
+    { pagina: 'perfil', handle: 'empresa.exemplo', seguidores: 12500, arredondado: true, total: 1234, avisos: [] },
+  );
+  assert.deepStrictEqual(r.itens.map((i) => [i.codigo, i.formato, i.fixado, i.dia_alt]), [
+    ['AAAA fixa do1', null, true, '2026-10-02'],
+    ['BBBB _ree l-2', 'reel', false, null],
+    ['CCCC carr os3', 'carrossel', false, '2026-11-20'],
+    ['DDDD imag em4', 'imagem', false, '2026-11-09'],
+  ]);
+  assert.ok(r.itens.every((i) => i.dono === 'empresa.exemplo'));
+});
+
+nosDois('instagram perfil: perfil sem posts diz sem_posts, sem aviso', async (amb) => {
+  const head = ogs('https://www.instagram.com/empresa.nova/');
+  const body = h('body', {}, h('main', {},
+    h('header', {}, h('div', {}, 'empresa.nova'), h('ul', {}, h('li', {}, '0 posts'), h('li', {}, '35 seguidores'))),
+    h('div', {}, 'Ainda não há nenhum post')));
+  const r = await perfil({ head, body }, amb);
+  assert.deepStrictEqual(
+    { seguidores: r.seguidores, arredondado: r.seguidores_arredondado, total: r.posts_no_perfil, sem_posts: r.sem_posts, itens: r.itens, avisos: r.avisos },
+    { seguidores: 35, arredondado: false, total: 0, sem_posts: true, itens: [], avisos: [] },
+  );
+});
+
+nosDois('instagram perfil: fora de um perfil devolve pagina outra', async (amb) => {
+  const r = await perfil({ head: null, body: h('body', {}, h('main', {}, h('div', {}, 'Entrar'))) }, amb);
+  assert.strictEqual(r.pagina, 'outra');
+  assert.strictEqual(r.avisos.length, 1);
+});
+
+nosDois('instagram post: reel lido pela página /p/, com data do link do post e legenda inteira', async (amb) => {
+  const r = await post(postIg({}), amb);
+  assert.deepStrictEqual(
+    { pagina: r.pagina, codigo: r.codigo, dono: r.dono, data: r.data, formato: r.formato, legenda: r.legenda_pedacos.join(''), chars: r.legenda_chars, hashtags: r.hashtags, avisos: r.avisos },
+    { pagina: 'post', codigo: 'EEEE post -_5', dono: 'empresa.exemplo', data: '2026-11-26T14:01:25.000Z', formato: 'reel', legenda: LEGENDA, chars: LEGENDA.length, hashtags: ['#envase', '#industria'], avisos: [] },
+  );
+});
+
+nosDois('instagram post: número exato da og:description vence o arredondado da barra, e cada número fica com o ícone dele', async (amb) => {
+  const r = await post(postIg({}), amb);
+  assert.deepStrictEqual(
+    { likes: r.likes, comentarios: r.comentarios, reposts: r.reposts, compartilhamentos: r.compartilhamentos, arredondados: r.arredondados, carregados: r.comentarios_carregados },
+    { likes: 3959, comentarios: 27, reposts: 0, compartilhamentos: 41, arredondados: [], carregados: 2 },
+  );
+});
+
+nosDois('instagram post: carrossel com legenda longa sai em pedaços, e número arredondado nas duas fontes fica marcado', async (amb) => {
+  const longa = Array.from({ length: 30 }, (_, k) => `Linha ${k + 1} da legenda sobre a dosadora nova.`).join('\n');
+  const pagina = postIg({
+    caminho: 'p', codigo: 'GGGGcarros7', legenda: longa, carrossel: true, video: false, comentarios: 0,
+    descricao: `24K likes, 108 comments - empresa.exemplo no November 26, 2026: "${longa}".`,
+    contas: { Curtir: '24 mil', Comentar: '108', Repostar: '9' },
+  });
+  const r = await post(pagina, amb);
+  assert.strictEqual(r.formato, 'carrossel');
+  assert.ok(r.legenda_pedacos.length > 1 && r.legenda_pedacos.every((pd) => pd.length <= 850));
+  assert.strictEqual(r.legenda_pedacos.join(''), longa);
+  assert.deepStrictEqual([r.likes, r.comentarios, r.reposts, r.compartilhamentos, r.arredondados], [24000, 108, 9, 0, ['likes']]);
+  assert.deepStrictEqual(r.avisos, []);
+});
+
+nosDois('instagram post: sem a barra, curtidas e comentários saem da og:description e o resto vira aviso, não 0', async (amb) => {
+  const r = await post(postIg({ caminho: 'p', video: false, contas: null }), amb);
+  assert.strictEqual(r.formato, 'imagem');
+  assert.deepStrictEqual([r.likes, r.comentarios, r.reposts, r.compartilhamentos], [3959, 27, null, null]);
+  assert.deepStrictEqual(r.avisos, [
+    'barra de contadores não achada: leia curtidas e comentários na tela',
+    'contador de reposts não achado: leia na tela',
+    'contador de compartilhamentos não achado: leia na tela',
+  ]);
+});
+
+nosDois('instagram post: legenda da página diferente da og:description vira aviso', async (amb) => {
+  const r = await post(postIg({ descricao: '10 likes, 0 comments - empresa.exemplo no November 26, 2026: "Outra legenda".' }), amb);
+  assert.ok(r.avisos.some((a) => /^legenda da página \(\d+ caracteres\) difere da og:description \(13\)/.test(a)), JSON.stringify(r.avisos));
+});
+
+nosDois('instagram post: post sem legenda não pega texto de comentário nem dos contadores', async (amb) => {
+  const r = await post(postIg({ legenda: '' }), amb);
+  assert.deepStrictEqual([r.legenda_chars, r.legenda_pedacos, r.hashtags, r.avisos], [0, [], [], []]);
+});
+
+nosDois('instagram post: fora de um post devolve pagina outra', async (amb) => {
+  const r = await post({ head: ogs('https://www.instagram.com/empresa.exemplo/'), body: h('body', {}, h('main', {})) }, amb);
+  assert.strictEqual(r.pagina, 'outra');
 });
 
 (async () => {
