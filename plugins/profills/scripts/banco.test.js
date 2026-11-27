@@ -119,15 +119,16 @@ caso('cada coleta guarda status, concluída e catálogo pela regra de coleta.js'
   );
 });
 
-caso('o último catálogo do banco é o mesmo da rodada do indice.js', () => {
+caso('o último catálogo de cada conta no banco é o mesmo da rodada do indice.js, nas duas redes', () => {
   const dados = montarDados();
   const doBanco = linhasDe(
     dados,
-    "SELECT e.slug, (SELECT max(co.data) FROM coleta co JOIN conta ct ON ct.id = co.conta_id WHERE ct.empresa_id = e.id AND ct.rede = 'linkedin' AND co.catalogo = 1) FROM empresa e ORDER BY e.slug",
+    'SELECT e.slug, ct.rede, (SELECT max(co.data) FROM coleta co WHERE co.conta_id = ct.id AND co.catalogo = 1) FROM conta ct JOIN empresa e ON e.id = ct.empresa_id ORDER BY 1, 2',
   );
   const v = JSON.parse(spawnSync(process.execPath, [INDICE, path.join(dados, 'refs'), '--hoje', HOJE], { encoding: 'utf8' }).stdout);
-  assert.deepStrictEqual(doBanco, v.empresas.map((e) => [e.slug, e.catalogo]).sort());
-  assert.deepStrictEqual(doBanco, [['alfa', '2026-11-01'], ['beta', null], ['gama', null]]);
+  const doIndice = v.empresas.flatMap((e) => e.contas.map((c) => [e.slug, c.rede, c.catalogo])).sort((a, b) => `${a[0]} ${a[1]}`.localeCompare(`${b[0]} ${b[1]}`));
+  assert.deepStrictEqual(doBanco, doIndice);
+  assert.deepStrictEqual(doBanco, [['alfa', 'instagram', '2026-11-02'], ['alfa', 'linkedin', '2026-11-01'], ['beta', 'linkedin', null], ['gama', 'instagram', null]]);
 });
 
 caso('post visto em duas coletas: um post, uma métrica por coleta, campos da coleta mais nova', () => {
