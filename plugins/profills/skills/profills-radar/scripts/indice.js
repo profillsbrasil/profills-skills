@@ -2,8 +2,9 @@
 // indice.js — a conta do índice de referências da profills-radar (Node >= 18, sem dependência).
 // Faz três coisas sobre DADOS/refs: valida o INDEX.md linha a linha (campos por chave, id, datas,
 // existência da ficha, fichas órfãs, pesquisa vencida em 60 dias) e monta a rodada por camadas de
-// prioridade (CAMADAS, até LIMITE_POR_RODADA empresas), com a data do último catálogo de cada empresa
-// tirada das coletas em catalog/raw/linkedin/ (a linha não guarda essa data); reconstrói o INDEX.md a
+// prioridade (CAMADAS), por conta em cada rede (a página no LinkedIn e o perfil no Instagram), até
+// LIMITE_PAGINAS_POR_RODADA páginas, com a data do último catálogo de cada conta tirada das coletas em
+// catalog/raw/<rede>/<conta>/ (a linha não guarda essa data); reconstrói o INDEX.md a
 // partir das fichas quando ele sumiu (--reconstruir; o alerta ⚠ não é recuperável do disco); e procura
 // ficha parecida antes de criar uma nova (--procurar, sem acento e por distância, também pelo grupo e
 // pelos nomes relacionados).
@@ -18,7 +19,7 @@ const fs = require('fs');
 const path = require('path');
 
 // O que uma coleta diz (e quando ela vira catálogo) é regra compartilhada do plugin.
-const { ultimoCatalogo } = require(path.join(__dirname, '..', '..', '..', 'scripts', 'coleta.js'));
+const { contasDaEmpresa, ultimoCatalogo } = require(path.join(__dirname, '..', '..', '..', 'scripts', 'coleta.js'));
 
 // ---------- utilidades ----------
 
@@ -179,6 +180,7 @@ const RE_LINHA = /^-\s+\[([^\]]+)\]\(([^)]+)\)\s+—\s+`([^`]*)`\s+·\s+(.+)$/;
 // Toda linha de lista do INDEX.md é candidata a linha de empresa: linha solta vira problema, não sumiço.
 const RE_ITEM = /^-\s+/;
 const SLUG_VALIDO = /^[A-Za-z0-9_-]+$/;
+const REDE_POR_EXTENSO = { linkedin: 'LinkedIn', instagram: 'Instagram' };
 // O handle do Instagram sem o @: letras, números, ponto e _, até 30 caracteres.
 const HANDLE_INSTAGRAM = /^[A-Za-z0-9._]{1,30}$/;
 const PRIORIDADES = ['Alta', 'Média', 'Adjacente', 'Validação', 'a definir'];
@@ -404,41 +406,55 @@ const CAMADAS = [
   { prioridade: 'Validação', intervalo_dias: 28 },
   { prioridade: 'a definir', intervalo_dias: null },
 ];
-// Cada empresa custa algumas páginas no navegador logado; 12 já somam as "dezenas de páginas, não
-// centenas" por sessão de profills-garimpo/references/compliance.md.
-const LIMITE_POR_RODADA = 12;
+// Quantas páginas cada conta custa na janela padrão: no LinkedIn, a aba Publicações com a troca para
+// Recentes e poucas rolagens; no Instagram, o perfil e um post por página, até 5
+// (profills-garimpo/references/navegacao-instagram.md).
+const PAGINAS_POR_CONTA = { linkedin: 3, instagram: 6 };
+// As "dezenas de páginas, não centenas" por sessão de profills-garimpo/references/compliance.md, contadas
+// nas duas redes: 36 são as 12 empresas só com LinkedIn de antes do Instagram.
+const LIMITE_PAGINAS_POR_RODADA = 36;
 
-// Cada empresa cai em exatamente um balde. Ordem: camada, depois o catálogo mais antigo (nunca primeiro).
+// Cada empresa cai em exatamente um balde. Entra devida quando alguma conta dela venceu o intervalo da
+// camada, e leva para a rodada só as contas vencidas. Ordem: camada, depois a conta com o catálogo mais
+// antigo (nunca catalogada primeiro). O limite é de páginas e respeita a ordem: a primeira empresa que não
+// cabe e todas depois dela vão para fora_do_limite.
 function montarRodada(empresas, hoje) {
-  const rodada = { limite_por_rodada: LIMITE_POR_RODADA, devidas: [], fora_do_limite: [], em_dia: [], sem_linkedin: [], a_definir: [] };
-  const ordem = (e) => CAMADAS.findIndex((c) => c.prioridade === (e.prioridade || 'a definir'));
+  const rodada = { limite_paginas: LIMITE_PAGINAS_POR_RODADA, paginas: 0, devidas: [], fora_do_limite: [], em_dia: [], sem_rede: [], a_definir: [] };
+  const ordem = (e) => CAMADAS.findIndex((c) => c.prioridade === e.prioridade);
+  const maisAntigo = (e) => e.contas.map((c) => c.catalogo || '').sort()[0] || '';
   const itens = empresas
     .map((e) => ({
       nome: e.nome,
       slug: e.slug,
       prioridade: e.prioridade || 'a definir',
-      catalogo: e.catalogo,
-      dias_desde_catalogo: e.catalogo ? diasEntre(e.catalogo, hoje) : null,
-      linkedin: e.linkedin,
+      contas: e.contas.map((c) => ({ ...c, dias_desde_catalogo: c.catalogo ? diasEntre(c.catalogo, hoje) : null })),
     }))
-    .sort((a, b) => ordem(a) - ordem(b) || (a.catalogo || '').localeCompare(b.catalogo || ''));
-  const devidas = [];
-  for (const { linkedin, ...item } of itens) {
+    .sort((a, b) => ordem(a) - ordem(b) || maisAntigo(a).localeCompare(maisAntigo(b)));
+  let cheia = false;
+  for (const item of itens) {
     const camada = CAMADAS[ordem(item)];
-    if (linkedin === false) rodada.sem_linkedin.push(item);
+    if (!item.contas.length) rodada.sem_rede.push(item);
     else if (camada.intervalo_dias === null) rodada.a_definir.push(item);
-    // Catálogo com data depois de hoje é data errada: a empresa conta como devida, e o examinar avisa.
-    else if (item.dias_desde_catalogo === null || item.dias_desde_catalogo < 0 || item.dias_desde_catalogo >= camada.intervalo_dias) devidas.push(item);
-    else rodada.em_dia.push(item);
+    else {
+      // Catálogo com data depois de hoje é data errada: a conta conta como vencida, e o examinar avisa.
+      const vencidas = item.contas.filter((c) => c.dias_desde_catalogo === null || c.dias_desde_catalogo < 0 || c.dias_desde_catalogo >= camada.intervalo_dias);
+      const paginas = vencidas.reduce((soma, c) => soma + PAGINAS_POR_CONTA[c.rede], 0);
+      if (!vencidas.length) rodada.em_dia.push(item);
+      else if (cheia || rodada.paginas + paginas > LIMITE_PAGINAS_POR_RODADA) {
+        cheia = true;
+        rodada.fora_do_limite.push({ ...item, contas: vencidas, paginas });
+      } else {
+        rodada.paginas += paginas;
+        rodada.devidas.push({ ...item, contas: vencidas, paginas });
+      }
+    }
   }
-  rodada.devidas = devidas.slice(0, LIMITE_POR_RODADA);
-  rodada.fora_do_limite = devidas.slice(LIMITE_POR_RODADA);
   return rodada;
 }
 
 // Lê o índice e devolve a saída da validação, sem imprimir: o importar.js chama isto direto.
-// O catálogo de cada empresa é a data da última coleta que virou catálogo em <raizCatalogo>/<slug>/.
-function examinar(pasta, hoje, raizCatalogo = path.resolve(pasta, '..', 'catalog', 'raw', 'linkedin')) {
+// O catálogo de cada conta é a data da última coleta que virou catálogo em <raizCatalogo>/<rede>/<conta>/.
+function examinar(pasta, hoje, raizCatalogo = path.resolve(pasta, '..', 'catalog', 'raw')) {
   const saida = {
     acao: 'validar',
     pasta,
@@ -506,14 +522,19 @@ function examinar(pasta, hoje, raizCatalogo = path.resolve(pasta, '..', 'catalog
     const dias = e.pesquisa ? diasEntre(e.pesquisa, hoje) : null;
     const vencida = dias !== null && dias > 60;
     if (vencida) saida.pesquisa_vencida.push(e.slug);
-    e.catalogo = e.linkedin === false || !SLUG_VALIDO.test(e.slug) ? null : ultimoCatalogo(path.join(raizCatalogo, e.slug));
-    if (e.catalogo && diasEntre(e.catalogo, hoje) < 0) {
+    const contas = contasDaEmpresa(e).map(({ rede, conta }) => {
+      const valida = rede === 'linkedin' ? SLUG_VALIDO.test(conta) : HANDLE_INSTAGRAM.test(conta);
+      return { rede, conta, catalogo: valida ? ultimoCatalogo(path.join(raizCatalogo, rede, conta)) : null };
+    });
+    for (const c of contas.filter((c) => c.catalogo && diasEntre(c.catalogo, hoje) < 0)) {
       saida.avisos.push({
         tipo: 'catalogo_no_futuro',
         linha: numero,
         slug: e.slug,
-        catalogo: e.catalogo,
-        detalhe: `o último catálogo de ${e.nome} está numa pasta de coleta de ${e.catalogo}, depois de hoje (${hoje}): o relógio ou o fuso do computador estava adiantado quando ela foi gravada; ela entra na rodada como devida até a pasta ser corrigida`,
+        rede: c.rede,
+        conta: c.conta,
+        catalogo: c.catalogo,
+        detalhe: `o último catálogo de ${e.nome} no ${REDE_POR_EXTENSO[c.rede]} está numa pasta de coleta de ${c.catalogo}, depois de hoje (${hoje}): o relógio ou o fuso do computador estava adiantado quando ela foi gravada; a conta entra na rodada como vencida até a pasta ser corrigida`,
       });
     }
 
@@ -530,7 +551,7 @@ function examinar(pasta, hoje, raizCatalogo = path.resolve(pasta, '..', 'catalog
       pesquisa: e.pesquisa,
       dias_desde_pesquisa: dias,
       pesquisa_vencida: vencida,
-      catalogo: e.catalogo,
+      contas,
       grupo: e.grupo,
       alerta: e.alerta,
       ficha_existe: fichaExiste,
@@ -781,7 +802,7 @@ function principal(argv) {
       if (!termo) morrer('Uso: --procurar precisa de um nome, ex.: --procurar "Maquimox".');
     } else if (a === '--catalog') {
       catalogo = args[++i];
-      if (!catalogo) morrer('Uso: --catalog precisa de uma pasta, ex.: --catalog "<DADOS>/catalog/raw/linkedin".');
+      if (!catalogo) morrer('Uso: --catalog precisa da pasta das coletas, ex.: --catalog "<DADOS>/catalog/raw".');
     } else if (a === '--hoje') {
       hoje = args[++i];
       if (!hoje || !dataValida(hoje)) morrer('Uso: --hoje precisa de uma data AAAA-MM-DD, ex.: --hoje 2026-08-24.');
@@ -799,8 +820,8 @@ function principal(argv) {
   if (acao !== 'validar' && !fs.existsSync(pasta)) morrer(`Pasta não encontrada: ${pasta}`);
   if (fs.existsSync(pasta) && !fs.statSync(pasta).isDirectory()) morrer(`Não é uma pasta: ${pasta}`);
 
-  // catalog/raw/linkedin/ fica em DADOS, ao lado de refs/; --catalog sobrescreve quando não fica.
-  const raizCatalogo = catalogo ? path.resolve(catalogo) : path.resolve(pasta, '..', 'catalog', 'raw', 'linkedin');
+  // catalog/raw/ fica em DADOS, ao lado de refs/; --catalog sobrescreve quando não fica.
+  const raizCatalogo = catalogo ? path.resolve(catalogo) : path.resolve(pasta, '..', 'catalog', 'raw');
 
   if (acao === 'reconstruir') return reconstruir(pasta, hoje);
   if (acao === 'procurar') return procurar(pasta, termo);
@@ -810,7 +831,8 @@ function principal(argv) {
 module.exports = {
   CAMPOS,
   CAMADAS,
-  LIMITE_POR_RODADA,
+  PAGINAS_POR_CONTA,
+  LIMITE_PAGINAS_POR_RODADA,
   PRIORIDADES,
   FORMATO_DA_LINHA,
   SLUG_VALIDO,

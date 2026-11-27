@@ -186,7 +186,7 @@ caso('lista vazia: o índice nasce com o cabeçalho e valida', () => {
   const v = validar(refs).json;
   assert.strictEqual(v.ok, true, JSON.stringify(v.problemas));
   assert.deepStrictEqual(v.rodada.devidas.map((e) => e.nome), ['Alfa Cartonagem', 'Épsilon Pack', 'Beta Envase', 'Eta Cartons']);
-  assert.deepStrictEqual(v.rodada.sem_linkedin.map((e) => e.nome).sort(), ['Delta Máquinas', 'Gama Embalagens', 'Teta Líquidos']);
+  assert.deepStrictEqual(v.rodada.sem_rede.map((e) => e.nome).sort(), ['Delta Máquinas', 'Gama Embalagens', 'Teta Líquidos']);
   assert.deepStrictEqual(v.rodada.a_definir.map((e) => e.nome), ['Zeta Papéis']);
 });
 
