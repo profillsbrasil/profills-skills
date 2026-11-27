@@ -4,12 +4,12 @@ Marketplace com dois plugins da Profills para o time comercial. Cada plugin se i
 
 | Plugin | Para quem | O que faz |
 |---|---|---|
-| `profills-skills` | Quem posta no LinkedIn da Profills | Acompanha o que as empresas de referência postam e gera rascunhos de post, no Claude Code ou no Codex Desktop. |
+| `profills-skills` | Quem posta no LinkedIn da Profills | Acompanha o que as empresas de referência postam no LinkedIn e no Instagram e gera rascunhos de post, no Claude Code ou no Codex Desktop. |
 | `crm-profills` | Vendedor com conta ativa no CRM | Liga o CRM ao Claude Code ou ao Codex, com as permissões da sua tela. |
 
 ## Conteúdo do LinkedIn (`profills-skills`)
 
-O plugin acompanha o que os concorrentes e as empresas de referência postam no LinkedIn e transforma isso em rascunhos de post em português, no seu jeito de falar. Você conversa com o assistente em português e ele conduz cada passo, sem código. Ele funciona do mesmo jeito em dois assistentes: o **Claude Code** e o **Codex Desktop** (o app do ChatGPT, na aba Codex). Use o que a sua conta tem.
+O plugin acompanha o que os concorrentes e as empresas de referência postam no LinkedIn e no Instagram e transforma isso em rascunhos de post em português, no seu jeito de falar. Você conversa com o assistente em português e ele conduz cada passo, sem código. Ele funciona do mesmo jeito em dois assistentes: o **Claude Code** e o **Codex Desktop** (o app do ChatGPT, na aba Codex). Use o que a sua conta tem.
 
 ### Pré-requisitos
 
@@ -53,9 +53,9 @@ A `profills-setup` confere o que falta, instala a `humanize-pt-br`, cria a pasta
 |---|---|
 | `profills-setup` | Instala e confere tudo, cria a pasta de dados e atualiza a pasta quando as skills mudam. |
 | `profills-voz` | Conversa com você uns 10 minutos e grava o que você vende, para quem e como você fala. Todo post sai dessa voz. |
-| `profills-radar` | Guarda a lista de empresas que você acompanha, importa sua planilha de concorrentes e escolhe as empresas de cada rodada, até 12, pela prioridade. |
+| `profills-radar` | Guarda a lista de empresas que você acompanha, importa sua planilha de concorrentes e escolhe as empresas e as redes de cada rodada pela prioridade, dentro de um limite de páginas que protege a sua conta (12 empresas só com LinkedIn, menos quando elas têm Instagram). |
 | `profills-navegador` | Deixa o seu navegador, com a extensão do assistente, pronto antes de abrir qualquer página (a coleta da garimpo e as páginas que a radar lê), e guia a instalação da extensão quando falta. |
-| `profills-garimpo` | Lê os posts recentes de cada empresa da rodada no seu navegador. Post em outro idioma ganha um resumo em português. |
+| `profills-garimpo` | Lê os posts recentes de cada empresa da rodada no seu navegador, no LinkedIn e no Instagram, e mostra os números de cada rede separados. Post em outro idioma ganha um resumo em português. |
 | `profills-boletim` | Responde "o que os concorrentes fizeram?": o que cada empresa postou de novo, quem ficou sem leitura e por quê, e 3 pautas de post. |
 | `profills-post` | Escreve de 3 a 5 versões de post na sua voz e mostra lado a lado para você escolher e copiar. |
 
