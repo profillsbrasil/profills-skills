@@ -6,7 +6,7 @@
       "prompt": "Gera uns posts sobre embalagens sustentáveis no estilo que a Cetro Máquinas usa. (Contexto: o usuário não tem número novo na mão — \"usa o que já está no meu arquivo de voz\" — e, perguntado sobre o que não copiar da Cetro, responde \"o tom institucional, aquele 'você, empreendedor'\".)",
       "expected_output": "- Lê do disco o perfil da Cetro, o posts.json da coleta e o voz.md antes de gerar.\n- Trata o '## Do Not Copy' em placeholder como pergunta com opções tiradas dos posts da Cetro e grava a resposta no dossiê, no lugar do comentário, antes de gerar.\n- Nenhum número do texto sem origem: só o que está em Provas do voz.md ou medido no catálogo.\n- 3-5 variações salvas em drafts/<data>-<tema-slug>/variacoes.md, uma por ângulo, as três famílias de hook cobertas, sem categoria repetida.\n- checar-formato.js volta ok:true no arquivo salvo em drafts/<data>-<tema-slug>.md.\n- Picker local com JSON de tela e escolha pedida ao usuário.",
       "files": [
-        "evals/files/1"
+        "evals/profills-post/files/1"
       ],
       "expectations": [
         "O dossiê entregue em outputs/linkedin-data/refs/cetromaquinas.md traz a resposta do usuário sobre o que não copiar (tom institucional) no lugar do comentário de placeholder — o arquivo não contém mais a linha `<!-- A definir com o usuário`, e a pergunta registrada trouxe opções concretas tiradas dos posts da Cetro.",
@@ -26,7 +26,7 @@
       "prompt": "Escreve um post inspirado no que a Cetro postou sobre o mercado de gummies. (Contexto: na hora de escolher, o usuário leva a variação de história de cliente, não a que segue o padrão do post-referência; ele não tem número novo — \"pega o do meu arquivo de voz\".)",
       "expected_output": "- Localiza o post de gummies no posts.json e anuncia o padrão que vai reusar: ângulo `trend` + hook `question`.\n- Gera as variações, o usuário escolhe a de história de cliente, e a skill registra em uma frase que o padrão levado é diferente do anunciado.\n- O arquivo salvo é o da variação escolhida, com a linha de contexto refletindo o ângulo e o hook reais.\n- Respeita o '## Do Not Copy' já preenchido, sem repetir a pergunta.\n- checar-formato.js volta ok:true no arquivo salvo.",
       "files": [
-        "evals/files/2"
+        "evals/profills-post/files/2"
       ],
       "expectations": [
         "Cita o post-referência concreto da Cetro (post_id `urn:li:activity:7482422340073746433` ou o hook \"Está pensando em investir no mercado de gummies?\") e anuncia o padrão a reusar como ângulo `trend` + categoria de hook `question`, na resposta final ou no cabeçalho do variacoes.md.",
@@ -46,7 +46,7 @@
       "prompt": "Preciso de ideias de post sobre automação industrial pro meu LinkedIn. (Contexto: ele não tem nenhum número medido para dar, e as Provas do arquivo de voz dele estão todas como [a confirmar].)",
       "expected_output": "- Lê o voz.md do disco, que não tem nenhuma prova com número, e escreve na voz dele sem invocar a profills-voz.\n- Sem catálogo, diz isso em uma frase, oferece rodar a profills-garimpo e segue com o tema.\n- Sem número real, usa `[número a confirmar]` nas variações e deixa o ângulo `dado` de fora; o arquivo final não fica com campo pendente nem ganha número inventado.\n- 3-5 variações, picker local e escolhido salvo em drafts/.",
       "files": [
-        "evals/files/3"
+        "evals/profills-post/files/3"
       ],
       "expectations": [
         "Lê linkedin-data/voz.md do disco antes de gerar e não invoca a profills-voz (o arquivo existe); o texto salvo não contém nenhuma das palavras banidas do voz.md (\"solução robusta\", \"alavancar\", \"parceiro estratégico\", \"de forma assertiva\", \"estado da arte\").",
@@ -66,7 +66,7 @@
       "prompt": "Transforma o catálogo da Skymsen em posts. (Contexto: o usuário aceita o tema que você recomendar; perguntado sobre o que não copiar da Skymsen, responde \"os posts de data comemorativa, tipo Dia da Pizza, não são minha praia\"; não tem número novo para dar além do que está no arquivo de voz.)",
       "expected_output": "- Sem tema no pedido, tira 3-4 temas que engajaram do catalog/skymsen.md e oferece com recomendação e porquê.\n- Trata o '## Do Not Copy' em placeholder: pergunta e grava a resposta no dossiê antes de gerar.\n- 3-5 variações com ângulo próprio, três famílias de hook, sem categoria repetida; crivo, humanização, picker.\n- Cria drafts/ e salva o escolhido; checar-formato.js volta ok:true.",
       "files": [
-        "evals/files/4"
+        "evals/profills-post/files/4"
       ],
       "expectations": [
         "Sem tema no pedido, oferece 3-4 temas tirados de linkedin-data/catalog/skymsen.md (temas recorrentes e destaque medido), cada um ancorado num post ou número do perfil e com a recomendação e o porquê — não temas genéricos escolhidos sozinho.",
@@ -86,7 +86,7 @@
       "prompt": "Esse rascunho de troca de bico dosador eu ia postar hoje de manhã, tá salvo em drafts/2026-08-22-troca-de-bico-dosador.md. Dá uma última olhada e me devolve pronto pra colar. (Contexto: perguntado sobre o número que falta, o usuário confirma que é o caso do cliente de cosmético de Diadema que já está no arquivo de voz, e concorda em deixar o link no primeiro comentário.)",
       "expected_output": "- Roda o checar-formato.js no rascunho existente antes de mexer e reporta as falhas com os números medidos pelo script.\n- Corrige tudo o que reprovou: markdown, link no corpo, parágrafo longo, palavra banida, travessão e campo pendente; e trata o aviso de corpo curto conversando com o usuário.\n- O campo `[X]%` é preenchido com o número real do voz.md (perda de 6% para 0,8% em Diadema), com a origem na linha de contexto.\n- Reescreve o MESMO arquivo e só dá por pronto com ok:true no script.",
       "files": [
-        "evals/files/5"
+        "evals/profills-post/files/5"
       ],
       "expectations": [
         "Roda `scripts/checar-formato.js linkedin-data/drafts/2026-08-22-troca-de-bico-dosador.md --voz linkedin-data/voz.md` no rascunho como ele está antes de reescrever, e reporta o que o script mediu (parágrafo acima do limite de linha, markdown, link, palavra banida, travessão e campo pendente como falhas; os 644 caracteres de corpo como aviso `corpo_curto`, que não reprova) — sem recitar limites de cabeça nem inventar contagem.",
@@ -104,7 +104,7 @@
       "prompt": "Faz um post inspirado no que a Tecnox do Brasil vem postando sobre embalagem flexível. (Contexto: o usuário não tem número novo para dar; ele topa seguir só com o tema se a empresa não tiver material.)",
       "expected_output": "- Não achando catalog/tecnox-do-brasil.md, abre o meta.json da coleta e usa o campo status (`sem_posts`) para explicar em uma frase por que não há o que espelhar.\n- Oferece rodar a profills-garimpo e segue só com o tema, sem inventar posts da Tecnox.\n- Gera 3-5 variações a partir da voz do usuário, abre o picker e salva o escolhido.\n- checar-formato.js volta ok:true no arquivo salvo.",
       "files": [
-        "evals/files/6"
+        "evals/profills-post/files/6"
       ],
       "expectations": [
         "Sem `catalog/tecnox-do-brasil.md`, lê `linkedin-data/catalog/raw/tecnox-do-brasil/2026-07-14/meta.json` e conta ao usuário, em uma frase e na resposta final, a razão que está lá (`status: sem_posts` — LinkedIn parado há cerca de 11 meses, 0 posts coletados), sem jargão de campo de JSON.",
@@ -124,7 +124,7 @@
       "prompt": "Gera uns posts sobre manutenção preventiva de envasadora. (Contexto: quando você propõe montar o arquivo de voz, o usuário responde \"agora não dá, tô saindo pra uma visita\".)",
       "expected_output": "- Confere no disco que linkedin-data/voz.md não existe e invoca a profills-voz antes de qualquer rascunho.\n- Diante do \"agora não dá\", explica em uma frase que sem a voz o post sai genérico, com a cara da empresa de referência e não a dele, e para.\n- Não gera rascunho nem variação, não abre o picker e não troca a voz por perguntas rápidas de tom, público ou produto.\n- Fecha com uma única sugestão: rodar a profills-voz quando ele tiver os 10 minutos.",
       "files": [
-        "evals/files/7"
+        "evals/profills-post/files/7"
       ],
       "expectations": [
         "Confere a ausência de linkedin-data/voz.md (test -f ou equivalente) e invoca a skill profills-voz (lê o SKILL.md dela) antes de escrever qualquer texto de post.",
@@ -139,7 +139,7 @@
       "prompt": "Gera um post da pauta 2 do boletim. (Contexto: o número que o usuário dá é \"na linha anterior, cliente que envasava 300 frascos por dia na mão passou a 1.800 com a máquina\"; a opinião é \"lote pequeno é justamente onde a máquina se paga, porque é onde o operador mais erra o peso\"; o mecanismo é \"regula o bico pro frasco, testa 10 frascos na balança, libera a linha\". Ele escolhe a variação recomendada.)",
       "expected_output": "- Abre o boletim mais novo de linkedin-data/boletins/ (2026-08-24.md, não o de 17/08) e lê a pauta 2: \"Envasar à mão ainda compensa no lote pequeno?\", ângulo contrarian.\n- Acha o post citado pelo link no posts.json da Nordic Fill Systems (22/08, hook_categoria question) e anuncia o padrão que vai reusar: ângulo contrarian com hook de pergunta, inspirado no que a Nordic Fill Systems postou.\n- Lê a voz e o Do Not Copy da ficha da Nordic Fill Systems (já preenchido, não pergunta de novo).\n- Escreve as variações do zero em pt-BR, sem traduzir o texto em inglês do post, com a primeira variação no ângulo contrarian.\n- Salva o escolhido em linkedin-data/drafts/2026-08-24-<tema-slug>.md no formato fixo, com a Nordic Fill Systems como empresa que inspirou e a origem do número (resposta do usuário).",
       "files": [
-        "evals/files/8"
+        "evals/profills-post/files/8"
       ],
       "expectations": [
         "O transcript lê `linkedin-data/boletins/2026-08-24.md` (e não toma a pauta do `2026-08-17.md`) e diz em uma frase que pegou a pauta 2, \"Envasar à mão ainda compensa no lote pequeno?\", e o post de 22/08 da Nordic Fill Systems.",
@@ -154,12 +154,12 @@
       "prompt": "Voltei. A aba com as opções do post de manutenção preventiva não carrega mais, diz que perdeu a conexão. Me mostra de novo que eu escolho. (Contexto: hoje à tarde você gerou as 3 variações, salvou o variacoes.md e abriu o picker; ele não clicou em nenhuma e saiu para uma visita, voltando 5 horas depois. Quando as opções reaparecem, ele responde \"agora tenho que sair de novo, escolho mais tarde\".)",
       "expected_output": "- Antes de ler a escolha ou gravar tela, roda a checagem `lifecycle-lib.cjs ready` no `state/` do picker e vê que ele caiu.\n- Religa o picker com o start-server.sh sem perguntar se pode.\n- Regrava a última tela: copia o JSON mais novo de `content/.anterior/` para `content/` com nome novo, com as mesmas 3 opções, sem gerar variação nova.\n- Diz em uma frase que o picker tinha desligado e reabriu com as mesmas opções, e pede a escolha pelo Copiar ou pela letra no chat.\n- Não salva rascunho final nem para o picker, porque ele ainda não escolheu.",
       "files": [
-        "evals/files/9"
+        "evals/profills-post/files/9"
       ],
       "expectations": [
         "O transcript registra `node <skill>/scripts/picker/lifecycle-lib.cjs ready <...>/linkedin-data/.picker/current/state` rodado ANTES da primeira chamada de start-server.sh e antes de qualquer leitura de `state/events`, com a saída 1 (picker caído) levada em conta. Checagem por outro meio (curl na porta, leitura do server.log, só olhar o `server-stopped`) não cumpre esta expectativa.",
         "start-server.sh é chamado com `--dados-dir` apontando para linkedin-data, e o transcript não registra nenhuma [PERGUNTA] antes dele pedindo licença para religar ou reabrir o picker.",
-        "Existe em outputs/linkedin-data/.picker/current/content/ um JSON de tela com nome diferente de `manutencao-preventiva.json` cujo `opcoes[].texto` é igual, opção a opção, ao das 3 opções de `evals/files/9/linkedin-data/.picker/current/content/manutencao-preventiva.json` (mesma ordem A, B, C).",
+        "Existe em outputs/linkedin-data/.picker/current/content/ um JSON de tela com nome diferente de `manutencao-preventiva.json` cujo `opcoes[].texto` é igual, opção a opção, ao das 3 opções de `evals/profills-post/files/9/linkedin-data/.picker/current/content/manutencao-preventiva.json` (mesma ordem A, B, C).",
         "NEGATIVA: `linkedin-data/drafts/2026-08-24-manutencao-preventiva/variacoes.md` volta inalterado (ou ausente de outputs/), não existe `linkedin-data/drafts/2026-08-24-manutencao-preventiva.md` em outputs/ e o transcript não registra checar-formato.js nem humanize-pt-br: nenhuma variação foi regerada.",
         "NEGATIVA: stop-server.sh não é chamado, porque ele ainda não escolheu.",
         "A resposta final diz em uma frase que o picker tinha desligado e reabriu com as mesmas opções, oferece as duas formas de escolher (clicar Copiar no card ou digitar a letra no chat), não cola a `url` nem query com chave, e fecha com uma única sugestão de próximo passo."
